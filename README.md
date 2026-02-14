@@ -43,6 +43,23 @@ Run specific build steps:
 | Build | Build application | `scripts\build.bat` | `./scripts/build.sh` |
 | Publish | Create self-contained .exe | `scripts\publish.bat` | `./scripts/publish.sh` |
 
+### Output Logging
+
+All scripts automatically save detailed output to log files in the repository root:
+
+- `validate-output.log` - Full validation pipeline output
+- `test-output.log` - Test run details
+- `build-output.log` - Build output and warnings
+- `publish-output.log` - Publish process details
+
+**Why this helps:**
+- Easier debugging when builds fail
+- Upload logs for team review
+- Compare output across runs
+- All stdout and stderr captured
+
+Log files are excluded from git (see `.gitignore`).
+
 ## Manual Build Instructions
 
 If you prefer to run commands manually:
