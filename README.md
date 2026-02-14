@@ -6,8 +6,48 @@ A Windows desktop application that automatically updates your desktop wallpaper 
 
 - Windows 10 or Windows 11 (x64)
 - .NET 8 SDK (for building from source)
+- Git (for version control)
 
-## Build
+## Quick Start (Automated)
+
+**Recommended workflow:** Use the automated scripts to ensure tests pass before deployment.
+
+### Full Validation Pipeline
+
+Runs: pull → test → build → publish (stops on any failure)
+
+**Windows:**
+```cmd
+scripts\validate.bat
+```
+
+**Linux/macOS/WSL:**
+```bash
+./scripts/validate.sh
+```
+
+This script will:
+1. Pull latest code from git
+2. Run all automated tests (**stops if any test fails**)
+3. Build the application (**stops if build fails**)
+4. Publish self-contained executable
+5. Prompt for manual testing
+
+### Individual Scripts
+
+Run specific build steps:
+
+| Script | Purpose | Windows | Linux/macOS/WSL |
+|--------|---------|---------|-----------------|
+| Test | Run all tests (fail-fast) | `scripts\test.bat` | `./scripts/test.sh` |
+| Build | Build application | `scripts\build.bat` | `./scripts/build.sh` |
+| Publish | Create self-contained .exe | `scripts\publish.bat` | `./scripts/publish.sh` |
+
+## Manual Build Instructions
+
+If you prefer to run commands manually:
+
+### Build
 
 ```bash
 cd src/WallpaperApp
