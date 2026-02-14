@@ -18,6 +18,32 @@ Before you start, make sure you have:
 
 ---
 
+## Important Context: Read These First
+
+Before implementing Story 1, familiarize yourself with these key documents:
+
+### Architectural Decisions (ADRs)
+
+This story implements several foundational architectural decisions. Understanding **why** these decisions were made will help you implement them correctly:
+
+- **[ADR-002: Self-Contained Deployment](../adr/ADR-002-self-contained-deployment.md)** - Why we bundle the .NET runtime (this drives the `.csproj` configuration in Step 3)
+- **[ADR-004: appsettings.json Configuration](../adr/ADR-004-appsettings-json-configuration.md)** - Configuration strategy (relevant for Story 2, but shapes project structure)
+
+Optional but recommended:
+- **[ADR-001: SystemParametersInfo API](../adr/ADR-001-use-systemparametersinfo-for-wallpaper.md)** - How we'll set wallpapers in Story 3 (validated by Story 0 spike)
+- **[Spike Results](../spike-results.md)** - Story 0 findings about Windows wallpaper API
+
+### Where to Find ADRs
+
+All architectural decisions are documented in `plan/adr/`. Start with:
+1. Read `plan/adr/README.md` to understand the ADR system
+2. Browse `plan/adr/INDEX.md` to see all decisions by category
+3. Review any ADR marked "Accepted" that relates to your story
+
+**Why this matters**: The `.csproj` settings in Step 3 (like `<SelfContained>true</SelfContained>`) aren't arbitrary - they're based on ADR-002's decision to prioritize user experience over download size. If you understand the *why*, you won't accidentally "fix" something that was intentional.
+
+---
+
 ## What You'll Build
 
 By the end of this story you will have:
