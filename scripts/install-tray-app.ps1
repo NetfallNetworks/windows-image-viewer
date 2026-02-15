@@ -21,7 +21,7 @@ $startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Star
 
 # Check if build exists
 if (-not (Test-Path $buildPath)) {
-    Write-Host "❌ ERROR: Build not found. Please run .\scripts\build-tray-app.ps1 first!" -ForegroundColor Red
+    Write-Host "❌ ERROR: Build not found. Please run .\scripts\publish-tray-app.ps1 first!" -ForegroundColor Red
     exit 1
 }
 

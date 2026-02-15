@@ -3,12 +3,12 @@
 ## Available Scripts
 
 ### Development Scripts
-- `build.bat` / `build.sh` - Build the project
+- `build.bat` / `build.sh` - Build ALL projects (console app, tray app, tests)
 - `test.bat` / `test.sh` - Run unit tests
 - `validate.bat` / `validate.sh` - Full validation pipeline
 
 ### Tray App Scripts (NEW!)
-- `build-tray-app.ps1` - Build the system tray application
+- `publish-tray-app.ps1` - Publish the system tray application (single-file .exe)
 - `install-tray-app.ps1` - Install and configure auto-start
 - `uninstall-tray-app.ps1` - Remove the tray app
 
@@ -167,11 +167,11 @@ more < validate-output.log
 
 ## Next Steps
 
-After running tests successfully, build and install the tray app:
+After running tests successfully, publish and install the tray app:
 
 ```powershell
-# Build the system tray app
-.\scripts\build-tray-app.ps1
+# Publish the system tray app (creates single-file .exe)
+.\scripts\publish-tray-app.ps1
 
 # Install it (adds to Windows Startup)
 .\scripts\install-tray-app.ps1

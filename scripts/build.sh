@@ -2,17 +2,20 @@
 set -e  # Exit immediately if any command fails
 
 echo "========================================"
-echo "Building WallpaperApp..."
+echo "Building All Projects..."
 echo "========================================"
 echo ""
 
-cd "$(dirname "$0")/../src/WallpaperApp"
+cd "$(dirname "$0")/../src"
 
-# Build with warnings as errors, minimal verbosity
+# Build all projects with warnings as errors, minimal verbosity
 dotnet build -c Release --warnaserror --verbosity minimal --nologo
 
 echo ""
 echo "========================================"
 echo "✅ Build successful!"
+echo "  - WallpaperApp (console/service)"
+echo "  - WallpaperApp.TrayApp (system tray)"
+echo "  - WallpaperApp.Tests"
 echo "========================================"
 exit 0

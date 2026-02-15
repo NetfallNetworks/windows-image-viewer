@@ -15,7 +15,7 @@ A system tray application that automatically updates your Windows wallpaper with
 ### Step 1: Build the App
 
 ```powershell
-.\scripts\build-tray-app.ps1
+.\scripts\publish-tray-app.ps1
 ```
 
 ### Step 2: Install and Configure
@@ -112,7 +112,7 @@ Windows services require a password to run, but the tray app:
 
 ```powershell
 # Build
-.\scripts\build-tray-app.ps1
+.\scripts\publish-tray-app.ps1
 
 # Install (auto-start enabled)
 .\scripts\install-tray-app.ps1

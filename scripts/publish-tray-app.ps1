@@ -1,5 +1,5 @@
-# Build script for Weather Wallpaper Tray App
-# This script builds the tray app in Release mode
+# Publish script for Weather Wallpaper Tray App
+# This script publishes the tray app as a single-file executable ready for installation
 
 param(
     [switch]$Clean = $false
@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Weather Wallpaper - Build Tray App" -ForegroundColor Cyan
+Write-Host "Weather Wallpaper - Publish Tray App" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host
 
@@ -26,7 +26,7 @@ if (-not (Test-Path $projectPath)) {
 
 # Clean if requested
 if ($Clean) {
-    Write-Host "🧹 Cleaning previous build..." -ForegroundColor Yellow
+    Write-Host "🧹 Cleaning previous publish..." -ForegroundColor Yellow
     if (Test-Path $outputPath) {
         Remove-Item -Path $outputPath -Recurse -Force
     }
@@ -34,8 +34,8 @@ if ($Clean) {
     Write-Host
 }
 
-# Build the project
-Write-Host "🔨 Building tray app..." -ForegroundColor Yellow
+# Publish the project
+Write-Host "🔨 Publishing tray app..." -ForegroundColor Yellow
 Write-Host "  Project: $projectPath"
 Write-Host "  Output: $outputPath"
 Write-Host
@@ -50,11 +50,11 @@ try {
         /p:IncludeNativeLibrariesForSelfExtract=true
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Build failed with exit code $LASTEXITCODE"
+        throw "Publish failed with exit code $LASTEXITCODE"
     }
 
     Write-Host
-    Write-Host "✓ Build successful!" -ForegroundColor Green
+    Write-Host "✓ Publish successful!" -ForegroundColor Green
     Write-Host
     Write-Host "📦 Output files:" -ForegroundColor Cyan
     Get-ChildItem $outputPath | ForEach-Object {
@@ -68,7 +68,7 @@ try {
 
 } catch {
     Write-Host
-    Write-Host "❌ BUILD FAILED" -ForegroundColor Red
+    Write-Host "❌ PUBLISH FAILED" -ForegroundColor Red
     Write-Host "Error: $_" -ForegroundColor Red
     Write-Host
     exit 1
