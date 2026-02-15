@@ -7,7 +7,9 @@ using WallpaperApp.Configuration;
 using WallpaperApp.Services;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
-using FontStyle = System.Drawing.FontStyle;
+using DrawingFont = System.Drawing.Font;
+using DrawingFontStyle = System.Drawing.FontStyle;
+using DrawingIcon = System.Drawing.Icon;
 
 namespace WallpaperApp.TrayApp
 {
@@ -95,16 +97,16 @@ namespace WallpaperApp.TrayApp
             _notifyIcon.DoubleClick += (s, e) => ShowStatus();
         }
 
-        private Icon CreateDefaultIcon()
+        private DrawingIcon CreateDefaultIcon()
         {
             // Create a simple icon (you can replace this with a real .ico file)
             var bitmap = new Bitmap(32, 32);
             using (var g = Graphics.FromImage(bitmap))
             {
                 g.Clear(Color.FromArgb(0, 120, 212)); // Windows blue
-                g.DrawString("W", new Font("Segoe UI", 20, FontStyle.Bold), Brushes.White, new PointF(4, 2));
+                g.DrawString("W", new DrawingFont("Segoe UI", 20, DrawingFontStyle.Bold), Brushes.White, new PointF(4, 2));
             }
-            return Icon.FromHandle(bitmap.GetHicon());
+            return DrawingIcon.FromHandle(bitmap.GetHicon());
         }
 
         private async void StartWallpaperUpdates()
