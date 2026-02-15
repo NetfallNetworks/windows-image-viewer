@@ -800,6 +800,22 @@ HTTP endpoint for monitoring service health
 ### Story 15: Metrics and Telemetry
 Track success/failure rates, latencies
 
+### Story 16: System Tray Icon
+**Priority**: Medium
+**Estimated Points**: 5
+
+Add system tray icon for easy service management without opening services.msc:
+- Show tray icon when service is running
+- Right-click menu: "Refresh Now", "View Status", "Open Settings", "Exit"
+- Display last update time and next scheduled update
+- Show notification on wallpaper update (optional, configurable)
+- Visual indicator: green (running), yellow (error), red (stopped)
+- Double-click to open status window
+- Tray icon persists across user sessions
+- Clean removal when service uninstalled
+
+**Benefits**: Better UX, easier troubleshooting, manual refresh capability
+
 ---
 
 ## Definition of Ready (for each story)

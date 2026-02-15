@@ -1,0 +1,6 @@
+{
+  "AppSettings": {
+    "ImageUrl": "https://weather.zamflam.com/latest.png",
+    "RefreshIntervalMinutes": 15
+  }
+}
