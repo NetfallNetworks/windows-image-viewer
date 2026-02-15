@@ -18,7 +18,7 @@ namespace WallpaperApp
             Console.WriteLine("Weather Wallpaper App");
             Console.WriteLine("========================================");
             Console.WriteLine();
-            Console.WriteLine($"Working Directory: {Directory.GetCurrentDirectory()}");
+            Console.WriteLine($"Executable Directory: {AppContext.BaseDirectory}");
             Console.WriteLine($"Looking for: WallpaperApp.json");
             Console.WriteLine();
 

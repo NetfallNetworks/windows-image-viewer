@@ -18,8 +18,11 @@ namespace WallpaperApp.Configuration
 
             try
             {
+                // Use AppContext.BaseDirectory to get the exe's directory
+                // This works correctly for both console apps and Windows Services
+                // (GetCurrentDirectory() returns C:\Windows\System32 for services!)
                 config = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .SetBasePath(AppContext.BaseDirectory)
                     .AddJsonFile("WallpaperApp.json", optional: false, reloadOnChange: false)
                     .Build();
             }
