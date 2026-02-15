@@ -222,8 +222,8 @@ namespace WallpaperApp.Tests
             // Act
             var result1 = await fetcher.DownloadImageAsync("https://example.com/test1.png");
 
-            // Wait a moment to ensure different timestamp
-            await Task.Delay(1100); // Wait just over 1 second to ensure different filename
+            // Wait a moment to ensure different timestamp (millisecond precision)
+            await Task.Delay(10);
 
             var result2 = await fetcher.DownloadImageAsync("https://example.com/test2.png");
 
@@ -232,11 +232,11 @@ namespace WallpaperApp.Tests
             Assert.NotNull(result2);
             Assert.NotEqual(result1, result2);
 
-            // Verify filename format: wallpaper-{yyyyMMdd-HHmmss}.png
+            // Verify filename format: wallpaper-{yyyyMMdd-HHmmss-fff}.png
             string filename1 = Path.GetFileName(result1);
             string filename2 = Path.GetFileName(result2);
-            Assert.Matches(@"^wallpaper-\d{8}-\d{6}\.png$", filename1);
-            Assert.Matches(@"^wallpaper-\d{8}-\d{6}\.png$", filename2);
+            Assert.Matches(@"^wallpaper-\d{8}-\d{6}-\d{3}\.png$", filename1);
+            Assert.Matches(@"^wallpaper-\d{8}-\d{6}-\d{3}\.png$", filename2);
         }
 
         [Fact]

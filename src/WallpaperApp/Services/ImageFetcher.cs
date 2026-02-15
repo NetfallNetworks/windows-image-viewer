@@ -79,12 +79,12 @@ namespace WallpaperApp.Services
         }
 
         /// <summary>
-        /// Generates a unique filename based on the current timestamp.
-        /// Format: wallpaper-{yyyyMMdd-HHmmss}.png
+        /// Generates a unique filename based on the current timestamp with millisecond precision.
+        /// Format: wallpaper-{yyyyMMdd-HHmmss-fff}.png
         /// </summary>
         private string GenerateUniqueFilename()
         {
-            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff");
             return $"wallpaper-{timestamp}.png";
         }
 
