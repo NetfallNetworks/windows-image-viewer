@@ -15,22 +15,19 @@
    ```
 
 2. **Run the install script as Administrator**:
-
-   **Option A: PowerShell (Recommended - more reliable)**
    ```powershell
    # Right-click install-service.ps1 → "Run with PowerShell"
    # Or from an admin PowerShell:
    .\install-service.ps1
    ```
 
-   **Option B: Batch file**
-   ```powershell
-   # Right-click install-service.bat → "Run as administrator"
-   # Or from an admin command prompt:
-   .\install-service.bat
-   ```
+3. **Choose service account**:
+   - **Option 1**: Run as YOUR user account (RECOMMENDED - can set wallpapers)
+   - **Option 2**: Run as LocalSystem (cannot set wallpapers)
 
-The scripts will automatically find the executable in the build output directory.
+   You'll be prompted for your Windows password if you choose option 1.
+
+The script will automatically find the executable in the build output directory.
 
 ## Managing the Service
 
@@ -60,39 +57,84 @@ sc qc WeatherWallpaperService
 
 ## Uninstallation
 
-**Option A: PowerShell (Recommended)**
+**Using the uninstall script:**
 ```powershell
 .\uninstall-service.ps1
 ```
 
-**Option B: Batch file**
-```cmd
-.\uninstall-service.bat
-```
-
-**Option C: Manual removal**
+**Manual removal:**
 1. Open services.msc
 2. Find "Weather Wallpaper Service"
 3. Stop the service (if running)
 4. Right-click → Delete
 
+**Command line:**
+```powershell
+sc stop WeatherWallpaperService
+sc delete WeatherWallpaperService
+```
+
+## Diagnostic Tools
+
+### Quick Diagnosis
+```powershell
+.\diagnose-service.ps1
+```
+Shows service status, account, and recent log entries.
+
+### Check Windows Event Logs
+```powershell
+.\check-service-logs.ps1
+```
+Searches Windows Event Logs for service-related errors.
+
+### View Service Logs
+The service logs to:
+```
+%TEMP%\WeatherWallpaperService\service.log
+```
+
+View logs:
+```powershell
+notepad $env:TEMP\WeatherWallpaperService\service.log
+```
+
 ## Troubleshooting
 
 ### Service won't start
-1. Check that the executable path is correct:
+1. **Run diagnostics**:
+   ```powershell
+   .\diagnose-service.ps1
+   ```
+
+2. **Check if running as correct account**:
+   - Service must run as YOUR user account to set wallpapers
+   - Reinstall with `.\install-service.ps1` and choose option 1
+
+3. **Check Windows Event Viewer**:
+   ```powershell
+   .\check-service-logs.ps1
+   ```
+
+4. **Verify executable path**:
    ```powershell
    sc qc WeatherWallpaperService
    ```
 
-2. Verify the executable exists at that path
+### Wallpaper not updating
 
-3. Check Windows Event Viewer for error details:
-   - Windows Logs → Application
-   - Look for errors from "WeatherWallpaperService"
+**Most common cause**: Service running as LocalSystem instead of your user account.
 
-### Manual service deletion (if needed)
+**Solution**: Reinstall with the correct account:
 ```powershell
-sc delete WeatherWallpaperService
+.\uninstall-service.ps1
+.\install-service.ps1
+# Choose option 1 - Run as YOUR user account
+```
+
+**Check logs** to see if updates are happening:
+```powershell
+notepad $env:TEMP\WeatherWallpaperService\service.log
 ```
 
 ## Configuration
