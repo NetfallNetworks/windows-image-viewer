@@ -8,22 +8,13 @@ namespace WallpaperApp.Tests
     public class TimerServiceTests
     {
         private readonly Mock<IConfigurationService> _mockConfigService;
-        private readonly Mock<WallpaperUpdater> _mockWallpaperUpdater;
+        private readonly Mock<IWallpaperUpdater> _mockWallpaperUpdater;
         private readonly AppSettings _testSettings;
 
         public TimerServiceTests()
         {
             _mockConfigService = new Mock<IConfigurationService>();
-
-            // Create mocks for WallpaperUpdater dependencies
-            var mockImageFetcher = new Mock<IImageFetcher>();
-            var mockWallpaperService = new Mock<IWallpaperService>();
-
-            _mockWallpaperUpdater = new Mock<WallpaperUpdater>(
-                _mockConfigService.Object,
-                mockImageFetcher.Object,
-                mockWallpaperService.Object
-            );
+            _mockWallpaperUpdater = new Mock<IWallpaperUpdater>();
 
             _testSettings = new AppSettings
             {

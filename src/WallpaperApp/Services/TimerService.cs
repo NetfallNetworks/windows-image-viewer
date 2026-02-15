@@ -8,7 +8,7 @@ namespace WallpaperApp.Services
     public class TimerService : ITimerService
     {
         private readonly IConfigurationService _configurationService;
-        private readonly WallpaperUpdater _wallpaperUpdater;
+        private readonly IWallpaperUpdater _wallpaperUpdater;
         private Timer? _timer;
         private DateTime _nextRefreshTime;
         private readonly object _lock = new object();
@@ -16,7 +16,7 @@ namespace WallpaperApp.Services
 
         public TimerService(
             IConfigurationService configurationService,
-            WallpaperUpdater wallpaperUpdater)
+            IWallpaperUpdater wallpaperUpdater)
         {
             _configurationService = configurationService ?? throw new ArgumentNullException(nameof(configurationService));
             _wallpaperUpdater = wallpaperUpdater ?? throw new ArgumentNullException(nameof(wallpaperUpdater));
