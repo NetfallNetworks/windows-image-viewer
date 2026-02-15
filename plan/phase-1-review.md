@@ -1,5 +1,9 @@
 # Phase 1 Architecture Review - Quality Gate
 
+> **HISTORICAL NOTE**: This document reflects the state of the project after Phase 1 completion.
+> The Windows Service approach mentioned here was later replaced with a System Tray App.
+> See [ADR-005](adr/ADR-005-pivot-service-to-tray-app.md) for details. This document is preserved for historical reference.
+
 **Review Date**: 2026-02-15
 **Trigger**: ARCHITECT REVIEW #1 (after Story 5 - Core infrastructure complete)
 **Verdict**: PASS with required refactorings before Story 6

@@ -16,7 +16,7 @@ namespace WallpaperApp
             Console.WriteLine("Weather Wallpaper App");
             Console.WriteLine("========================================");
             Console.WriteLine();
-            Console.WriteLine($"Working Directory: {Directory.GetCurrentDirectory()}");
+            Console.WriteLine($"Executable Directory: {AppContext.BaseDirectory}");
             Console.WriteLine($"Looking for: WallpaperApp.json");
             Console.WriteLine();
 
@@ -24,9 +24,6 @@ namespace WallpaperApp
             if (args.Length > 0 && args[0] == "--help")
             {
                 Console.WriteLine("USAGE:");
-                Console.WriteLine("  WallpaperApp.exe");
-                Console.WriteLine("    Fetch and set wallpaper (default mode)");
-                Console.WriteLine();
                 Console.WriteLine("  WallpaperApp.exe --download");
                 Console.WriteLine("    Downloads image from URL in configuration");
                 Console.WriteLine();
@@ -36,43 +33,22 @@ namespace WallpaperApp
                 Console.WriteLine("  WallpaperApp.exe --help");
                 Console.WriteLine("    Displays this help message");
                 Console.WriteLine();
+                Console.WriteLine("NOTE: For continuous background wallpaper updates, use the Tray App.");
+                Console.WriteLine("      See TRAY-APP-README.md for installation instructions.");
+                Console.WriteLine();
                 return 0;
             }
-            // Story 6: Periodic refresh with timer (default mode)
+            // No-argument mode: Show help message
             else if (args.Length == 0)
             {
-                Console.WriteLine("Story 6: Starting wallpaper refresh service...");
-                Console.WriteLine("Press Ctrl+C to stop.");
+                Console.WriteLine("❌ No command specified.");
                 Console.WriteLine();
-
-                var configService = new ConfigurationService();
-                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-                var imageFetcher = new ImageFetcher(httpClient);
-                var wallpaperService = new WallpaperService();
-                var updater = new WallpaperUpdater(configService, imageFetcher, wallpaperService);
-
-                var timerService = new TimerService(configService, updater);
-
-                // Set up cancellation for Ctrl+C
-                using var cts = new CancellationTokenSource();
-                Console.CancelKeyPress += (sender, e) =>
-                {
-                    e.Cancel = true;  // Prevent immediate termination
-                    Console.WriteLine();
-                    Console.WriteLine("Ctrl+C detected. Shutting down gracefully...");
-                    cts.Cancel();
-                };
-
-                try
-                {
-                    await timerService.StartAsync(cts.Token);
-                    return 0;
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"❌ Fatal error: {ex.Message}");
-                    return 1;
-                }
+                Console.WriteLine("Use --help to see available commands.");
+                Console.WriteLine();
+                Console.WriteLine("NOTE: Continuous background updates now use the Tray App.");
+                Console.WriteLine("      See TRAY-APP-README.md for installation instructions.");
+                Console.WriteLine();
+                return 1;
             }
             // Story 4: Download image from URL (if --download flag provided)
             else if (args.Length > 0 && args[0] == "--download")
@@ -173,5 +149,6 @@ namespace WallpaperApp
             // Should never reach here
             return 1;
         }
+
     }
 }

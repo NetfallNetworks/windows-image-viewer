@@ -537,8 +537,12 @@ public class TimerServiceTests
 
 ## **Story 7: Windows Service - Convert to Service**
 
-**Epic**: Automation  
-**Story Points**: 8  
+> **DEPRECATED**: This story was implemented but later superseded by the System Tray App approach.
+> See [ADR-005](plan/adr/ADR-005-pivot-service-to-tray-app.md) for rationale. The Windows Service code has been removed from the codebase.
+> This story is preserved for historical context only.
+
+**Epic**: Automation
+**Story Points**: 8
 **Type**: Feature
 
 ### Description

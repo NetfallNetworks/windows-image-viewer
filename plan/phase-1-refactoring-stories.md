@@ -1,5 +1,9 @@
 # Phase 1 Refactoring Stories
 
+> **HISTORICAL NOTE**: This document reflects the state of the project after Phase 1 completion.
+> The Windows Service approach mentioned here was later replaced with a System Tray App.
+> See [ADR-005](adr/ADR-005-pivot-service-to-tray-app.md) for details. This document is preserved for historical reference.
+
 **Source**: Phase 1 Architecture Review (plan/phase-1-review.md)
 **Created**: 2026-02-15
 **Status**: Ready for Implementation

@@ -1,5 +1,21 @@
 # Build Scripts - Quick Reference
 
+## Available Scripts
+
+### Development Scripts
+- `build.bat` / `build.sh` - Build ALL projects (console app, tray app, tests)
+- `test.bat` / `test.sh` - Run unit tests
+- `validate.bat` / `validate.sh` - Full validation pipeline
+
+### Tray App Scripts (NEW!)
+- `publish-tray-app.ps1` - Publish the system tray application (single-file .exe)
+- `install-tray-app.ps1` - Install and configure auto-start
+- `uninstall-tray-app.ps1` - Remove the tray app
+
+For detailed tray app documentation, see [TRAY-APP-README.md](../TRAY-APP-README.md)
+
+---
+
 ## What Was Fixed
 
 ### 1. Directory Navigation Bug ❌ → ✅
@@ -24,13 +40,12 @@ dotnet test
 
 ### 2. Output Logging ✨ NEW
 
-All scripts now save complete output to log files:
+Development scripts save complete output to log files:
 
 ```batch
 validate.bat  → validate-output.log
 test.bat      → test-output.log
 build.bat     → build-output.log
-publish.bat   → publish-output.log
 ```
 
 **Log file location:** Repository root (same folder as README.md)
@@ -122,7 +137,6 @@ All log files are excluded from git via `.gitignore`:
 validate-output.log
 test-output.log
 build-output.log
-publish-output.log
 ```
 
 This prevents accidental commits of build artifacts.
@@ -153,22 +167,14 @@ more < validate-output.log
 
 ## Next Steps
 
-After running `validate.bat` successfully, you'll see:
-```
-SUCCESS: Publish successful!
+After running tests successfully, publish and install the tray app:
 
-Output location: src\WallpaperApp\publish\
-Executable: src\WallpaperApp\publish\WallpaperApp.exe
+```powershell
+# Publish the system tray app (creates single-file .exe)
+.\scripts\publish-tray-app.ps1
 
-Full output saved to: validate-output.log
-```
-
-Then run manual tests:
-```cmd
-src\WallpaperApp\publish\WallpaperApp.exe
+# Install it (adds to Windows Startup)
+.\scripts\install-tray-app.ps1
 ```
 
-Expected output:
-```
-Weather Wallpaper App - Starting...
-```
+See [TRAY-APP-README.md](../TRAY-APP-README.md) for complete usage instructions.

@@ -66,23 +66,73 @@ dotnet test
 
 The application supports multiple modes:
 
-### Periodic Refresh (Story 6 - Default Mode)
+### System Tray App Mode (Recommended)
 
-Run continuously and automatically update wallpaper at configured interval:
+Run the app as a system tray application for automatic wallpaper updates:
 
-```bash
-cd src/WallpaperApp
-dotnet run
-```
+#### Installation
+
+1. Build and publish the tray app:
+   ```powershell
+   .\scripts\publish-tray-app.ps1
+   ```
+
+2. Install and configure:
+   ```powershell
+   .\scripts\install-tray-app.ps1
+   ```
 
 This will:
-- Read the `ImageUrl` and `RefreshIntervalMinutes` from your configuration
-- Download and set wallpaper immediately on startup
-- Continue running and refresh wallpaper every 15 minutes (or configured interval)
-- Display progress messages for each update
-- Run until you press Ctrl+C to stop gracefully
+- Copy the app to `%LOCALAPPDATA%\WeatherWallpaper`
+- Add a shortcut to your Startup folder for auto-start
+- Let you configure the image URL and refresh interval
+- Offer to start the app immediately
 
-This is the default mode and provides continuous automatic wallpaper updates.
+#### Using the Tray App
+
+Once running, the app sits quietly in your system tray:
+
+- **Right-click the tray icon** for options:
+  - Refresh Now - Immediately update wallpaper
+  - Status - View current status and next refresh time
+  - Open Image Folder - Browse downloaded images
+  - About - App information
+  - Exit - Close the app
+
+- **Double-click the tray icon** to view status
+
+#### Benefits Over Windows Service
+
+The tray app offers several advantages:
+- No password required (runs as regular app, not a service)
+- Works with Windows Hello and fingerprint login
+- Easy control via system tray interface
+- Shows notifications when wallpaper updates
+
+#### Uninstallation
+
+To remove the tray app:
+```powershell
+.\scripts\uninstall-tray-app.ps1
+```
+
+For detailed instructions, see [TRAY-APP-README.md](TRAY-APP-README.md).
+
+### Console Mode (Development/Debugging)
+
+**For production use, see System Tray App Mode above.**
+
+The console mode is no longer the primary way to run the app, but the CLI commands remain available for debugging:
+
+Run single commands:
+```bash
+cd src/WallpaperApp
+dotnet run -- --help       # Show help
+dotnet run -- --download   # Download image once
+dotnet run -- <image.png>  # Set wallpaper to local file
+```
+
+Note: The continuous background mode has been moved to the Tray App. For automated wallpaper updates, use the Tray App installation above.
 
 ### Download Image from URL (Story 4)
 
@@ -234,6 +284,16 @@ All validation errors are designed to guide you in fixing the configuration issu
 - Robust error handling - timer continues running even if individual updates fail
 - Default mode when running the application without arguments
 - Thread-safe timer implementation with proper resource disposal
+
+### Story 7: Windows Service - Convert to Service
+- `Worker` background service implementing `BackgroundService`
+- Uses `HostBuilder` pattern with dependency injection
+- Runs as Windows Service or console application (dual-mode)
+- Automatic startup on system boot
+- Service management via installation scripts
+- Runs as LocalSystem account
+- Proper service lifecycle management with graceful shutdown
+- Service registration in Windows Service Control Manager
 
 #### ImageFetcher Implementation Details
 

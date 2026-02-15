@@ -77,7 +77,8 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_fixture.TestDirectory, "WallpaperApp.json"), configContent);
+            // Write config to AppContext.BaseDirectory where ConfigurationService looks for it
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json"), configContent);
 
             // Act
             var exitCode = Program.Main(new[] { "--download" });
@@ -91,7 +92,12 @@ namespace WallpaperApp.Tests
         [Fact]
         public void DownloadMode_MissingConfig_ReturnsErrorCode()
         {
-            // Arrange - No config file created
+            // Arrange - Make sure config file doesn't exist in AppContext.BaseDirectory
+            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+            if (File.Exists(configPath))
+            {
+                File.Delete(configPath);
+            }
 
             // Act
             var exitCode = Program.Main(new[] { "--download" });

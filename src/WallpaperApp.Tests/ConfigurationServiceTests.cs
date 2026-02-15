@@ -16,6 +16,20 @@ namespace WallpaperApp.Tests
 
         public void Dispose()
         {
+            // Clean up config file from AppContext.BaseDirectory
+            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+            if (File.Exists(configPath))
+            {
+                try
+                {
+                    File.Delete(configPath);
+                }
+                catch
+                {
+                    // Ignore cleanup failures
+                }
+            }
+
             _fixture.Dispose();
         }
 
@@ -29,8 +43,9 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            // Write to current directory (already set to _testDirectory in constructor)
-            File.WriteAllText("WallpaperApp.json", configContent);
+            // Write to AppContext.BaseDirectory (where ConfigurationService looks for config)
+            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+            File.WriteAllText(configPath, configContent);
             var service = new ConfigurationService();
 
             // Act
@@ -46,6 +61,12 @@ namespace WallpaperApp.Tests
         public void LoadConfiguration_MissingFile_ThrowsException()
         {
             // Arrange
+            // Make sure config file doesn't exist in AppContext.BaseDirectory
+            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+            if (File.Exists(configPath))
+            {
+                File.Delete(configPath);
+            }
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -64,7 +85,8 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText("WallpaperApp.json", configContent);
+            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+            File.WriteAllText(configPath, configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -82,7 +104,8 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText("WallpaperApp.json", configContent);
+            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+            File.WriteAllText(configPath, configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -99,7 +122,8 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText("WallpaperApp.json", configContent);
+            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+            File.WriteAllText(configPath, configContent);
             var service = new ConfigurationService();
 
             // Act & Assert

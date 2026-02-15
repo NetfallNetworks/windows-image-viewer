@@ -5,14 +5,14 @@ set "SCRIPT_DIR=%~dp0"
 set "REPO_ROOT=%SCRIPT_DIR%.."
 
 echo ========================================
-echo Building WallpaperApp...
+echo Building All Projects...
 echo ========================================
 echo.
 
-cd /d "%REPO_ROOT%\src\WallpaperApp"
+cd /d "%REPO_ROOT%"
 
-REM Build with warnings as errors, minimal verbosity
-dotnet build -c Release --warnaserror --verbosity minimal --nologo
+REM Build all projects using the solution file
+dotnet build WallpaperApp.sln -c Release --warnaserror --verbosity minimal --nologo
 
 if errorlevel 1 (
     echo.
@@ -25,6 +25,9 @@ if errorlevel 1 (
     echo.
     echo ========================================
     echo SUCCESS: Build successful!
+    echo   - WallpaperApp (console/service)
+    echo   - WallpaperApp.TrayApp (system tray)
+    echo   - WallpaperApp.Tests
     echo ========================================
     pause
     exit /b 0
