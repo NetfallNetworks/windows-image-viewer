@@ -1,4 +1,5 @@
 using WallpaperApp;
+using WallpaperApp.Tests.Infrastructure;
 using Xunit;
 
 namespace WallpaperApp.Tests
@@ -6,85 +7,137 @@ namespace WallpaperApp.Tests
     [Collection("CurrentDirectory Tests")]
     public class ProgramTests : IDisposable
     {
-        private readonly string _originalDirectory;
-        private readonly string _testDirectory;
+        private readonly TestDirectoryFixture _fixture;
 
         public ProgramTests()
         {
-            _originalDirectory = Directory.GetCurrentDirectory();
-            _testDirectory = Path.Combine(Path.GetTempPath(), "ProgramTests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_testDirectory);
-            Directory.SetCurrentDirectory(_testDirectory);
+            _fixture = new TestDirectoryFixture("ProgramTests");
         }
 
         public void Dispose()
         {
-            try
-            {
-                // Change back to original directory before cleanup
-                if (Directory.Exists(_originalDirectory))
-                {
-                    Directory.SetCurrentDirectory(_originalDirectory);
-                }
-            }
-            catch (Exception)
-            {
-                // If we can't change directory, try temp directory as fallback
-                try
-                {
-                    Directory.SetCurrentDirectory(Path.GetTempPath());
-                }
-                catch
-                {
-                    // Ignore - we tried our best
-                }
-            }
+            _fixture.Dispose();
+        }
 
-            // Clean up test directory
-            try
+        /// <summary>
+        /// Creates a minimal valid BMP file for testing.
+        /// </summary>
+        private string CreateTestBmpFile(string filename)
+        {
+            // Create a minimal 1x1 BMP file
+            byte[] bmpData = new byte[]
             {
-                if (Directory.Exists(_testDirectory))
-                {
-                    Directory.Delete(_testDirectory, recursive: true);
-                }
+                // BMP Header
+                0x42, 0x4D,             // "BM" signature
+                0x46, 0x00, 0x00, 0x00, // File size (70 bytes)
+                0x00, 0x00,             // Reserved
+                0x00, 0x00,             // Reserved
+                0x36, 0x00, 0x00, 0x00, // Offset to pixel data
 
-                // Also clean up parent directory if empty
-                string? parentDir = Path.GetDirectoryName(_testDirectory);
-                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
-                {
-                    try
-                    {
-                        Directory.Delete(parentDir, recursive: false);
-                    }
-                    catch
-                    {
-                        // Parent directory not empty or in use - that's fine
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Cleanup failures are not critical - ignore them
-            }
+                // DIB Header (BITMAPINFOHEADER)
+                0x28, 0x00, 0x00, 0x00, // Header size (40 bytes)
+                0x01, 0x00, 0x00, 0x00, // Width (1 pixel)
+                0x01, 0x00, 0x00, 0x00, // Height (1 pixel)
+                0x01, 0x00,             // Color planes (1)
+                0x18, 0x00,             // Bits per pixel (24-bit RGB)
+                0x00, 0x00, 0x00, 0x00, // Compression (none)
+                0x10, 0x00, 0x00, 0x00, // Image size (16 bytes - includes padding)
+                0x13, 0x0B, 0x00, 0x00, // Horizontal resolution
+                0x13, 0x0B, 0x00, 0x00, // Vertical resolution
+                0x00, 0x00, 0x00, 0x00, // Colors in palette
+                0x00, 0x00, 0x00, 0x00, // Important colors
+
+                // Pixel data (1x1 blue pixel + padding)
+                0xFF, 0x00, 0x00,       // Blue pixel (BGR format)
+                0x00                    // Padding to 4-byte boundary
+            };
+
+            string filePath = Path.Combine(_fixture.TestDirectory, filename);
+            File.WriteAllBytes(filePath, bmpData);
+            return filePath;
         }
 
         [Fact]
-        public void ApplicationStartsSuccessfully()
+        public void ApplicationDisplaysHelp_HelpFlag()
         {
-            // Arrange - Create valid config file in current directory
+            // Arrange & Act
+            var exitCode = Program.Main(new[] { "--help" });
+
+            // Assert
+            Assert.Equal(0, exitCode);
+        }
+
+        [Fact]
+        public void DownloadMode_ValidConfig_DownloadsImage()
+        {
+            // Arrange - Create valid config file
             var configContent = @"{
   ""AppSettings"": {
     ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText("WallpaperApp.json", configContent);
+            File.WriteAllText(Path.Combine(_fixture.TestDirectory, "WallpaperApp.json"), configContent);
 
             // Act
-            var exitCode = Program.Main(new string[] { });
+            var exitCode = Program.Main(new[] { "--download" });
+
+            // Assert
+            // Note: This test makes a real HTTP call. It will succeed if the network is available
+            // and the server is up. For a true unit test, HTTP should be mocked.
+            Assert.Equal(0, exitCode);
+        }
+
+        [Fact]
+        public void DownloadMode_MissingConfig_ReturnsErrorCode()
+        {
+            // Arrange - No config file created
+
+            // Act
+            var exitCode = Program.Main(new[] { "--download" });
+
+            // Assert
+            Assert.Equal(1, exitCode);
+        }
+
+        [Fact]
+        public void SetWallpaperMode_ValidImage_SetsWallpaper()
+        {
+            // Arrange
+            string testImagePath = CreateTestBmpFile("test.bmp");
+
+            // Act
+            var exitCode = Program.Main(new[] { testImagePath });
 
             // Assert
             Assert.Equal(0, exitCode);
+        }
+
+        [Fact]
+        public void SetWallpaperMode_InvalidImagePath_ReturnsErrorCode()
+        {
+            // Arrange
+            string invalidPath = "nonexistent.png";
+
+            // Act
+            var exitCode = Program.Main(new[] { invalidPath });
+
+            // Assert
+            Assert.Equal(1, exitCode);
+        }
+
+        [Fact]
+        public void SetWallpaperMode_InvalidImageFormat_ReturnsErrorCode()
+        {
+            // Arrange - Create a file with unsupported extension
+            string invalidImagePath = Path.Combine(_fixture.TestDirectory, "invalid.txt");
+            File.WriteAllText(invalidImagePath, "This is not an image");
+
+            // Act
+            var exitCode = Program.Main(new[] { invalidImagePath });
+
+            // Assert
+            Assert.Equal(1, exitCode);
         }
     }
 }

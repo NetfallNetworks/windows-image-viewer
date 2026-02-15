@@ -1,6 +1,7 @@
 using Moq;
 using WallpaperApp.Configuration;
 using WallpaperApp.Services;
+using WallpaperApp.Tests.Infrastructure;
 using Xunit;
 
 namespace WallpaperApp.Tests
@@ -8,93 +9,39 @@ namespace WallpaperApp.Tests
     [Collection("CurrentDirectory Tests")]
     public class WallpaperUpdaterTests : IDisposable
     {
-        private readonly string _originalDirectory;
-        private readonly string _testDirectory;
+        private readonly TestDirectoryFixture _fixture;
+        private readonly Mock<IConfigurationService> _mockConfigurationService;
         private readonly Mock<IImageFetcher> _mockImageFetcher;
         private readonly Mock<IWallpaperService> _mockWallpaperService;
-        private readonly ConfigurationService _configurationService;
 
         public WallpaperUpdaterTests()
         {
-            _originalDirectory = Directory.GetCurrentDirectory();
-            _testDirectory = Path.Combine(Path.GetTempPath(), "WallpaperAppTests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_testDirectory);
-            Directory.SetCurrentDirectory(_testDirectory);
+            _fixture = new TestDirectoryFixture("WallpaperUpdaterTests");
 
             // Create mock services
+            _mockConfigurationService = new Mock<IConfigurationService>();
             _mockImageFetcher = new Mock<IImageFetcher>();
             _mockWallpaperService = new Mock<IWallpaperService>();
-            _configurationService = new ConfigurationService();
         }
 
         public void Dispose()
         {
-            try
-            {
-                // Restore original directory
-                if (Directory.Exists(_originalDirectory))
-                {
-                    Directory.SetCurrentDirectory(_originalDirectory);
-                }
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    Directory.SetCurrentDirectory(Path.GetTempPath());
-                }
-                catch
-                {
-                    // Ignore
-                }
-            }
-
-            // Clean up test directory
-            try
-            {
-                if (Directory.Exists(_testDirectory))
-                {
-                    Directory.Delete(_testDirectory, recursive: true);
-                }
-
-                // Clean up parent directory if empty
-                string? parentDir = Path.GetDirectoryName(_testDirectory);
-                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
-                {
-                    try
-                    {
-                        Directory.Delete(parentDir, recursive: false);
-                    }
-                    catch
-                    {
-                        // Parent directory not empty - that's fine
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Cleanup failures are not critical
-            }
-        }
-
-        private void CreateValidConfiguration()
-        {
-            var configContent = @"{
-  ""AppSettings"": {
-    ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
-    ""RefreshIntervalMinutes"": 15
-  }
-}";
-            File.WriteAllText("WallpaperApp.json", configContent);
+            _fixture.Dispose();
         }
 
         [Fact]
         public async Task UpdateWallpaperAsync_HappyPath_SucceedsEndToEnd()
         {
             // Arrange
-            CreateValidConfiguration();
+            _mockConfigurationService
+                .Setup(c => c.LoadConfiguration())
+                .Returns(new AppSettings
+                {
+                    ImageUrl = "https://weather.zamflam.com/latest.png",
+                    RefreshIntervalMinutes = 15
+                });
 
-            string testImagePath = Path.Combine(_testDirectory, "test-image.png");
+            string testImagePath = Path.Combine(_fixture.TestDirectory, "test-image.png");
             _mockImageFetcher
                 .Setup(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"))
                 .ReturnsAsync(testImagePath);
@@ -104,7 +51,7 @@ namespace WallpaperApp.Tests
                 .Verifiable();
 
             var updater = new WallpaperUpdater(
-                _configurationService,
+                _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object);
 
@@ -113,6 +60,7 @@ namespace WallpaperApp.Tests
 
             // Assert
             Assert.True(result);
+            _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
             _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath), Times.Once);
         }
@@ -121,14 +69,20 @@ namespace WallpaperApp.Tests
         public async Task UpdateWallpaperAsync_DownloadFails_LogsErrorAndExitsGracefully()
         {
             // Arrange
-            CreateValidConfiguration();
+            _mockConfigurationService
+                .Setup(c => c.LoadConfiguration())
+                .Returns(new AppSettings
+                {
+                    ImageUrl = "https://weather.zamflam.com/latest.png",
+                    RefreshIntervalMinutes = 15
+                });
 
             _mockImageFetcher
                 .Setup(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"))
                 .ReturnsAsync((string?)null); // Download fails
 
             var updater = new WallpaperUpdater(
-                _configurationService,
+                _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object);
 
@@ -137,6 +91,7 @@ namespace WallpaperApp.Tests
 
             // Assert
             Assert.False(result);
+            _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
             _mockWallpaperService.Verify(w => w.SetWallpaper(It.IsAny<string>()), Times.Never);
         }
@@ -145,9 +100,15 @@ namespace WallpaperApp.Tests
         public async Task UpdateWallpaperAsync_SetWallpaperFails_LogsErrorAndExitsGracefully()
         {
             // Arrange
-            CreateValidConfiguration();
+            _mockConfigurationService
+                .Setup(c => c.LoadConfiguration())
+                .Returns(new AppSettings
+                {
+                    ImageUrl = "https://weather.zamflam.com/latest.png",
+                    RefreshIntervalMinutes = 15
+                });
 
-            string testImagePath = Path.Combine(_testDirectory, "test-image.png");
+            string testImagePath = Path.Combine(_fixture.TestDirectory, "test-image.png");
             _mockImageFetcher
                 .Setup(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"))
                 .ReturnsAsync(testImagePath);
@@ -157,7 +118,7 @@ namespace WallpaperApp.Tests
                 .Throws(new WallpaperException("Failed to set wallpaper"));
 
             var updater = new WallpaperUpdater(
-                _configurationService,
+                _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object);
 
@@ -166,6 +127,7 @@ namespace WallpaperApp.Tests
 
             // Assert
             Assert.False(result);
+            _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
             _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath), Times.Once);
         }
@@ -174,10 +136,12 @@ namespace WallpaperApp.Tests
         public async Task UpdateWallpaperAsync_ConfigurationFails_LogsErrorAndExitsGracefully()
         {
             // Arrange
-            // No configuration file created - will throw ConfigurationException
+            _mockConfigurationService
+                .Setup(c => c.LoadConfiguration())
+                .Throws(new ConfigurationException("WallpaperApp.json not found. Create it with ImageUrl setting."));
 
             var updater = new WallpaperUpdater(
-                _configurationService,
+                _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object);
 
@@ -186,6 +150,7 @@ namespace WallpaperApp.Tests
 
             // Assert
             Assert.False(result);
+            _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync(It.IsAny<string>()), Times.Never);
             _mockWallpaperService.Verify(w => w.SetWallpaper(It.IsAny<string>()), Times.Never);
         }
@@ -207,7 +172,7 @@ namespace WallpaperApp.Tests
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
                 new WallpaperUpdater(
-                    _configurationService,
+                    _mockConfigurationService.Object,
                     null!,
                     _mockWallpaperService.Object));
         }
@@ -218,7 +183,7 @@ namespace WallpaperApp.Tests
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
                 new WallpaperUpdater(
-                    _configurationService,
+                    _mockConfigurationService.Object,
                     _mockImageFetcher.Object,
                     null!));
         }

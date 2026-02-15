@@ -1,4 +1,5 @@
 using WallpaperApp.Configuration;
+using WallpaperApp.Tests.Infrastructure;
 using Xunit;
 
 namespace WallpaperApp.Tests
@@ -6,66 +7,16 @@ namespace WallpaperApp.Tests
     [Collection("CurrentDirectory Tests")]
     public class ConfigurationServiceTests : IDisposable
     {
-        private readonly string _originalDirectory;
-        private readonly string _testDirectory;
+        private readonly TestDirectoryFixture _fixture;
 
         public ConfigurationServiceTests()
         {
-            _originalDirectory = Directory.GetCurrentDirectory();
-            _testDirectory = Path.Combine(Path.GetTempPath(), "WallpaperAppTests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_testDirectory);
-            Directory.SetCurrentDirectory(_testDirectory);
+            _fixture = new TestDirectoryFixture("ConfigurationServiceTests");
         }
 
         public void Dispose()
         {
-            try
-            {
-                // Change back to original directory before cleanup
-                if (Directory.Exists(_originalDirectory))
-                {
-                    Directory.SetCurrentDirectory(_originalDirectory);
-                }
-            }
-            catch (Exception)
-            {
-                // If we can't change directory, try temp directory as fallback
-                try
-                {
-                    Directory.SetCurrentDirectory(Path.GetTempPath());
-                }
-                catch
-                {
-                    // Ignore - we tried our best
-                }
-            }
-
-            // Clean up test directory
-            try
-            {
-                if (Directory.Exists(_testDirectory))
-                {
-                    Directory.Delete(_testDirectory, recursive: true);
-                }
-
-                // Also clean up parent directory if empty
-                string? parentDir = Path.GetDirectoryName(_testDirectory);
-                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
-                {
-                    try
-                    {
-                        Directory.Delete(parentDir, recursive: false);
-                    }
-                    catch
-                    {
-                        // Parent directory not empty or in use - that's fine
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Cleanup failures are not critical - ignore them
-            }
+            _fixture.Dispose();
         }
 
         [Fact]

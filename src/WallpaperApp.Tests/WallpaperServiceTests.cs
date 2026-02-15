@@ -1,4 +1,5 @@
 using WallpaperApp.Services;
+using WallpaperApp.Tests.Infrastructure;
 using Xunit;
 
 namespace WallpaperApp.Tests
@@ -6,68 +7,18 @@ namespace WallpaperApp.Tests
     [Collection("CurrentDirectory Tests")]
     public class WallpaperServiceTests : IDisposable
     {
-        private readonly string _originalDirectory;
-        private readonly string _testDirectory;
+        private readonly TestDirectoryFixture _fixture;
         private readonly WallpaperService _service;
 
         public WallpaperServiceTests()
         {
-            _originalDirectory = Directory.GetCurrentDirectory();
-            _testDirectory = Path.Combine(Path.GetTempPath(), "WallpaperServiceTests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_testDirectory);
-            Directory.SetCurrentDirectory(_testDirectory);
+            _fixture = new TestDirectoryFixture("WallpaperServiceTests");
             _service = new WallpaperService();
         }
 
         public void Dispose()
         {
-            try
-            {
-                // Change back to original directory before cleanup
-                if (Directory.Exists(_originalDirectory))
-                {
-                    Directory.SetCurrentDirectory(_originalDirectory);
-                }
-            }
-            catch (Exception)
-            {
-                // If we can't change directory, try temp directory as fallback
-                try
-                {
-                    Directory.SetCurrentDirectory(Path.GetTempPath());
-                }
-                catch
-                {
-                    // Ignore - we tried our best
-                }
-            }
-
-            // Clean up test directory
-            try
-            {
-                if (Directory.Exists(_testDirectory))
-                {
-                    Directory.Delete(_testDirectory, recursive: true);
-                }
-
-                // Also clean up parent directory if empty
-                string? parentDir = Path.GetDirectoryName(_testDirectory);
-                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
-                {
-                    try
-                    {
-                        Directory.Delete(parentDir, recursive: false);
-                    }
-                    catch
-                    {
-                        // Parent directory not empty or in use - that's fine
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Cleanup failures are not critical - ignore them
-            }
+            _fixture.Dispose();
         }
 
         /// <summary>
@@ -102,14 +53,14 @@ namespace WallpaperApp.Tests
                 0xFF, 0xFF, 0xFF, 0x00 // White pixel + padding
             };
 
-            File.WriteAllBytes(Path.Combine(_testDirectory, filename), bmpData);
+            File.WriteAllBytes(Path.Combine(_fixture.TestDirectory, filename), bmpData);
         }
 
         [Fact]
         public void SetWallpaper_MissingFile_ThrowsFileNotFoundException()
         {
             // Arrange
-            string nonExistentPath = Path.Combine(_testDirectory, "nonexistent.png");
+            string nonExistentPath = Path.Combine(_fixture.TestDirectory, "nonexistent.png");
 
             // Act & Assert
             var exception = Assert.Throws<FileNotFoundException>(() => _service.SetWallpaper(nonExistentPath));
@@ -121,7 +72,7 @@ namespace WallpaperApp.Tests
         public void SetWallpaper_InvalidFormat_ThrowsInvalidImageException()
         {
             // Arrange
-            string invalidFile = Path.Combine(_testDirectory, "test.txt");
+            string invalidFile = Path.Combine(_fixture.TestDirectory, "test.txt");
             File.WriteAllText(invalidFile, "This is not an image");
 
             // Act & Assert
@@ -174,7 +125,7 @@ namespace WallpaperApp.Tests
         {
             // Arrange
             CreateTestImage(filename);
-            string filePath = Path.Combine(_testDirectory, filename);
+            string filePath = Path.Combine(_fixture.TestDirectory, filename);
 
             // Act & Assert
             // Should not throw FileNotFoundException or InvalidImageException
@@ -207,7 +158,7 @@ namespace WallpaperApp.Tests
         public void SetWallpaper_UnsupportedFormats_ThrowsInvalidImageException(string filename)
         {
             // Arrange
-            string filePath = Path.Combine(_testDirectory, filename);
+            string filePath = Path.Combine(_fixture.TestDirectory, filename);
             File.WriteAllBytes(filePath, new byte[] { 0x00 }); // Create dummy file
 
             // Act & Assert
@@ -221,7 +172,7 @@ namespace WallpaperApp.Tests
         {
             // Arrange
             CreateTestImage("test.bmp");
-            string absolutePath = Path.Combine(_testDirectory, "test.bmp");
+            string absolutePath = Path.Combine(_fixture.TestDirectory, "test.bmp");
 
             // Act & Assert
             if (OperatingSystem.IsWindows())

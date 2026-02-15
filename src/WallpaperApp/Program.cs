@@ -20,39 +20,55 @@ namespace WallpaperApp
             Console.WriteLine($"Looking for: WallpaperApp.json");
             Console.WriteLine();
 
-            try
+            // Help flag
+            if (args.Length > 0 && args[0] == "--help")
             {
-                // Story 2: Load configuration
-                var configService = new ConfigurationService();
-                var settings = configService.LoadConfiguration();
-
-                Console.WriteLine("✓ Configuration loaded successfully");
-                Console.WriteLine($"  Image URL: {settings.ImageUrl}");
-                Console.WriteLine($"  Refresh Interval: {settings.RefreshIntervalMinutes} minutes");
+                Console.WriteLine("USAGE:");
+                Console.WriteLine("  WallpaperApp.exe");
+                Console.WriteLine("    Fetch and set wallpaper (default mode)");
+                Console.WriteLine();
+                Console.WriteLine("  WallpaperApp.exe --download");
+                Console.WriteLine("    Downloads image from URL in configuration");
+                Console.WriteLine();
+                Console.WriteLine("  WallpaperApp.exe <path-to-image>");
+                Console.WriteLine("    Sets wallpaper to local image file");
+                Console.WriteLine();
+                Console.WriteLine("  WallpaperApp.exe --help");
+                Console.WriteLine("    Displays this help message");
+                Console.WriteLine();
+                return 0;
+            }
+            // Story 5: Integrated workflow - fetch and set wallpaper (default mode)
+            else if (args.Length == 0)
+            {
+                Console.WriteLine("Story 5: Fetching and setting wallpaper...");
                 Console.WriteLine();
 
-                // Story 5: Integrated workflow - fetch and set wallpaper (default mode)
-                if (args.Length == 0)
+                var configService = new ConfigurationService();
+                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+                var imageFetcher = new ImageFetcher(httpClient);
+                var wallpaperService = new WallpaperService();
+
+                var updater = new WallpaperUpdater(configService, imageFetcher, wallpaperService);
+                bool success = await updater.UpdateWallpaperAsync();
+
+                return success ? 0 : 1;
+            }
+            // Story 4: Download image from URL (if --download flag provided)
+            else if (args.Length > 0 && args[0] == "--download")
+            {
+                try
                 {
-                    Console.WriteLine("Story 5: Fetching and setting wallpaper...");
+                    var configService = new ConfigurationService();
+                    var settings = configService.LoadConfiguration();
+
+                    Console.WriteLine("✓ Configuration loaded successfully");
+                    Console.WriteLine($"  Image URL: {settings.ImageUrl}");
                     Console.WriteLine();
 
-                    using var httpClient = new HttpClient();
-                    var imageFetcher = new ImageFetcher(httpClient);
-                    var wallpaperService = new WallpaperService();
-
-                    var updater = new WallpaperUpdater(configService, imageFetcher, wallpaperService);
-                    bool success = await updater.UpdateWallpaperAsync();
-
-                    return success ? 0 : 1;
-                }
-                // Story 4: Download image from URL (if --download flag provided)
-                else if (args.Length > 0 && args[0] == "--download")
-                {
                     Console.WriteLine($"Story 4: Downloading image from: {settings.ImageUrl}");
-                    Console.WriteLine();
 
-                    using var httpClient = new HttpClient();
+                    using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
                     var imageFetcher = new ImageFetcher(httpClient);
 
                     var downloadedPath = await imageFetcher.DownloadImageAsync(settings.ImageUrl);
@@ -62,6 +78,7 @@ namespace WallpaperApp
                         Console.WriteLine("✓ Image downloaded successfully");
                         Console.WriteLine($"  Saved to: {downloadedPath}");
                         Console.WriteLine();
+                        return 0;
                     }
                     else
                     {
@@ -71,78 +88,70 @@ namespace WallpaperApp
                         return 1;
                     }
                 }
-                // Story 3: Demonstrate wallpaper service (if test image provided)
-                else if (args.Length > 0)
+                catch (ConfigurationException ex)
+                {
+                    Console.WriteLine();
+                    Console.Error.WriteLine("❌ Configuration Error:");
+                    Console.Error.WriteLine($"   {ex.Message}");
+                    Console.WriteLine();
+                    return 1;
+                }
+            }
+            // Story 3: Demonstrate wallpaper service (if test image provided)
+            else if (args.Length > 0)
+            {
+                try
                 {
                     string testImagePath = args[0];
                     Console.WriteLine($"Story 3: Setting wallpaper to: {testImagePath}");
+                    Console.WriteLine();
 
                     var wallpaperService = new WallpaperService();
                     wallpaperService.SetWallpaper(testImagePath);
 
                     Console.WriteLine("✓ Wallpaper set successfully");
                     Console.WriteLine();
+                    return 0;
                 }
-                else
+                catch (FileNotFoundException ex)
                 {
-                    Console.WriteLine("USAGE:");
-                    Console.WriteLine("  WallpaperApp.exe");
-                    Console.WriteLine("    Fetch and set wallpaper (Story 5 - default mode)");
                     Console.WriteLine();
-                    Console.WriteLine("  WallpaperApp.exe --download");
-                    Console.WriteLine("    Downloads image from URL in configuration (Story 4)");
+                    Console.Error.WriteLine("❌ File Not Found:");
+                    Console.Error.WriteLine($"   {ex.Message}");
                     Console.WriteLine();
-                    Console.WriteLine("  WallpaperApp.exe <path-to-image.png>");
-                    Console.WriteLine("    Sets wallpaper to local image file (Story 3)");
-                    Console.WriteLine();
+                    return 1;
                 }
+                catch (InvalidImageException ex)
+                {
+                    Console.WriteLine();
+                    Console.Error.WriteLine("❌ Invalid Image:");
+                    Console.Error.WriteLine($"   {ex.Message}");
+                    Console.WriteLine();
+                    return 1;
+                }
+                catch (WallpaperException ex)
+                {
+                    Console.WriteLine();
+                    Console.Error.WriteLine("❌ Wallpaper Error:");
+                    Console.Error.WriteLine($"   {ex.Message}");
+                    Console.WriteLine();
+                    return 1;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine();
+                    Console.Error.WriteLine("❌ Unexpected Error:");
+                    Console.Error.WriteLine($"   {ex.Message}");
+                    Console.Error.WriteLine();
+                    Console.Error.WriteLine("Stack Trace:");
+                    Console.Error.WriteLine(ex.StackTrace);
+                    Console.WriteLine();
+                    return 1;
+                }
+            }
 
-                Console.WriteLine("Application completed successfully.");
-                return 0;
-            }
-            catch (ConfigurationException ex)
-            {
-                Console.WriteLine();
-                Console.Error.WriteLine("❌ Configuration Error:");
-                Console.Error.WriteLine($"   {ex.Message}");
-                Console.WriteLine();
-                return 1;
-            }
-            catch (FileNotFoundException ex)
-            {
-                Console.WriteLine();
-                Console.Error.WriteLine("❌ File Not Found:");
-                Console.Error.WriteLine($"   {ex.Message}");
-                Console.WriteLine();
-                return 1;
-            }
-            catch (InvalidImageException ex)
-            {
-                Console.WriteLine();
-                Console.Error.WriteLine("❌ Invalid Image:");
-                Console.Error.WriteLine($"   {ex.Message}");
-                Console.WriteLine();
-                return 1;
-            }
-            catch (WallpaperException ex)
-            {
-                Console.WriteLine();
-                Console.Error.WriteLine("❌ Wallpaper Error:");
-                Console.Error.WriteLine($"   {ex.Message}");
-                Console.WriteLine();
-                return 1;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine();
-                Console.Error.WriteLine("❌ Unexpected Error:");
-                Console.Error.WriteLine($"   {ex.Message}");
-                Console.Error.WriteLine();
-                Console.Error.WriteLine("Stack Trace:");
-                Console.Error.WriteLine(ex.StackTrace);
-                Console.WriteLine();
-                return 1;
-            }
+            // Should never reach here
+            return 1;
         }
     }
 }

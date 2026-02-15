@@ -11,13 +11,11 @@ namespace WallpaperApp.Services
         /// <summary>
         /// Initializes a new instance of ImageFetcher with an HttpClient.
         /// </summary>
-        /// <param name="httpClient">The HttpClient to use for downloads.</param>
+        /// <param name="httpClient">The HttpClient to use for downloads.
+        /// Should be configured with a 30-second timeout.</param>
         public ImageFetcher(HttpClient httpClient)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-
-            // Configure timeout to 30 seconds
-            _httpClient.Timeout = TimeSpan.FromSeconds(30);
 
             // Set temp directory to %TEMP%/WeatherWallpaper/
             _tempDirectory = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
@@ -81,12 +79,12 @@ namespace WallpaperApp.Services
         }
 
         /// <summary>
-        /// Generates a unique filename based on the current timestamp.
-        /// Format: wallpaper-{yyyyMMdd-HHmmss}.png
+        /// Generates a unique filename based on the current timestamp with millisecond precision.
+        /// Format: wallpaper-{yyyyMMdd-HHmmss-fff}.png
         /// </summary>
         private string GenerateUniqueFilename()
         {
-            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff");
             return $"wallpaper-{timestamp}.png";
         }
 

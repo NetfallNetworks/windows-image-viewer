@@ -7,12 +7,12 @@ namespace WallpaperApp.Services
     /// </summary>
     public class WallpaperUpdater
     {
-        private readonly ConfigurationService _configurationService;
+        private readonly IConfigurationService _configurationService;
         private readonly IImageFetcher _imageFetcher;
         private readonly IWallpaperService _wallpaperService;
 
         public WallpaperUpdater(
-            ConfigurationService configurationService,
+            IConfigurationService configurationService,
             IImageFetcher imageFetcher,
             IWallpaperService wallpaperService)
         {
