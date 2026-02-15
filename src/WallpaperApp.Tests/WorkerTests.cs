@@ -80,15 +80,15 @@ namespace WallpaperApp.Tests
             // Arrange
             var callCount = 0;
             _mockUpdater.Setup(x => x.UpdateWallpaperAsync())
-                .Callback(() =>
+                .Returns(() =>
                 {
                     callCount++;
                     if (callCount == 1)
                     {
                         throw new Exception("Simulated error on first call");
                     }
-                })
-                .Returns(Task.CompletedTask);
+                    return Task.CompletedTask;
+                });
 
             var worker = new Worker(_mockConfigService.Object, _mockUpdater.Object, _mockLifetime.Object);
             using var cts = new CancellationTokenSource();
