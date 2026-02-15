@@ -1,6 +1,7 @@
 using Moq;
 using WallpaperApp.Configuration;
 using WallpaperApp.Services;
+using WallpaperApp.Tests.Infrastructure;
 using Xunit;
 
 namespace WallpaperApp.Tests
@@ -8,18 +9,14 @@ namespace WallpaperApp.Tests
     [Collection("CurrentDirectory Tests")]
     public class WallpaperUpdaterTests : IDisposable
     {
-        private readonly string _originalDirectory;
-        private readonly string _testDirectory;
+        private readonly TestDirectoryFixture _fixture;
         private readonly Mock<IConfigurationService> _mockConfigurationService;
         private readonly Mock<IImageFetcher> _mockImageFetcher;
         private readonly Mock<IWallpaperService> _mockWallpaperService;
 
         public WallpaperUpdaterTests()
         {
-            _originalDirectory = Directory.GetCurrentDirectory();
-            _testDirectory = Path.Combine(Path.GetTempPath(), "WallpaperAppTests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_testDirectory);
-            Directory.SetCurrentDirectory(_testDirectory);
+            _fixture = new TestDirectoryFixture("WallpaperUpdaterTests");
 
             // Create mock services
             _mockConfigurationService = new Mock<IConfigurationService>();
@@ -29,52 +26,7 @@ namespace WallpaperApp.Tests
 
         public void Dispose()
         {
-            try
-            {
-                // Restore original directory
-                if (Directory.Exists(_originalDirectory))
-                {
-                    Directory.SetCurrentDirectory(_originalDirectory);
-                }
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    Directory.SetCurrentDirectory(Path.GetTempPath());
-                }
-                catch
-                {
-                    // Ignore
-                }
-            }
-
-            // Clean up test directory
-            try
-            {
-                if (Directory.Exists(_testDirectory))
-                {
-                    Directory.Delete(_testDirectory, recursive: true);
-                }
-
-                // Clean up parent directory if empty
-                string? parentDir = Path.GetDirectoryName(_testDirectory);
-                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
-                {
-                    try
-                    {
-                        Directory.Delete(parentDir, recursive: false);
-                    }
-                    catch
-                    {
-                        // Parent directory not empty - that's fine
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Cleanup failures are not critical
-            }
+            _fixture.Dispose();
         }
 
         [Fact]
@@ -89,7 +41,7 @@ namespace WallpaperApp.Tests
                     RefreshIntervalMinutes = 15
                 });
 
-            string testImagePath = Path.Combine(_testDirectory, "test-image.png");
+            string testImagePath = Path.Combine(_fixture.TestDirectory, "test-image.png");
             _mockImageFetcher
                 .Setup(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"))
                 .ReturnsAsync(testImagePath);
@@ -156,7 +108,7 @@ namespace WallpaperApp.Tests
                     RefreshIntervalMinutes = 15
                 });
 
-            string testImagePath = Path.Combine(_testDirectory, "test-image.png");
+            string testImagePath = Path.Combine(_fixture.TestDirectory, "test-image.png");
             _mockImageFetcher
                 .Setup(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"))
                 .ReturnsAsync(testImagePath);
