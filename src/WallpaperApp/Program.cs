@@ -37,7 +37,7 @@ namespace WallpaperApp
                     Console.WriteLine("Story 5: Fetching and setting wallpaper...");
                     Console.WriteLine();
 
-                    using var httpClient = new HttpClient();
+                    using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
                     var imageFetcher = new ImageFetcher(httpClient);
                     var wallpaperService = new WallpaperService();
 
@@ -52,7 +52,7 @@ namespace WallpaperApp
                     Console.WriteLine($"Story 4: Downloading image from: {settings.ImageUrl}");
                     Console.WriteLine();
 
-                    using var httpClient = new HttpClient();
+                    using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
                     var imageFetcher = new ImageFetcher(httpClient);
 
                     var downloadedPath = await imageFetcher.DownloadImageAsync(settings.ImageUrl);
