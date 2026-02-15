@@ -7,6 +7,11 @@ namespace WallpaperApp
     {
         public static int Main(string[] args)
         {
+            return MainAsync(args).GetAwaiter().GetResult();
+        }
+
+        public static async Task<int> MainAsync(string[] args)
+        {
             Console.WriteLine("========================================");
             Console.WriteLine("Weather Wallpaper App");
             Console.WriteLine("========================================");
@@ -26,11 +31,36 @@ namespace WallpaperApp
                 Console.WriteLine($"  Refresh Interval: {settings.RefreshIntervalMinutes} minutes");
                 Console.WriteLine();
 
+                // Story 4: Download image from URL (if --download flag provided)
+                if (args.Length > 0 && args[0] == "--download")
+                {
+                    Console.WriteLine($"Story 4: Downloading image from: {settings.ImageUrl}");
+                    Console.WriteLine();
+
+                    using var httpClient = new HttpClient();
+                    var imageFetcher = new ImageFetcher(httpClient);
+
+                    var downloadedPath = await imageFetcher.DownloadImageAsync(settings.ImageUrl);
+
+                    if (downloadedPath != null)
+                    {
+                        Console.WriteLine("✓ Image downloaded successfully");
+                        Console.WriteLine($"  Saved to: {downloadedPath}");
+                        Console.WriteLine();
+                    }
+                    else
+                    {
+                        Console.WriteLine("❌ Failed to download image");
+                        Console.WriteLine("  Check the URL in configuration and try again.");
+                        Console.WriteLine();
+                        return 1;
+                    }
+                }
                 // Story 3: Demonstrate wallpaper service (if test image provided)
-                if (args.Length > 0)
+                else if (args.Length > 0)
                 {
                     string testImagePath = args[0];
-                    Console.WriteLine($"Demo: Setting wallpaper to: {testImagePath}");
+                    Console.WriteLine($"Story 3: Setting wallpaper to: {testImagePath}");
 
                     var wallpaperService = new WallpaperService();
                     wallpaperService.SetWallpaper(testImagePath);
@@ -40,15 +70,17 @@ namespace WallpaperApp
                 }
                 else
                 {
-                    Console.WriteLine("NOTE: Story 3 implements wallpaper setting.");
-                    Console.WriteLine("      Pass an image path as argument to test:");
-                    Console.WriteLine("      WallpaperApp.exe <path-to-image.png>");
+                    Console.WriteLine("USAGE:");
+                    Console.WriteLine("  WallpaperApp.exe --download");
+                    Console.WriteLine("    Downloads image from URL in configuration (Story 4)");
                     Console.WriteLine();
-                    Console.WriteLine("      Image download from URL comes in Story 4.");
+                    Console.WriteLine("  WallpaperApp.exe <path-to-image.png>");
+                    Console.WriteLine("    Sets wallpaper to local image file (Story 3)");
                     Console.WriteLine();
                 }
 
                 Console.WriteLine("Application completed successfully.");
+                return 0;
             }
             catch (ConfigurationException ex)
             {
@@ -93,8 +125,6 @@ namespace WallpaperApp
                 Console.WriteLine();
                 return 1;
             }
-
-            return 0;
         }
     }
 }

@@ -1,0 +1,120 @@
+namespace WallpaperApp.Services
+{
+    /// <summary>
+    /// Service for downloading images from URLs.
+    /// </summary>
+    public class ImageFetcher : IImageFetcher
+    {
+        private readonly HttpClient _httpClient;
+        private readonly string _tempDirectory;
+
+        /// <summary>
+        /// Initializes a new instance of ImageFetcher with an HttpClient.
+        /// </summary>
+        /// <param name="httpClient">The HttpClient to use for downloads.</param>
+        public ImageFetcher(HttpClient httpClient)
+        {
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+
+            // Configure timeout to 30 seconds
+            _httpClient.Timeout = TimeSpan.FromSeconds(30);
+
+            // Set temp directory to %TEMP%/WeatherWallpaper/
+            _tempDirectory = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
+        }
+
+        /// <summary>
+        /// Downloads an image from the specified URL and saves it to a temporary directory.
+        /// Returns null on any error (no retries).
+        /// </summary>
+        /// <param name="url">The URL of the image to download.</param>
+        /// <returns>The full path to the downloaded file, or null if the download fails.</returns>
+        public async Task<string?> DownloadImageAsync(string url)
+        {
+            try
+            {
+                // Ensure temp directory exists
+                if (!Directory.Exists(_tempDirectory))
+                {
+                    Directory.CreateDirectory(_tempDirectory);
+                }
+
+                // Download the image
+                var response = await _httpClient.GetAsync(url);
+
+                // Check if the request was successful
+                if (!response.IsSuccessStatusCode)
+                {
+                    LogError($"HTTP error downloading image from {url}: {response.StatusCode}");
+                    return null;
+                }
+
+                // Generate unique filename based on timestamp
+                string filename = GenerateUniqueFilename();
+                string fullPath = Path.Combine(_tempDirectory, filename);
+
+                // Save the image to disk
+                using (var fileStream = File.Create(fullPath))
+                {
+                    await response.Content.CopyToAsync(fileStream);
+                }
+
+                LogInformation($"Downloaded image from {url} to {fullPath}");
+                return fullPath;
+            }
+            catch (TaskCanceledException)
+            {
+                // Timeout occurred
+                LogWarning($"Timeout downloading image from {url}");
+                return null;
+            }
+            catch (HttpRequestException ex)
+            {
+                LogWarning($"HTTP request error downloading image from {url}: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Error downloading image from {url}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Generates a unique filename based on the current timestamp.
+        /// Format: wallpaper-{yyyyMMdd-HHmmss}.png
+        /// </summary>
+        private string GenerateUniqueFilename()
+        {
+            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            return $"wallpaper-{timestamp}.png";
+        }
+
+        /// <summary>
+        /// Logs an information message.
+        /// </summary>
+        private void LogInformation(string message)
+        {
+            // TODO: Replace with proper logging in Story 8
+            Console.WriteLine($"[INFO] {message}");
+        }
+
+        /// <summary>
+        /// Logs a warning message.
+        /// </summary>
+        private void LogWarning(string message)
+        {
+            // TODO: Replace with proper logging in Story 8
+            Console.WriteLine($"[WARNING] {message}");
+        }
+
+        /// <summary>
+        /// Logs an error message.
+        /// </summary>
+        private void LogError(string message)
+        {
+            // TODO: Replace with proper logging in Story 8
+            Console.WriteLine($"[ERROR] {message}");
+        }
+    }
+}

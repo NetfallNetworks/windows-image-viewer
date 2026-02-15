@@ -64,6 +64,36 @@ dotnet test
 
 ## Run
 
+The application supports multiple modes:
+
+### Download Image from URL (Story 4)
+
+Download the image specified in `WallpaperApp.json`:
+
+```bash
+cd src/WallpaperApp
+dotnet run -- --download
+```
+
+This will:
+- Read the `ImageUrl` from your configuration
+- Download the image to `%TEMP%/WeatherWallpaper/`
+- Display the path where the image was saved
+- Return an error if the download fails
+
+### Set Wallpaper from Local File (Story 3)
+
+Set your desktop wallpaper to a local image:
+
+```bash
+cd src/WallpaperApp
+dotnet run -- C:\path\to\your\image.png
+```
+
+### View Help
+
+Run without arguments to see usage information:
+
 ```bash
 cd src/WallpaperApp
 dotnet run
@@ -152,3 +182,54 @@ The application validates configuration on startup:
   ```
 
 All validation errors are designed to guide you in fixing the configuration issue.
+
+## Features Implemented by Story
+
+### Story 1: Foundation - Console App + First Test
+- Basic console application structure
+- .NET 8 self-contained deployment
+- xUnit testing framework
+
+### Story 2: Configuration - Read URL from appsettings.json
+- Configuration service that reads from `WallpaperApp.json`
+- HTTPS URL validation
+- Clear error messages for configuration issues
+
+### Story 3: Wallpaper Service - Set Static Image as Wallpaper
+- `WallpaperService` that sets desktop wallpaper using Windows API
+- Support for PNG, JPG, and BMP formats
+- File validation and clear error messages
+
+### Story 4: HTTP Client - Fetch Image from URL
+- `ImageFetcher` service that downloads images from URLs
+- Automatic save to temporary directory (`%TEMP%/WeatherWallpaper/`)
+- 30-second timeout for HTTP requests
+- Graceful error handling (returns null on failure, no retries)
+- Unique timestamp-based filenames (`wallpaper-{yyyyMMdd-HHmmss}.png`)
+- Comprehensive logging of download operations
+
+#### ImageFetcher Implementation Details
+
+The `ImageFetcher` service provides the following capabilities:
+
+- **Download Location**: All images are saved to `%TEMP%/WeatherWallpaper/`
+  - Example: `C:\Users\YourName\AppData\Local\Temp\WeatherWallpaper\`
+  - Directory is created automatically if it doesn't exist
+
+- **Filename Format**: `wallpaper-{yyyyMMdd-HHmmss}.png`
+  - Example: `wallpaper-20240214-153045.png`
+  - Each download gets a unique timestamp to avoid conflicts
+
+- **Timeout**: 30 seconds
+  - If the server doesn't respond within 30 seconds, the download is cancelled
+  - Returns `null` to indicate failure
+
+- **Error Handling**: No retries, fail gracefully
+  - HTTP errors (404, 500, etc.) return `null`
+  - Network errors return `null`
+  - Timeout errors return `null`
+  - All errors are logged to the console
+
+- **Cleanup**: Old temporary files are NOT automatically deleted
+  - Simplicity over optimization (as per Story Map philosophy)
+  - Windows will clean up the temp directory as needed
