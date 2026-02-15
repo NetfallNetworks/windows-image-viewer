@@ -6,10 +6,10 @@ echo "Building All Projects..."
 echo "========================================"
 echo ""
 
-cd "$(dirname "$0")/../src"
+cd "$(dirname "$0")/.."
 
-# Build all projects with warnings as errors, minimal verbosity
-dotnet build -c Release --warnaserror --verbosity minimal --nologo
+# Build all projects using the solution file
+dotnet build WallpaperApp.sln -c Release --warnaserror --verbosity minimal --nologo
 
 echo ""
 echo "========================================"

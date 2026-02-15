@@ -9,10 +9,10 @@ echo Building All Projects...
 echo ========================================
 echo.
 
-cd /d "%REPO_ROOT%\src"
+cd /d "%REPO_ROOT%"
 
-REM Build all projects with warnings as errors, minimal verbosity
-dotnet build -c Release --warnaserror --verbosity minimal --nologo
+REM Build all projects using the solution file
+dotnet build WallpaperApp.sln -c Release --warnaserror --verbosity minimal --nologo
 
 if errorlevel 1 (
     echo.
