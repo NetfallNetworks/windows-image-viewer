@@ -99,3 +99,72 @@ Then run:
 ```bash
 ./publish/WallpaperApp.exe
 ```
+
+## Configuration
+
+The application is configured using `appsettings.json` located in the same directory as the executable.
+
+### Configuration File Location
+
+- **Development**: `src/WallpaperApp/appsettings.json`
+- **Published**: `publish/appsettings.json`
+- **Installed Service**: `C:\Program Files\WeatherWallpaper\appsettings.json` (future)
+
+### Available Settings
+
+```json
+{
+  "AppSettings": {
+    "ImageUrl": "https://weather.zamflam.com/latest.png",
+    "RefreshIntervalMinutes": 15
+  }
+}
+```
+
+#### AppSettings
+
+- **ImageUrl** (string, required): URL of the image to use as wallpaper
+  - Must use HTTPS protocol for security
+  - Example: `"https://weather.zamflam.com/latest.png"`
+
+- **RefreshIntervalMinutes** (integer, optional): Interval between wallpaper updates
+  - Default: 15 minutes
+  - Used in future stories for automatic refresh
+
+### Changing the Image URL
+
+1. Open `appsettings.json` in a text editor (Notepad, VS Code, etc.)
+2. Update the `ImageUrl` value to your desired HTTPS URL
+3. Save the file
+4. Restart the application
+
+Example:
+```json
+{
+  "AppSettings": {
+    "ImageUrl": "https://example.com/my-custom-image.png",
+    "RefreshIntervalMinutes": 15
+  }
+}
+```
+
+### Configuration Validation
+
+The application validates configuration on startup:
+
+- **Missing file**: If `appsettings.json` is not found, the app will exit with an error message:
+  ```
+  Configuration Error: appsettings.json not found. Create it with ImageUrl setting.
+  ```
+
+- **Non-HTTPS URL**: If the URL does not start with `https://`, the app will exit with:
+  ```
+  Configuration Error: ImageUrl must use HTTPS protocol for security
+  ```
+
+- **Empty URL**: If the URL is empty or missing, the app will exit with:
+  ```
+  Configuration Error: ImageUrl cannot be empty
+  ```
+
+All validation errors are designed to guide you in fixing the configuration issue.
