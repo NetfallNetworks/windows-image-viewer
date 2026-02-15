@@ -15,10 +15,22 @@
    ```
 
 2. **Run the install script as Administrator**:
-   - Right-click `install-service.bat` → "Run as administrator"
-   - Or from an admin PowerShell: `.\install-service.bat`
 
-The script will automatically find the executable in the build output directory.
+   **Option A: PowerShell (Recommended - more reliable)**
+   ```powershell
+   # Right-click install-service.ps1 → "Run with PowerShell"
+   # Or from an admin PowerShell:
+   .\install-service.ps1
+   ```
+
+   **Option B: Batch file**
+   ```powershell
+   # Right-click install-service.bat → "Run as administrator"
+   # Or from an admin command prompt:
+   .\install-service.bat
+   ```
+
+The scripts will automatically find the executable in the build output directory.
 
 ## Managing the Service
 
@@ -48,8 +60,21 @@ sc qc WeatherWallpaperService
 
 ## Uninstallation
 
-Run the uninstall script as Administrator:
-- Right-click `uninstall-service.bat` → "Run as administrator"
+**Option A: PowerShell (Recommended)**
+```powershell
+.\uninstall-service.ps1
+```
+
+**Option B: Batch file**
+```cmd
+.\uninstall-service.bat
+```
+
+**Option C: Manual removal**
+1. Open services.msc
+2. Find "Weather Wallpaper Service"
+3. Stop the service (if running)
+4. Right-click → Delete
 
 ## Troubleshooting
 

@@ -56,11 +56,45 @@ if "%EXE_PATH%"=="" (
 echo Executable path: %EXE_PATH%
 echo.
 
+REM Check if service already exists
+echo Checking for existing service...
+sc query WeatherWallpaperService >nul 2>&1
+if %errorLevel% equ 0 (
+    echo.
+    echo WARNING: Service "WeatherWallpaperService" already exists!
+    echo.
+    echo Please uninstall it first using one of these methods:
+    echo   1. Run uninstall-service.bat
+    echo   2. Open services.msc, find "Weather Wallpaper Service", right-click, Delete
+    echo   3. Restart your computer and try again
+    echo.
+    pause
+    exit /b 1
+)
+
 REM Create service
 echo Installing service...
 sc create WeatherWallpaperService binPath= "%EXE_PATH%" DisplayName= "Weather Wallpaper Service" start= auto
 if %errorLevel% neq 0 (
-    echo ERROR: Failed to create service
+    echo ERROR: Failed to create service (error code: %errorLevel%)
+    echo.
+    echo This could mean:
+    echo   - The service already exists (check services.msc)
+    echo   - Insufficient permissions (make sure to run as Administrator)
+    echo   - The path contains invalid characters
+    echo.
+    echo Current path: %EXE_PATH%
+    echo.
+    pause
+    exit /b 1
+)
+
+REM Verify service was created
+timeout /t 1 /nobreak >nul
+sc query WeatherWallpaperService >nul 2>&1
+if %errorLevel% neq 0 (
+    echo WARNING: Service created but cannot be queried
+    echo Please check services.msc to verify installation
     echo.
     pause
     exit /b 1
