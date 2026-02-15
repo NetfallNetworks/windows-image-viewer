@@ -3,12 +3,83 @@ using Xunit;
 
 namespace WallpaperApp.Tests
 {
-    public class ProgramTests
+    public class ProgramTests : IDisposable
     {
+        private readonly string _originalDirectory;
+        private readonly string _testDirectory;
+
+        public ProgramTests()
+        {
+            _originalDirectory = Directory.GetCurrentDirectory();
+            _testDirectory = Path.Combine(Path.GetTempPath(), "ProgramTests", Guid.NewGuid().ToString());
+            Directory.CreateDirectory(_testDirectory);
+            Directory.SetCurrentDirectory(_testDirectory);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                // Change back to original directory before cleanup
+                if (Directory.Exists(_originalDirectory))
+                {
+                    Directory.SetCurrentDirectory(_originalDirectory);
+                }
+            }
+            catch (Exception)
+            {
+                // If we can't change directory, try temp directory as fallback
+                try
+                {
+                    Directory.SetCurrentDirectory(Path.GetTempPath());
+                }
+                catch
+                {
+                    // Ignore - we tried our best
+                }
+            }
+
+            // Clean up test directory
+            try
+            {
+                if (Directory.Exists(_testDirectory))
+                {
+                    Directory.Delete(_testDirectory, recursive: true);
+                }
+
+                // Also clean up parent directory if empty
+                string? parentDir = Path.GetDirectoryName(_testDirectory);
+                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                {
+                    try
+                    {
+                        Directory.Delete(parentDir, recursive: false);
+                    }
+                    catch
+                    {
+                        // Parent directory not empty or in use - that's fine
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Cleanup failures are not critical - ignore them
+            }
+        }
+
         [Fact]
         public void ApplicationStartsSuccessfully()
         {
-            // Arrange & Act
+            // Arrange - Create valid config file in test directory
+            var configContent = @"{
+  ""AppSettings"": {
+    ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
+    ""RefreshIntervalMinutes"": 15
+  }
+}";
+            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+
+            // Act
             var exitCode = Program.Main(new string[] { });
 
             // Assert
