@@ -14,6 +14,7 @@ This index provides a categorized view of all architectural decisions made for t
 | [ADR-002](./ADR-002-self-contained-deployment.md) | Self-Contained Deployment Model | Accepted | 2026-02-14 |
 | [ADR-003](./ADR-003-no-retry-logic-for-failures.md) | No Retry Logic for Transient Failures | Accepted | 2026-02-14 |
 | [ADR-004](./ADR-004-appsettings-json-configuration.md) | Use appsettings.json for Configuration | Accepted | 2026-02-14 |
+| [ADR-005](./ADR-005-pivot-service-to-tray-app.md) | Pivot from Windows Service to System Tray Application | Accepted | 2026-02-15 |
 
 ---
 
@@ -23,6 +24,7 @@ This index provides a categorized view of all architectural decisions made for t
 
 - **[ADR-001](./ADR-001-use-systemparametersinfo-for-wallpaper.md)** - Use SystemParametersInfo for Wallpaper Changes
 - **[ADR-004](./ADR-004-appsettings-json-configuration.md)** - Use appsettings.json for Configuration
+- **[ADR-005](./ADR-005-pivot-service-to-tray-app.md)** - Pivot from Windows Service to System Tray Application
 
 ### Deployment & Distribution
 
@@ -54,6 +56,7 @@ These ADRs have **Status: Accepted** and should guide current development:
 2. **Deployment**: Bundle .NET runtime in executable ([ADR-002](./ADR-002-self-contained-deployment.md))
 3. **Error handling**: Log failures, no retries ([ADR-003](./ADR-003-no-retry-logic-for-failures.md))
 4. **Configuration**: JSON file over registry/command-line args ([ADR-004](./ADR-004-appsettings-json-configuration.md))
+5. **Application architecture**: System Tray App over Windows Service ([ADR-005](./ADR-005-pivot-service-to-tray-app.md))
 
 ---
 
@@ -65,4 +68,4 @@ These ADRs have **Status: Accepted** and should guide current development:
 
 ---
 
-**Last Updated**: 2026-02-14
+**Last Updated**: 2026-02-15

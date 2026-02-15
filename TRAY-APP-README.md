@@ -1,5 +1,8 @@
 # Weather Wallpaper Tray App 🌤️
 
+> **Recommended Installation Method**: The System Tray App is now the recommended way to run Weather Wallpaper.
+> The Windows Service mode has been deprecated (see [ADR-005](plan/adr/ADR-005-pivot-service-to-tray-app.md)).
+
 A system tray application that automatically updates your Windows wallpaper with weather images!
 
 ## Features ✨

@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using WallpaperApp.Configuration;
 using WallpaperApp.Services;
 
@@ -26,9 +24,6 @@ namespace WallpaperApp
             if (args.Length > 0 && args[0] == "--help")
             {
                 Console.WriteLine("USAGE:");
-                Console.WriteLine("  WallpaperApp.exe");
-                Console.WriteLine("    Run as Windows Service or console app with periodic wallpaper updates");
-                Console.WriteLine();
                 Console.WriteLine("  WallpaperApp.exe --download");
                 Console.WriteLine("    Downloads image from URL in configuration");
                 Console.WriteLine();
@@ -38,23 +33,22 @@ namespace WallpaperApp
                 Console.WriteLine("  WallpaperApp.exe --help");
                 Console.WriteLine("    Displays this help message");
                 Console.WriteLine();
+                Console.WriteLine("NOTE: For continuous background wallpaper updates, use the Tray App.");
+                Console.WriteLine("      See TRAY-APP-README.md for installation instructions.");
+                Console.WriteLine();
                 return 0;
             }
-            // Story 7: Windows Service mode (default mode)
+            // No-argument mode: Show help message
             else if (args.Length == 0)
             {
-                try
-                {
-                    var host = CreateHostBuilder(args).Build();
-                    await host.RunAsync();
-                    return 0;
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"❌ Fatal error: {ex.Message}");
-                    Console.Error.WriteLine(ex.StackTrace);
-                    return 1;
-                }
+                Console.WriteLine("❌ No command specified.");
+                Console.WriteLine();
+                Console.WriteLine("Use --help to see available commands.");
+                Console.WriteLine();
+                Console.WriteLine("NOTE: Continuous background updates now use the Tray App.");
+                Console.WriteLine("      See TRAY-APP-README.md for installation instructions.");
+                Console.WriteLine();
+                return 1;
             }
             // Story 4: Download image from URL (if --download flag provided)
             else if (args.Length > 0 && args[0] == "--download")
@@ -156,29 +150,5 @@ namespace WallpaperApp
             return 1;
         }
 
-        /// <summary>
-        /// Creates and configures the host builder for the Windows Service.
-        /// </summary>
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .UseWindowsService(options =>
-                {
-                    options.ServiceName = "WeatherWallpaperService";
-                })
-                .ConfigureServices((hostContext, services) =>
-                {
-                    // Register services for dependency injection
-                    services.AddSingleton<IConfigurationService, ConfigurationService>();
-                    services.AddSingleton<IWallpaperService, WallpaperService>();
-                    services.AddHttpClient<IImageFetcher, ImageFetcher>()
-                        .ConfigureHttpClient(client =>
-                        {
-                            client.Timeout = TimeSpan.FromSeconds(30);
-                        });
-                    services.AddSingleton<IWallpaperUpdater, WallpaperUpdater>();
-
-                    // Register the background worker
-                    services.AddHostedService<Worker>();
-                });
     }
 }

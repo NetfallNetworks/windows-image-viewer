@@ -66,91 +66,73 @@ dotnet test
 
 The application supports multiple modes:
 
-### Windows Service Mode (Story 7 - Recommended)
+### System Tray App Mode (Recommended)
 
-Install and run as a Windows Service for automatic wallpaper updates that survive reboots:
+Run the app as a system tray application for automatic wallpaper updates:
 
 #### Installation
 
-1. Build and publish the application first:
-   ```cmd
-   scripts\validate.bat
+1. Build and publish the tray app:
+   ```powershell
+   .\scripts\publish-tray-app.ps1
    ```
 
-2. Navigate to the publish directory:
-   ```cmd
-   cd publish
+2. Install and configure:
+   ```powershell
+   .\scripts\install-tray-app.ps1
    ```
 
-3. Right-click `install-service.bat` and select **"Run as administrator"**
-   - Alternatively, from an admin command prompt:
-   ```cmd
-   install-service.bat
-   ```
+This will:
+- Copy the app to `%LOCALAPPDATA%\WeatherWallpaper`
+- Add a shortcut to your Startup folder for auto-start
+- Let you configure the image URL and refresh interval
+- Offer to start the app immediately
 
-The installation script will:
-- Verify you have administrator privileges
-- Check that `WallpaperApp.exe` exists
-- Create the service "WeatherWallpaperService"
-- Configure it to start automatically on boot
-- Start the service immediately
+#### Using the Tray App
 
-#### Managing the Service
+Once running, the app sits quietly in your system tray:
 
-**Start the service:**
-```cmd
-sc start WeatherWallpaperService
-```
+- **Right-click the tray icon** for options:
+  - Refresh Now - Immediately update wallpaper
+  - Status - View current status and next refresh time
+  - Open Image Folder - Browse downloaded images
+  - About - App information
+  - Exit - Close the app
 
-**Stop the service:**
-```cmd
-sc stop WeatherWallpaperService
-```
+- **Double-click the tray icon** to view status
 
-**Check service status:**
-```cmd
-sc query WeatherWallpaperService
-```
+#### Benefits Over Windows Service
 
-**View in Services GUI:**
-1. Press `Win+R`, type `services.msc`, press Enter
-2. Find "Weather Wallpaper Service" in the list
-3. Right-click to Start, Stop, or view Properties
+The tray app offers several advantages:
+- No password required (runs as regular app, not a service)
+- Works with Windows Hello and fingerprint login
+- Easy control via system tray interface
+- Shows notifications when wallpaper updates
 
 #### Uninstallation
 
-To remove the service:
-
-1. Right-click `uninstall-service.bat` and select **"Run as administrator"**
-   - Alternatively, from an admin command prompt:
-   ```cmd
-   uninstall-service.bat
-   ```
-
-The uninstallation script will:
-- Stop the service if running
-- Remove the service registration
-- Preserve configuration files and downloaded images
-
-**Note:** Configuration files and downloaded images in `%TEMP%\WeatherWallpaper\` are NOT deleted during uninstallation. You can manually remove them if desired.
-
-### Console Mode (Story 6 - Debug/Development)
-
-Run continuously in console mode (does not require Windows Service installation):
-
-```bash
-cd src/WallpaperApp
-dotnet run
+To remove the tray app:
+```powershell
+.\scripts\uninstall-tray-app.ps1
 ```
 
-This will:
-- Read the `ImageUrl` and `RefreshIntervalMinutes` from your configuration
-- Download and set wallpaper immediately on startup
-- Continue running and refresh wallpaper every 15 minutes (or configured interval)
-- Display progress messages for each update
-- Run until you press Ctrl+C to stop gracefully
+For detailed instructions, see [TRAY-APP-README.md](TRAY-APP-README.md).
 
-This mode is useful for debugging and development, but does not survive reboots or run in the background like the Windows Service mode.
+### Console Mode (Development/Debugging)
+
+**For production use, see System Tray App Mode above.**
+
+The console mode is no longer the primary way to run the app, but the CLI commands remain available for debugging:
+
+Run single commands:
+```bash
+cd src/WallpaperApp
+dotnet run -- --help       # Show help
+dotnet run -- --download   # Download image once
+dotnet run -- <image.png>  # Set wallpaper to local file
+```
+
+Note: The continuous background mode has been moved to the Tray App. For automated wallpaper updates, use the Tray App installation above.
 
 ### Download Image from URL (Story 4)
 
