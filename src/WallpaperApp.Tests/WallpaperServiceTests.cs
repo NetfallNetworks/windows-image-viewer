@@ -3,6 +3,7 @@ using Xunit;
 
 namespace WallpaperApp.Tests
 {
+    [Collection("CurrentDirectory Tests")]
     public class WallpaperServiceTests : IDisposable
     {
         private readonly string _originalDirectory;
