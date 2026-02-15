@@ -5,7 +5,7 @@ namespace WallpaperApp.Configuration
     /// <summary>
     /// Service for loading and validating application configuration.
     /// </summary>
-    public class ConfigurationService
+    public class ConfigurationService : IConfigurationService
     {
         /// <summary>
         /// Loads configuration from appsettings.json and validates it.
