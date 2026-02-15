@@ -69,17 +69,69 @@ if ($existingService) {
     exit 1
 }
 
+# Ask user how to run the service
+Write-Host "=== SERVICE ACCOUNT CONFIGURATION ===" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "Windows Services run in Session 0 (non-interactive) by default."
+Write-Host "To set your wallpaper, the service needs to run as YOUR user account."
+Write-Host ""
+Write-Host "Choose how to run the service:"
+Write-Host "  1. As YOUR user account (RECOMMENDED - can set wallpaper)" -ForegroundColor Green
+Write-Host "  2. As LocalSystem (won't be able to set wallpaper)" -ForegroundColor Yellow
+Write-Host ""
+$choice = Read-Host "Enter choice (1 or 2)"
+
+if ($choice -eq "1") {
+    Write-Host ""
+    Write-Host "The service will run as: $env:USERDOMAIN\$env:USERNAME" -ForegroundColor Cyan
+    Write-Host "You will be prompted for your Windows password." -ForegroundColor Yellow
+    Write-Host ""
+
+    $credential = Get-Credential -UserName "$env:USERDOMAIN\$env:USERNAME" -Message "Enter your Windows password to run the service as your user account"
+
+    if (-not $credential) {
+        Write-Host "ERROR: Password not provided" -ForegroundColor Red
+        exit 1
+    }
+
+    $username = $credential.UserName
+    $password = $credential.GetNetworkCredential().Password
+} else {
+    $username = $null
+    $password = $null
+}
+
+Write-Host ""
+
 # Create the service
 try {
     Write-Host "Installing service..." -ForegroundColor Green
-    New-Service -Name $ServiceName `
-                -BinaryPathName $ExePath `
-                -DisplayName $DisplayName `
-                -Description $Description `
-                -StartupType Automatic `
-                -ErrorAction Stop
 
-    Write-Host "Service created successfully" -ForegroundColor Green
+    if ($username) {
+        # Create service with user account using sc.exe (more reliable for credentials)
+        $result = & sc.exe create $ServiceName binPath= "`"$ExePath`"" DisplayName= $DisplayName start= auto obj= $username password= $password
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "sc.exe create failed with exit code $LASTEXITCODE"
+        }
+
+        # Set description separately
+        sc.exe description $ServiceName $Description | Out-Null
+
+        Write-Host "Service created successfully (running as $username)" -ForegroundColor Green
+    } else {
+        # Create service as LocalSystem
+        New-Service -Name $ServiceName `
+                    -BinaryPathName $ExePath `
+                    -DisplayName $DisplayName `
+                    -Description $Description `
+                    -StartupType Automatic `
+                    -ErrorAction Stop
+
+        Write-Host "Service created successfully (running as LocalSystem)" -ForegroundColor Green
+        Write-Host "WARNING: LocalSystem services cannot set user wallpapers!" -ForegroundColor Yellow
+    }
+
     Write-Host ""
 } catch {
     Write-Host "ERROR: Failed to create service" -ForegroundColor Red
@@ -132,10 +184,17 @@ try {
         Write-Host "Display Name: $DisplayName" -ForegroundColor Cyan
         Write-Host "Status: Running" -ForegroundColor Green
         Write-Host "Startup Type: Automatic" -ForegroundColor Cyan
+        Write-Host "Running As: $(if ($username) { $username } else { 'LocalSystem' })" -ForegroundColor Cyan
         Write-Host "Auto-Restart: Enabled (restarts on failure)" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "The service will now update your wallpaper every 15 minutes." -ForegroundColor Gray
-        Write-Host "You can manage it through services.msc or Task Manager." -ForegroundColor Gray
+        if ($username) {
+            Write-Host "✓ The service will now update your wallpaper every 15 minutes." -ForegroundColor Green
+        } else {
+            Write-Host "⚠ WARNING: Service running as LocalSystem cannot set wallpapers!" -ForegroundColor Yellow
+            Write-Host "  Reinstall and choose option 1 to run as your user account." -ForegroundColor Yellow
+        }
+        Write-Host ""
+        Write-Host "You can manage the service through services.msc or Task Manager." -ForegroundColor Gray
         Write-Host ""
         $logPath = Join-Path $env:TEMP "WeatherWallpaperService\service.log"
         Write-Host "Service logs: $logPath" -ForegroundColor Cyan
