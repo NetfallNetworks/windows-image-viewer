@@ -53,7 +53,7 @@ call :log ""
 call :log "Working directory: %REPO_ROOT%\src"
 
 cd /d "%REPO_ROOT%\src"
-dotnet test --verbosity normal >> "%LOG_FILE%" 2>&1
+dotnet test WallpaperApp.Tests/WallpaperApp.Tests.csproj --verbosity normal >> "%LOG_FILE%" 2>&1
 if errorlevel 1 (
     call :log ""
     call :log "ERROR: Tests failed! Fix failing tests before proceeding."
@@ -147,6 +147,11 @@ exit /b 0
 REM Function to log and display messages
 :log
 set "msg=%~1"
-echo %msg%
-echo %msg% >> "%LOG_FILE%"
+if "%msg%"=="" (
+    echo.
+    echo. >> "%LOG_FILE%"
+) else (
+    echo %msg%
+    echo %msg% >> "%LOG_FILE%"
+)
 goto :eof

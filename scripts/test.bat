@@ -20,7 +20,7 @@ echo Output will be saved to: test-output.log
 echo.
 
 cd /d "%REPO_ROOT%\src"
-dotnet test --verbosity normal >> "%LOG_FILE%" 2>&1
+dotnet test WallpaperApp.Tests/WallpaperApp.Tests.csproj --verbosity normal >> "%LOG_FILE%" 2>&1
 
 if errorlevel 1 (
     echo.
