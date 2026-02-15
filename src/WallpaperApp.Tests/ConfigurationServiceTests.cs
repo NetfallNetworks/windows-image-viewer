@@ -3,6 +3,7 @@ using Xunit;
 
 namespace WallpaperApp.Tests
 {
+    [Collection("CurrentDirectory Tests")]
     public class ConfigurationServiceTests : IDisposable
     {
         private readonly string _originalDirectory;
@@ -18,10 +19,52 @@ namespace WallpaperApp.Tests
 
         public void Dispose()
         {
-            Directory.SetCurrentDirectory(_originalDirectory);
-            if (Directory.Exists(_testDirectory))
+            try
             {
-                Directory.Delete(_testDirectory, recursive: true);
+                // Change back to original directory before cleanup
+                if (Directory.Exists(_originalDirectory))
+                {
+                    Directory.SetCurrentDirectory(_originalDirectory);
+                }
+            }
+            catch (Exception)
+            {
+                // If we can't change directory, try temp directory as fallback
+                try
+                {
+                    Directory.SetCurrentDirectory(Path.GetTempPath());
+                }
+                catch
+                {
+                    // Ignore - we tried our best
+                }
+            }
+
+            // Clean up test directory
+            try
+            {
+                if (Directory.Exists(_testDirectory))
+                {
+                    Directory.Delete(_testDirectory, recursive: true);
+                }
+
+                // Also clean up parent directory if empty
+                string? parentDir = Path.GetDirectoryName(_testDirectory);
+                if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                {
+                    try
+                    {
+                        Directory.Delete(parentDir, recursive: false);
+                    }
+                    catch
+                    {
+                        // Parent directory not empty or in use - that's fine
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Cleanup failures are not critical - ignore them
             }
         }
 
@@ -35,7 +78,8 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            // Write to current directory (already set to _testDirectory in constructor)
+            File.WriteAllText("WallpaperApp.json", configContent);
             var service = new ConfigurationService();
 
             // Act
@@ -69,7 +113,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            File.WriteAllText("WallpaperApp.json", configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -87,7 +131,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            File.WriteAllText("WallpaperApp.json", configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -104,7 +148,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            File.WriteAllText("WallpaperApp.json", configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
