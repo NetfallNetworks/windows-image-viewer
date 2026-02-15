@@ -125,8 +125,6 @@ namespace WallpaperApp
                 Console.WriteLine();
                 return 1;
             }
-
-            return 0;
         }
     }
 }
