@@ -87,7 +87,7 @@ namespace WallpaperApp.Tests
                     {
                         throw new Exception("Simulated error on first call");
                     }
-                    return Task.CompletedTask;
+                    return Task.FromResult(true);
                 });
 
             var worker = new Worker(_mockConfigService.Object, _mockUpdater.Object, _mockLifetime.Object);
