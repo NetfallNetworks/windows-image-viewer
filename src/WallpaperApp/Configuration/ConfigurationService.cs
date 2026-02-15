@@ -32,12 +32,8 @@ namespace WallpaperApp.Configuration
                 throw new ConfigurationException("appsettings.json not found. Create it with ImageUrl setting.", ex);
             }
 
-            var settings = config.GetSection("AppSettings").Get<AppSettings>();
-
-            if (settings == null)
-            {
-                throw new ConfigurationException("AppSettings section not found in appsettings.json");
-            }
+            var settings = config.GetSection("AppSettings").Get<AppSettings>()
+                ?? throw new ConfigurationException("AppSettings section not found in appsettings.json");
 
             // Validation: ImageUrl cannot be empty
             if (string.IsNullOrWhiteSpace(settings.ImageUrl))
