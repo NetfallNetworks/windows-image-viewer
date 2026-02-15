@@ -50,7 +50,7 @@ namespace WallpaperApp.Tests
                 }
 
                 // Also clean up parent directory if empty
-                string parentDir = Path.GetDirectoryName(_testDirectory);
+                string? parentDir = Path.GetDirectoryName(_testDirectory);
                 if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
                 {
                     try
