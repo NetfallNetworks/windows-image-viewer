@@ -19,7 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WallpaperApp\WallpaperApp.csproj" />
+    <ProjectReference Include="..\WallpaperApp\WallpaperApp.csproj">
+      <ExcludeAssets>contentFiles</ExcludeAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
