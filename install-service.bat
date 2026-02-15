@@ -18,18 +18,41 @@ if %errorLevel% neq 0 (
     exit /b 1
 )
 
-REM Validate executable exists
-if not exist "WallpaperApp.exe" (
-    echo ERROR: WallpaperApp.exe not found in current directory
+REM Find the executable in standard build locations
+set "EXE_PATH="
+
+REM Check for published version first (preferred)
+if exist "%~dp0src\WallpaperApp\bin\Release\net8.0-windows\win-x64\publish\WallpaperApp.exe" (
+    set "EXE_PATH=%~dp0src\WallpaperApp\bin\Release\net8.0-windows\win-x64\publish\WallpaperApp.exe"
+)
+
+REM Check for regular Release build
+if "%EXE_PATH%"=="" (
+    if exist "%~dp0src\WallpaperApp\bin\Release\net8.0-windows\win-x64\WallpaperApp.exe" (
+        set "EXE_PATH=%~dp0src\WallpaperApp\bin\Release\net8.0-windows\win-x64\WallpaperApp.exe"
+    )
+)
+
+REM Check current directory as fallback
+if "%EXE_PATH%"=="" (
+    if exist "%~dp0WallpaperApp.exe" (
+        set "EXE_PATH=%~dp0WallpaperApp.exe"
+    )
+)
+
+REM Error if not found
+if "%EXE_PATH%"=="" (
+    echo ERROR: WallpaperApp.exe not found
     echo.
-    echo Please run this script from the directory containing WallpaperApp.exe
+    echo Please build the project first using:
+    echo   dotnet publish src\WallpaperApp\WallpaperApp.csproj -c Release
+    echo.
+    echo Or place WallpaperApp.exe in the project root
     echo.
     pause
     exit /b 1
 )
 
-REM Get the full path to the executable
-set "EXE_PATH=%~dp0WallpaperApp.exe"
 echo Executable path: %EXE_PATH%
 echo.
 
