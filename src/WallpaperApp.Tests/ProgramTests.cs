@@ -129,8 +129,8 @@ namespace WallpaperApp.Tests
         [Fact]
         public void SetWallpaperMode_InvalidImageFormat_ReturnsErrorCode()
         {
-            // Arrange - Create a text file with .png extension
-            string invalidImagePath = Path.Combine(_fixture.TestDirectory, "invalid.png");
+            // Arrange - Create a file with unsupported extension
+            string invalidImagePath = Path.Combine(_fixture.TestDirectory, "invalid.txt");
             File.WriteAllText(invalidImagePath, "This is not an image");
 
             // Act
