@@ -53,14 +53,14 @@ namespace WallpaperApp.Tests
                 0xFF, 0xFF, 0xFF, 0x00 // White pixel + padding
             };
 
-            File.WriteAllBytes(Path.Combine(_testDirectory, filename), bmpData);
+            File.WriteAllBytes(Path.Combine(_fixture.TestDirectory, filename), bmpData);
         }
 
         [Fact]
         public void SetWallpaper_MissingFile_ThrowsFileNotFoundException()
         {
             // Arrange
-            string nonExistentPath = Path.Combine(_testDirectory, "nonexistent.png");
+            string nonExistentPath = Path.Combine(_fixture.TestDirectory, "nonexistent.png");
 
             // Act & Assert
             var exception = Assert.Throws<FileNotFoundException>(() => _service.SetWallpaper(nonExistentPath));
@@ -72,7 +72,7 @@ namespace WallpaperApp.Tests
         public void SetWallpaper_InvalidFormat_ThrowsInvalidImageException()
         {
             // Arrange
-            string invalidFile = Path.Combine(_testDirectory, "test.txt");
+            string invalidFile = Path.Combine(_fixture.TestDirectory, "test.txt");
             File.WriteAllText(invalidFile, "This is not an image");
 
             // Act & Assert
@@ -125,7 +125,7 @@ namespace WallpaperApp.Tests
         {
             // Arrange
             CreateTestImage(filename);
-            string filePath = Path.Combine(_testDirectory, filename);
+            string filePath = Path.Combine(_fixture.TestDirectory, filename);
 
             // Act & Assert
             // Should not throw FileNotFoundException or InvalidImageException
@@ -158,7 +158,7 @@ namespace WallpaperApp.Tests
         public void SetWallpaper_UnsupportedFormats_ThrowsInvalidImageException(string filename)
         {
             // Arrange
-            string filePath = Path.Combine(_testDirectory, filename);
+            string filePath = Path.Combine(_fixture.TestDirectory, filename);
             File.WriteAllBytes(filePath, new byte[] { 0x00 }); // Create dummy file
 
             // Act & Assert
@@ -172,7 +172,7 @@ namespace WallpaperApp.Tests
         {
             // Arrange
             CreateTestImage("test.bmp");
-            string absolutePath = Path.Combine(_testDirectory, "test.bmp");
+            string absolutePath = Path.Combine(_fixture.TestDirectory, "test.bmp");
 
             // Act & Assert
             if (OperatingSystem.IsWindows())
