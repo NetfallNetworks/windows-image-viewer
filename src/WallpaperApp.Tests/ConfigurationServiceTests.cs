@@ -35,7 +35,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "appsettings.json"), configContent);
+            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
             var service = new ConfigurationService();
 
             // Act
@@ -55,7 +55,7 @@ namespace WallpaperApp.Tests
 
             // Act & Assert
             var exception = Assert.Throws<ConfigurationException>(() => service.LoadConfiguration());
-            Assert.Contains("appsettings.json not found", exception.Message);
+            Assert.Contains("WallpaperApp.json not found", exception.Message);
             Assert.Contains("Create it with ImageUrl setting", exception.Message);
         }
 
@@ -69,7 +69,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "appsettings.json"), configContent);
+            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -87,7 +87,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "appsettings.json"), configContent);
+            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -104,7 +104,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "appsettings.json"), configContent);
+            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
             var service = new ConfigurationService();
 
             // Act & Assert

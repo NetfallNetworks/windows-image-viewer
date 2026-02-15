@@ -20,20 +20,20 @@ namespace WallpaperApp.Configuration
             {
                 config = new ConfigurationBuilder()
                     .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                    .AddJsonFile("WallpaperApp.json", optional: false, reloadOnChange: false)
                     .Build();
             }
             catch (FileNotFoundException)
             {
-                throw new ConfigurationException("appsettings.json not found. Create it with ImageUrl setting.");
+                throw new ConfigurationException("WallpaperApp.json not found. Create it with ImageUrl setting.");
             }
             catch (Exception ex)
             {
-                throw new ConfigurationException("appsettings.json not found. Create it with ImageUrl setting.", ex);
+                throw new ConfigurationException("WallpaperApp.json not found. Create it with ImageUrl setting.", ex);
             }
 
             var settings = config.GetSection("AppSettings").Get<AppSettings>()
-                ?? throw new ConfigurationException("AppSettings section not found in appsettings.json");
+                ?? throw new ConfigurationException("AppSettings section not found in WallpaperApp.json");
 
             // Validation: ImageUrl cannot be empty
             if (string.IsNullOrWhiteSpace(settings.ImageUrl))

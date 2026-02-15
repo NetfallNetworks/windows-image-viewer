@@ -31,7 +31,6 @@ This script will:
 2. Run all automated tests (**stops if any test fails**)
 3. Build the application (**stops if build fails**)
 4. Publish self-contained executable
-5. Prompt for manual testing
 
 ### Individual Scripts
 
@@ -102,13 +101,13 @@ Then run:
 
 ## Configuration
 
-The application is configured using `appsettings.json` located in the same directory as the executable.
+The application is configured using `WallpaperApp.json` located in the same directory as the executable.
 
 ### Configuration File Location
 
-- **Development**: `src/WallpaperApp/appsettings.json`
-- **Published**: `publish/appsettings.json`
-- **Installed Service**: `C:\Program Files\WeatherWallpaper\appsettings.json` (future)
+- **Development**: `src/WallpaperApp/WallpaperApp.json`
+- **Published**: `publish/WallpaperApp.json`
+- **Installed Service**: `C:\Program Files\WeatherWallpaper\WallpaperApp.json` (future)
 
 ### Available Settings
 
@@ -133,7 +132,7 @@ The application is configured using `appsettings.json` located in the same direc
 
 ### Changing the Image URL
 
-1. Open `appsettings.json` in a text editor (Notepad, VS Code, etc.)
+1. Open `WallpaperApp.json` in a text editor (Notepad, VS Code, etc.)
 2. Update the `ImageUrl` value to your desired HTTPS URL
 3. Save the file
 4. Restart the application
@@ -152,9 +151,9 @@ Example:
 
 The application validates configuration on startup:
 
-- **Missing file**: If `appsettings.json` is not found, the app will exit with an error message:
+- **Missing file**: If `WallpaperApp.json` is not found, the app will exit with an error message:
   ```
-  Configuration Error: appsettings.json not found. Create it with ImageUrl setting.
+  Configuration Error: WallpaperApp.json not found. Create it with ImageUrl setting.
   ```
 
 - **Non-HTTPS URL**: If the URL does not start with `https://`, the app will exit with:
