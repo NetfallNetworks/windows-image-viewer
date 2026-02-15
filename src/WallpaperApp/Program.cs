@@ -31,8 +31,23 @@ namespace WallpaperApp
                 Console.WriteLine($"  Refresh Interval: {settings.RefreshIntervalMinutes} minutes");
                 Console.WriteLine();
 
+                // Story 5: Integrated workflow - fetch and set wallpaper (default mode)
+                if (args.Length == 0)
+                {
+                    Console.WriteLine("Story 5: Fetching and setting wallpaper...");
+                    Console.WriteLine();
+
+                    using var httpClient = new HttpClient();
+                    var imageFetcher = new ImageFetcher(httpClient);
+                    var wallpaperService = new WallpaperService();
+
+                    var updater = new WallpaperUpdater(configService, imageFetcher, wallpaperService);
+                    bool success = await updater.UpdateWallpaperAsync();
+
+                    return success ? 0 : 1;
+                }
                 // Story 4: Download image from URL (if --download flag provided)
-                if (args.Length > 0 && args[0] == "--download")
+                else if (args.Length > 0 && args[0] == "--download")
                 {
                     Console.WriteLine($"Story 4: Downloading image from: {settings.ImageUrl}");
                     Console.WriteLine();
@@ -71,6 +86,9 @@ namespace WallpaperApp
                 else
                 {
                     Console.WriteLine("USAGE:");
+                    Console.WriteLine("  WallpaperApp.exe");
+                    Console.WriteLine("    Fetch and set wallpaper (Story 5 - default mode)");
+                    Console.WriteLine();
                     Console.WriteLine("  WallpaperApp.exe --download");
                     Console.WriteLine("    Downloads image from URL in configuration (Story 4)");
                     Console.WriteLine();

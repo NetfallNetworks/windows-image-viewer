@@ -66,6 +66,24 @@ dotnet test
 
 The application supports multiple modes:
 
+### Fetch and Set Wallpaper (Story 5 - Default Mode)
+
+Download and set wallpaper in one step (integrated workflow):
+
+```bash
+cd src/WallpaperApp
+dotnet run
+```
+
+This will:
+- Read the `ImageUrl` from your configuration
+- Download the image to `%TEMP%/WeatherWallpaper/`
+- Set the downloaded image as your desktop wallpaper
+- Display progress messages at each step
+- Return an error if any step fails
+
+This is the default mode and provides the complete end-to-end functionality.
+
 ### Download Image from URL (Story 4)
 
 Download the image specified in `WallpaperApp.json`:
@@ -88,15 +106,6 @@ Set your desktop wallpaper to a local image:
 ```bash
 cd src/WallpaperApp
 dotnet run -- C:\path\to\your\image.png
-```
-
-### View Help
-
-Run without arguments to see usage information:
-
-```bash
-cd src/WallpaperApp
-dotnet run
 ```
 
 ## Publish (Self-Contained)
@@ -207,6 +216,14 @@ All validation errors are designed to guide you in fixing the configuration issu
 - Graceful error handling (returns null on failure, no retries)
 - Unique timestamp-based filenames (`wallpaper-{yyyyMMdd-HHmmss}.png`)
 - Comprehensive logging of download operations
+
+### Story 5: Integration - Fetch and Set Wallpaper
+- `WallpaperUpdater` orchestrator that integrates all components
+- Complete end-to-end workflow: Configuration → Download → Set Wallpaper
+- Graceful error handling at each step with clear console output
+- Default mode when running the application without arguments
+- Progress messages showing each step of the process
+- Returns success/failure status for automation
 
 #### ImageFetcher Implementation Details
 
