@@ -88,6 +88,21 @@ try {
     exit 1
 }
 
+# Configure service to restart on failure
+try {
+    Write-Host "Configuring automatic restart on failure..." -ForegroundColor Green
+
+    # Set recovery options: restart after 1 minute on first 3 failures
+    sc.exe failure $ServiceName reset= 86400 actions= restart/60000/restart/60000/restart/60000 | Out-Null
+
+    Write-Host "Auto-restart configured" -ForegroundColor Green
+    Write-Host ""
+} catch {
+    Write-Host "WARNING: Could not configure auto-restart" -ForegroundColor Yellow
+    Write-Host $_.Exception.Message -ForegroundColor Yellow
+    Write-Host ""
+}
+
 # Verify service exists
 Start-Sleep -Seconds 1
 $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
@@ -117,9 +132,13 @@ try {
         Write-Host "Display Name: $DisplayName" -ForegroundColor Cyan
         Write-Host "Status: Running" -ForegroundColor Green
         Write-Host "Startup Type: Automatic" -ForegroundColor Cyan
+        Write-Host "Auto-Restart: Enabled (restarts on failure)" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "The service will now update your wallpaper every 15 minutes." -ForegroundColor Gray
         Write-Host "You can manage it through services.msc or Task Manager." -ForegroundColor Gray
+        Write-Host ""
+        $logPath = Join-Path $env:TEMP "WeatherWallpaperService\service.log"
+        Write-Host "Service logs: $logPath" -ForegroundColor Cyan
         Write-Host ""
     } else {
         Write-Host "WARNING: Service created but not running (Status: $($service.Status))" -ForegroundColor Yellow

@@ -35,26 +35,29 @@ namespace WallpaperApp
         {
             try
             {
+                FileLogger.Log("=== Service Starting ===");
+                FileLogger.Log($"Log file: {FileLogger.GetLogPath()}");
+
                 // Load configuration to get refresh interval
                 var settings = _configurationService.LoadConfiguration();
                 var intervalMilliseconds = settings.RefreshIntervalMinutes * 60 * 1000;
 
-                Console.WriteLine("Weather Wallpaper Service starting...");
-                Console.WriteLine($"Refresh interval: {settings.RefreshIntervalMinutes} minutes");
-                Console.WriteLine();
+                FileLogger.Log("Weather Wallpaper Service starting...");
+                FileLogger.Log($"Refresh interval: {settings.RefreshIntervalMinutes} minutes");
 
                 // Execute immediately on startup
-                Console.WriteLine("Executing first wallpaper update...");
+                FileLogger.Log("Executing first wallpaper update...");
                 await ExecuteUpdateAsync();
 
                 // Calculate next refresh time
                 _nextRefreshTime = DateTime.Now.AddMinutes(settings.RefreshIntervalMinutes);
-                Console.WriteLine($"Next refresh at: {_nextRefreshTime:yyyy-MM-dd HH:mm:ss}");
-                Console.WriteLine();
+                FileLogger.Log($"Next refresh at: {_nextRefreshTime:yyyy-MM-dd HH:mm:ss}");
 
                 // Create timer for subsequent executions
+                // Note: Timer callbacks MUST be synchronous (no async void!)
+                // We fire-and-forget the async work with proper exception handling
                 _timer = new Timer(
-                    callback: async _ => await TimerCallbackAsync(),
+                    callback: _ => _ = TimerCallbackAsync(), // Fire and forget (safe because TimerCallbackAsync handles all exceptions)
                     state: null,
                     dueTime: intervalMilliseconds,
                     period: intervalMilliseconds
@@ -66,17 +69,16 @@ namespace WallpaperApp
             catch (TaskCanceledException)
             {
                 // Graceful shutdown requested
-                Console.WriteLine("Shutdown requested...");
+                FileLogger.Log("Shutdown requested (TaskCanceledException)");
             }
             catch (OperationCanceledException)
             {
                 // Graceful shutdown requested
-                Console.WriteLine("Shutdown requested...");
+                FileLogger.Log("Shutdown requested (OperationCanceledException)");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Fatal error in service: {ex.Message}");
-                Console.Error.WriteLine(ex.StackTrace);
+                FileLogger.LogError("FATAL ERROR in ExecuteAsync", ex);
                 throw;
             }
         }
@@ -86,7 +88,7 @@ namespace WallpaperApp
         /// </summary>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            Console.WriteLine("Weather Wallpaper Service stopping...");
+            FileLogger.Log("Weather Wallpaper Service stopping...");
 
             lock (_lock)
             {
@@ -95,7 +97,7 @@ namespace WallpaperApp
             }
 
             await base.StopAsync(cancellationToken);
-            Console.WriteLine("Weather Wallpaper Service stopped.");
+            FileLogger.Log("Weather Wallpaper Service stopped.");
         }
 
         /// <summary>
@@ -105,21 +107,18 @@ namespace WallpaperApp
         {
             try
             {
-                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Timer triggered - updating wallpaper...");
+                FileLogger.Log("Timer triggered - updating wallpaper...");
                 await ExecuteUpdateAsync();
 
                 // Calculate next refresh time
                 var settings = _configurationService.LoadConfiguration();
                 _nextRefreshTime = DateTime.Now.AddMinutes(settings.RefreshIntervalMinutes);
-                Console.WriteLine($"Next refresh at: {_nextRefreshTime:yyyy-MM-dd HH:mm:ss}");
-                Console.WriteLine();
+                FileLogger.Log($"Next refresh at: {_nextRefreshTime:yyyy-MM-dd HH:mm:ss}");
             }
             catch (Exception ex)
             {
                 // Catch all exceptions to prevent timer from stopping
-                Console.Error.WriteLine($"❌ Error in timer callback: {ex.Message}");
-                Console.Error.WriteLine("  Service will continue running.");
-                Console.WriteLine();
+                FileLogger.LogError("Error in timer callback - service will continue running", ex);
             }
         }
 
@@ -131,11 +130,11 @@ namespace WallpaperApp
             try
             {
                 await _wallpaperUpdater.UpdateWallpaperAsync();
+                FileLogger.Log("Wallpaper update completed successfully");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"❌ Update failed: {ex.Message}");
-                Console.WriteLine();
+                FileLogger.LogError("Wallpaper update failed", ex);
             }
         }
     }
