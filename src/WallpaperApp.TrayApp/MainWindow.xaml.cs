@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +7,7 @@ using WallpaperApp.Configuration;
 using WallpaperApp.Services;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
+using FontStyle = System.Drawing.FontStyle;
 
 namespace WallpaperApp.TrayApp
 {
