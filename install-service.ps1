@@ -188,10 +188,10 @@ try {
         Write-Host "Auto-Restart: Enabled (restarts on failure)" -ForegroundColor Cyan
         Write-Host ""
         if ($username) {
-            Write-Host "✓ The service will now update your wallpaper every 15 minutes." -ForegroundColor Green
+            Write-Host "[OK] The service will now update your wallpaper every 15 minutes." -ForegroundColor Green
         } else {
-            Write-Host "⚠ WARNING: Service running as LocalSystem cannot set wallpapers!" -ForegroundColor Yellow
-            Write-Host "  Reinstall and choose option 1 to run as your user account." -ForegroundColor Yellow
+            Write-Host "[WARNING] Service running as LocalSystem cannot set wallpapers!" -ForegroundColor Yellow
+            Write-Host "          Reinstall and choose option 1 to run as your user account." -ForegroundColor Yellow
         }
         Write-Host ""
         Write-Host "You can manage the service through services.msc or Task Manager." -ForegroundColor Gray
