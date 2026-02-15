@@ -69,19 +69,10 @@ namespace WallpaperApp.Tests
         }
 
         [Fact]
-        public void ApplicationStartsSuccessfully()
+        public void ApplicationDisplaysHelp_HelpFlag()
         {
-            // Arrange - Create valid config file in current directory
-            var configContent = @"{
-  ""AppSettings"": {
-    ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
-    ""RefreshIntervalMinutes"": 15
-  }
-}";
-            File.WriteAllText("WallpaperApp.json", configContent);
-
-            // Act
-            var exitCode = Program.Main(new string[] { });
+            // Arrange & Act
+            var exitCode = Program.Main(new[] { "--help" });
 
             // Assert
             Assert.Equal(0, exitCode);

@@ -20,8 +20,26 @@ namespace WallpaperApp
             Console.WriteLine($"Looking for: WallpaperApp.json");
             Console.WriteLine();
 
+            // Help flag
+            if (args.Length > 0 && args[0] == "--help")
+            {
+                Console.WriteLine("USAGE:");
+                Console.WriteLine("  WallpaperApp.exe");
+                Console.WriteLine("    Fetch and set wallpaper (default mode)");
+                Console.WriteLine();
+                Console.WriteLine("  WallpaperApp.exe --download");
+                Console.WriteLine("    Downloads image from URL in configuration");
+                Console.WriteLine();
+                Console.WriteLine("  WallpaperApp.exe <path-to-image>");
+                Console.WriteLine("    Sets wallpaper to local image file");
+                Console.WriteLine();
+                Console.WriteLine("  WallpaperApp.exe --help");
+                Console.WriteLine("    Displays this help message");
+                Console.WriteLine();
+                return 0;
+            }
             // Story 5: Integrated workflow - fetch and set wallpaper (default mode)
-            if (args.Length == 0)
+            else if (args.Length == 0)
             {
                 Console.WriteLine("Story 5: Fetching and setting wallpaper...");
                 Console.WriteLine();
