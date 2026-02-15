@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using WallpaperApp.Configuration;
 using WallpaperApp.Services;
 
@@ -25,7 +27,7 @@ namespace WallpaperApp
             {
                 Console.WriteLine("USAGE:");
                 Console.WriteLine("  WallpaperApp.exe");
-                Console.WriteLine("    Fetch and set wallpaper (default mode)");
+                Console.WriteLine("    Run as Windows Service or console app with periodic wallpaper updates");
                 Console.WriteLine();
                 Console.WriteLine("  WallpaperApp.exe --download");
                 Console.WriteLine("    Downloads image from URL in configuration");
@@ -38,39 +40,19 @@ namespace WallpaperApp
                 Console.WriteLine();
                 return 0;
             }
-            // Story 6: Periodic refresh with timer (default mode)
+            // Story 7: Windows Service mode (default mode)
             else if (args.Length == 0)
             {
-                Console.WriteLine("Story 6: Starting wallpaper refresh service...");
-                Console.WriteLine("Press Ctrl+C to stop.");
-                Console.WriteLine();
-
-                var configService = new ConfigurationService();
-                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-                var imageFetcher = new ImageFetcher(httpClient);
-                var wallpaperService = new WallpaperService();
-                var updater = new WallpaperUpdater(configService, imageFetcher, wallpaperService);
-
-                var timerService = new TimerService(configService, updater);
-
-                // Set up cancellation for Ctrl+C
-                using var cts = new CancellationTokenSource();
-                Console.CancelKeyPress += (sender, e) =>
-                {
-                    e.Cancel = true;  // Prevent immediate termination
-                    Console.WriteLine();
-                    Console.WriteLine("Ctrl+C detected. Shutting down gracefully...");
-                    cts.Cancel();
-                };
-
                 try
                 {
-                    await timerService.StartAsync(cts.Token);
+                    var host = CreateHostBuilder(args).Build();
+                    await host.RunAsync();
                     return 0;
                 }
                 catch (Exception ex)
                 {
                     Console.Error.WriteLine($"❌ Fatal error: {ex.Message}");
+                    Console.Error.WriteLine(ex.StackTrace);
                     return 1;
                 }
             }
@@ -173,5 +155,30 @@ namespace WallpaperApp
             // Should never reach here
             return 1;
         }
+
+        /// <summary>
+        /// Creates and configures the host builder for the Windows Service.
+        /// </summary>
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .UseWindowsService(options =>
+                {
+                    options.ServiceName = "WeatherWallpaperService";
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                    // Register services for dependency injection
+                    services.AddSingleton<IConfigurationService, ConfigurationService>();
+                    services.AddSingleton<IWallpaperService, WallpaperService>();
+                    services.AddHttpClient<IImageFetcher, ImageFetcher>()
+                        .ConfigureHttpClient(client =>
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        });
+                    services.AddSingleton<IWallpaperUpdater, WallpaperUpdater>();
+
+                    // Register the background worker
+                    services.AddHostedService<Worker>();
+                });
     }
 }

@@ -66,9 +66,77 @@ dotnet test
 
 The application supports multiple modes:
 
-### Periodic Refresh (Story 6 - Default Mode)
+### Windows Service Mode (Story 7 - Recommended)
 
-Run continuously and automatically update wallpaper at configured interval:
+Install and run as a Windows Service for automatic wallpaper updates that survive reboots:
+
+#### Installation
+
+1. Build and publish the application first:
+   ```cmd
+   scripts\validate.bat
+   ```
+
+2. Navigate to the publish directory:
+   ```cmd
+   cd publish
+   ```
+
+3. Right-click `install-service.bat` and select **"Run as administrator"**
+   - Alternatively, from an admin command prompt:
+   ```cmd
+   install-service.bat
+   ```
+
+The installation script will:
+- Verify you have administrator privileges
+- Check that `WallpaperApp.exe` exists
+- Create the service "WeatherWallpaperService"
+- Configure it to start automatically on boot
+- Start the service immediately
+
+#### Managing the Service
+
+**Start the service:**
+```cmd
+sc start WeatherWallpaperService
+```
+
+**Stop the service:**
+```cmd
+sc stop WeatherWallpaperService
+```
+
+**Check service status:**
+```cmd
+sc query WeatherWallpaperService
+```
+
+**View in Services GUI:**
+1. Press `Win+R`, type `services.msc`, press Enter
+2. Find "Weather Wallpaper Service" in the list
+3. Right-click to Start, Stop, or view Properties
+
+#### Uninstallation
+
+To remove the service:
+
+1. Right-click `uninstall-service.bat` and select **"Run as administrator"**
+   - Alternatively, from an admin command prompt:
+   ```cmd
+   uninstall-service.bat
+   ```
+
+The uninstallation script will:
+- Stop the service if running
+- Remove the service registration
+- Preserve configuration files and downloaded images
+
+**Note:** Configuration files and downloaded images in `%TEMP%\WeatherWallpaper\` are NOT deleted during uninstallation. You can manually remove them if desired.
+
+### Console Mode (Story 6 - Debug/Development)
+
+Run continuously in console mode (does not require Windows Service installation):
 
 ```bash
 cd src/WallpaperApp
@@ -82,7 +150,7 @@ This will:
 - Display progress messages for each update
 - Run until you press Ctrl+C to stop gracefully
 
-This is the default mode and provides continuous automatic wallpaper updates.
+This mode is useful for debugging and development, but does not survive reboots or run in the background like the Windows Service mode.
 
 ### Download Image from URL (Story 4)
 
@@ -234,6 +302,16 @@ All validation errors are designed to guide you in fixing the configuration issu
 - Robust error handling - timer continues running even if individual updates fail
 - Default mode when running the application without arguments
 - Thread-safe timer implementation with proper resource disposal
+
+### Story 7: Windows Service - Convert to Service
+- `Worker` background service implementing `BackgroundService`
+- Uses `HostBuilder` pattern with dependency injection
+- Runs as Windows Service or console application (dual-mode)
+- Automatic startup on system boot
+- Service management via installation scripts
+- Runs as LocalSystem account
+- Proper service lifecycle management with graceful shutdown
+- Service registration in Windows Service Control Manager
 
 #### ImageFetcher Implementation Details
 
