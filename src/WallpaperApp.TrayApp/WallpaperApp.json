@@ -1,0 +1,4 @@
+{
+  "ImageUrl": "https://example.com/weather-image.jpg",
+  "RefreshIntervalMinutes": 30
+}
