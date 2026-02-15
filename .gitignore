@@ -1,0 +1,34 @@
+## .NET build output
+**/bin/
+**/obj/
+**/publish/
+
+## User-specific files
+*.user
+*.suo
+*.rsuser
+
+## NuGet
+**/packages/
+*.nupkg
+
+## Visual Studio
+.vs/
+*.sln.docuser
+
+## Rider
+.idea/
+
+## OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Test results
+**/TestResults/
+
+## Script output logs
+validate-output.log
+test-output.log
+build-output.log
+publish-output.log
