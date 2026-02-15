@@ -77,7 +77,8 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            // Write to current directory (already set to _testDirectory in constructor)
+            File.WriteAllText("WallpaperApp.json", configContent);
             var service = new ConfigurationService();
 
             // Act
@@ -111,7 +112,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            File.WriteAllText("WallpaperApp.json", configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -129,7 +130,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            File.WriteAllText("WallpaperApp.json", configContent);
             var service = new ConfigurationService();
 
             // Act & Assert
@@ -146,7 +147,7 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            File.WriteAllText("WallpaperApp.json", configContent);
             var service = new ConfigurationService();
 
             // Act & Assert

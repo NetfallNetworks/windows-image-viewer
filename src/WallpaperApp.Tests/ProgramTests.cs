@@ -70,14 +70,14 @@ namespace WallpaperApp.Tests
         [Fact]
         public void ApplicationStartsSuccessfully()
         {
-            // Arrange - Create valid config file in test directory
+            // Arrange - Create valid config file in current directory
             var configContent = @"{
   ""AppSettings"": {
     ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            File.WriteAllText(Path.Combine(_testDirectory, "WallpaperApp.json"), configContent);
+            File.WriteAllText("WallpaperApp.json", configContent);
 
             // Act
             var exitCode = Program.Main(new string[] { });
