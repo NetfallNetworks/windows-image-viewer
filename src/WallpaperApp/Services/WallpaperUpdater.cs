@@ -5,7 +5,7 @@ namespace WallpaperApp.Services
     /// <summary>
     /// Orchestrates the complete workflow of fetching and setting wallpaper.
     /// </summary>
-    public class WallpaperUpdater
+    public class WallpaperUpdater : IWallpaperUpdater
     {
         private readonly IConfigurationService _configurationService;
         private readonly IImageFetcher _imageFetcher;

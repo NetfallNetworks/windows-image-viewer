@@ -38,21 +38,41 @@ namespace WallpaperApp
                 Console.WriteLine();
                 return 0;
             }
-            // Story 5: Integrated workflow - fetch and set wallpaper (default mode)
+            // Story 6: Periodic refresh with timer (default mode)
             else if (args.Length == 0)
             {
-                Console.WriteLine("Story 5: Fetching and setting wallpaper...");
+                Console.WriteLine("Story 6: Starting wallpaper refresh service...");
+                Console.WriteLine("Press Ctrl+C to stop.");
                 Console.WriteLine();
 
                 var configService = new ConfigurationService();
                 using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
                 var imageFetcher = new ImageFetcher(httpClient);
                 var wallpaperService = new WallpaperService();
-
                 var updater = new WallpaperUpdater(configService, imageFetcher, wallpaperService);
-                bool success = await updater.UpdateWallpaperAsync();
 
-                return success ? 0 : 1;
+                var timerService = new TimerService(configService, updater);
+
+                // Set up cancellation for Ctrl+C
+                using var cts = new CancellationTokenSource();
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    e.Cancel = true;  // Prevent immediate termination
+                    Console.WriteLine();
+                    Console.WriteLine("Ctrl+C detected. Shutting down gracefully...");
+                    cts.Cancel();
+                };
+
+                try
+                {
+                    await timerService.StartAsync(cts.Token);
+                    return 0;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"❌ Fatal error: {ex.Message}");
+                    return 1;
+                }
             }
             // Story 4: Download image from URL (if --download flag provided)
             else if (args.Length > 0 && args[0] == "--download")

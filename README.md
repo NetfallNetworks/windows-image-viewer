@@ -66,9 +66,9 @@ dotnet test
 
 The application supports multiple modes:
 
-### Fetch and Set Wallpaper (Story 5 - Default Mode)
+### Periodic Refresh (Story 6 - Default Mode)
 
-Download and set wallpaper in one step (integrated workflow):
+Run continuously and automatically update wallpaper at configured interval:
 
 ```bash
 cd src/WallpaperApp
@@ -76,13 +76,13 @@ dotnet run
 ```
 
 This will:
-- Read the `ImageUrl` from your configuration
-- Download the image to `%TEMP%/WeatherWallpaper/`
-- Set the downloaded image as your desktop wallpaper
-- Display progress messages at each step
-- Return an error if any step fails
+- Read the `ImageUrl` and `RefreshIntervalMinutes` from your configuration
+- Download and set wallpaper immediately on startup
+- Continue running and refresh wallpaper every 15 minutes (or configured interval)
+- Display progress messages for each update
+- Run until you press Ctrl+C to stop gracefully
 
-This is the default mode and provides the complete end-to-end functionality.
+This is the default mode and provides continuous automatic wallpaper updates.
 
 ### Download Image from URL (Story 4)
 
@@ -221,9 +221,19 @@ All validation errors are designed to guide you in fixing the configuration issu
 - `WallpaperUpdater` orchestrator that integrates all components
 - Complete end-to-end workflow: Configuration → Download → Set Wallpaper
 - Graceful error handling at each step with clear console output
-- Default mode when running the application without arguments
 - Progress messages showing each step of the process
 - Returns success/failure status for automation
+
+### Story 6: Periodic Refresh - Timer Implementation
+- `TimerService` for scheduling automatic wallpaper updates
+- Runs continuously with configurable refresh interval
+- First update executes immediately on startup
+- Subsequent updates run every 15 minutes (configurable via `RefreshIntervalMinutes`)
+- Graceful shutdown on Ctrl+C using CancellationToken
+- Console displays next refresh time after each update
+- Robust error handling - timer continues running even if individual updates fail
+- Default mode when running the application without arguments
+- Thread-safe timer implementation with proper resource disposal
 
 #### ImageFetcher Implementation Details
 
