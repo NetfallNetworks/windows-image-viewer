@@ -1,4 +1,6 @@
 {
-  "ImageUrl": "https://example.com/weather-image.jpg",
-  "RefreshIntervalMinutes": 30
+  "AppSettings": {
+    "ImageUrl": "https://weather.zamflam.com/latest.png",
+    "RefreshIntervalMinutes": 15
+  }
 }

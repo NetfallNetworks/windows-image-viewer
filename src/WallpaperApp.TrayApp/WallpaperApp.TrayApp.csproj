@@ -19,9 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WallpaperApp\WallpaperApp.csproj">
-      <ExcludeAssets>contentFiles</ExcludeAssets>
-    </ProjectReference>
+    <ProjectReference Include="..\WallpaperApp\WallpaperApp.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,5 +27,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <!-- Remove duplicate WallpaperApp.json from referenced project during publish -->
+  <Target Name="RemoveDuplicateConfigFile" BeforeTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                              Condition="'%(ResolvedFileToPublish.RelativePath)' == 'WallpaperApp.json' and !$([System.String]::new('%(ResolvedFileToPublish.SourcePath)').Contains('TrayApp'))" />
+    </ItemGroup>
+  </Target>
 
 </Project>
