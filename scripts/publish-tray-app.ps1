@@ -20,22 +20,22 @@ $outputPath = Join-Path $rootPath "bin\TrayApp"
 
 # Check if project exists
 if (-not (Test-Path $projectPath)) {
-    Write-Host "❌ ERROR: Project file not found at: $projectPath" -ForegroundColor Red
+    Write-Host "ERROR: Project file not found at: $projectPath" -ForegroundColor Red
     exit 1
 }
 
 # Clean if requested
 if ($Clean) {
-    Write-Host "🧹 Cleaning previous publish..." -ForegroundColor Yellow
+    Write-Host "Cleaning previous publish..." -ForegroundColor Yellow
     if (Test-Path $outputPath) {
         Remove-Item -Path $outputPath -Recurse -Force
     }
-    Write-Host "✓ Clean complete" -ForegroundColor Green
+    Write-Host "Clean complete" -ForegroundColor Green
     Write-Host
 }
 
 # Publish the project
-Write-Host "🔨 Publishing tray app..." -ForegroundColor Yellow
+Write-Host "Publishing tray app..." -ForegroundColor Yellow
 Write-Host "  Project: $projectPath"
 Write-Host "  Output: $outputPath"
 Write-Host
@@ -54,9 +54,9 @@ try {
     }
 
     Write-Host
-    Write-Host "✓ Publish successful!" -ForegroundColor Green
+    Write-Host "Publish successful!" -ForegroundColor Green
     Write-Host
-    Write-Host "📦 Output files:" -ForegroundColor Cyan
+    Write-Host "Output files:" -ForegroundColor Cyan
     Get-ChildItem $outputPath | ForEach-Object {
         Write-Host "  $($_.Name)" -ForegroundColor Gray
     }
@@ -68,7 +68,7 @@ try {
 
 } catch {
     Write-Host
-    Write-Host "❌ PUBLISH FAILED" -ForegroundColor Red
+    Write-Host "PUBLISH FAILED" -ForegroundColor Red
     Write-Host "Error: $_" -ForegroundColor Red
     Write-Host
     exit 1
