@@ -72,7 +72,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             }
         }
 
-        private WallpaperFitMode _selectedFitMode = WallpaperFitMode.Fill;
+        private WallpaperFitMode _selectedFitMode = WallpaperFitMode.Fit;
         public WallpaperFitMode SelectedFitMode
         {
             get => _selectedFitMode;
@@ -286,7 +286,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 "Reset all settings to defaults?\n\nThis will:\n" +
                 "- Clear image URL/path\n" +
                 "- Reset refresh interval to 15 minutes\n" +
-                "- Set fit mode to Fill\n" +
+                "- Set fit mode to Fit\n" +
                 "- Clear last-known-good image",
                 "Reset Settings", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -295,7 +295,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 ImageUrl = string.Empty;
                 LocalImagePath = string.Empty;
                 RefreshIntervalMinutes = 15;
-                SelectedFitMode = WallpaperFitMode.Fill;
+                SelectedFitMode = WallpaperFitMode.Fit;
                 SourceType = ImageSource.Url;
 
                 // Clear state (but keep IsFirstRun = false)

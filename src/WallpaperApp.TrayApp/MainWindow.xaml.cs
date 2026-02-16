@@ -102,6 +102,10 @@ namespace WallpaperApp.TrayApp
 
             contextMenu.Items.Add(new ToolStripSeparator());
 
+            var settingsItem = new ToolStripMenuItem("⚙️ Settings");
+            settingsItem.Click += (s, e) => ShowSettingsWindow();
+            contextMenu.Items.Add(settingsItem);
+
             var openFolderItem = new ToolStripMenuItem("📁 Open Image Folder");
             openFolderItem.Click += (s, e) => OpenImageFolder();
             contextMenu.Items.Add(openFolderItem);
