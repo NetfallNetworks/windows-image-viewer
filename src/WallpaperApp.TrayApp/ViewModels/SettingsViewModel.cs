@@ -604,7 +604,7 @@ namespace WallpaperApp.TrayApp.ViewModels
 
             // Schedule new update after 1000ms
             _previewDebounceTimer = new System.Threading.Timer(
-                async _ => await Application.Current.Dispatcher.InvokeAsync(async () => await UpdatePreviewAsync()),
+                async _ => await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => await UpdatePreviewAsync()),
                 null,
                 1000, // 1 second debounce
                 System.Threading.Timeout.Infinite);
