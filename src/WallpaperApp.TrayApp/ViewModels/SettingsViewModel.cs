@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -39,6 +40,7 @@ namespace WallpaperApp.TrayApp.ViewModels
         private readonly IWallpaperService _wallpaperService;
         private readonly IImageValidator _imageValidator;
         private readonly HttpClient _httpClient;
+        private Timer? _previewDebounceTimer;
 
         // Original values for undo functionality
         private string _originalImageUrl = string.Empty;
@@ -57,7 +59,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 _imageUrl = value;
                 OnPropertyChanged();
                 ValidateUrl();
-                _ = UpdatePreviewAsync();
+                SchedulePreviewUpdate();
             }
         }
 
@@ -69,7 +71,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             {
                 _localImagePath = value;
                 OnPropertyChanged();
-                _ = UpdatePreviewAsync();
+                SchedulePreviewUpdate();
             }
         }
 
@@ -84,7 +86,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 OnPropertyChanged(nameof(IsUrlMode));
                 OnPropertyChanged(nameof(IsLocalFileMode));
                 ValidateUrl();
-                _ = UpdatePreviewAsync();
+                SchedulePreviewUpdate();
             }
         }
 
@@ -119,7 +121,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             {
                 _selectedFitMode = value;
                 OnPropertyChanged();
-                _ = UpdatePreviewAsync();
+                SchedulePreviewUpdate();
             }
         }
 
@@ -199,6 +201,8 @@ namespace WallpaperApp.TrayApp.ViewModels
             {
                 _screenWidth = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(PreviewWidth));
+                OnPropertyChanged(nameof(PreviewHeight));
             }
         }
 
@@ -210,6 +214,33 @@ namespace WallpaperApp.TrayApp.ViewModels
             {
                 _screenHeight = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(PreviewWidth));
+                OnPropertyChanged(nameof(PreviewHeight));
+            }
+        }
+
+        // Calculate preview dimensions to match screen aspect ratio
+        public double PreviewWidth
+        {
+            get
+            {
+                const double maxWidth = 620.0;
+                if (ScreenWidth <= 0 || ScreenHeight <= 0) return maxWidth;
+
+                double aspectRatio = ScreenWidth / ScreenHeight;
+                return maxWidth;
+            }
+        }
+
+        public double PreviewHeight
+        {
+            get
+            {
+                const double maxWidth = 620.0;
+                if (ScreenWidth <= 0 || ScreenHeight <= 0) return 350.0;
+
+                double aspectRatio = ScreenWidth / ScreenHeight;
+                return maxWidth / aspectRatio;
             }
         }
 
@@ -569,6 +600,19 @@ namespace WallpaperApp.TrayApp.ViewModels
             }
         }
 
+        private void SchedulePreviewUpdate()
+        {
+            // Cancel existing timer
+            _previewDebounceTimer?.Dispose();
+
+            // Schedule new update after 1000ms
+            _previewDebounceTimer = new Timer(
+                async _ => await Application.Current.Dispatcher.InvokeAsync(async () => await UpdatePreviewAsync()),
+                null,
+                1000, // 1 second debounce
+                Timeout.Infinite);
+        }
+
         private async Task UpdatePreviewAsync()
         {
             try
@@ -680,6 +724,7 @@ namespace WallpaperApp.TrayApp.ViewModels
 
         public void Dispose()
         {
+            _previewDebounceTimer?.Dispose();
             _httpClient?.Dispose();
         }
     }
