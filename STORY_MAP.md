@@ -1,8 +1,10 @@
-# Windows Weather Wallpaper - Story Map
+# Windows Wallpaper Sync - Story Map
+
+> **Note**: This project was rebranded from "Weather Wallpaper" to "Wallpaper Sync" in Phase 2 to reflect its general-purpose nature. See `plan/wallpaper-sync-phase-2-stories.md` for details. Historical story descriptions below retain original "Weather" references for context.
 
 ## Project Overview
 
-**Goal**: Build a Windows desktop app that automatically updates wallpaper with weather forecast images from weather.zamflam.com every 15 minutes.
+**Goal**: Build a Windows desktop app that automatically updates wallpaper from a remote image URL on a configurable schedule.
 
 **Philosophy**: Ship fast, zero maintenance, incremental progress. Every story delivers a working app with passing tests.
 
