@@ -1,9 +1,9 @@
-# Weather Wallpaper Tray App 🌤️
+# Wallpaper Sync Tray App
 
-> **Recommended Installation Method**: The System Tray App is now the recommended way to run Weather Wallpaper.
+> **Recommended Installation Method**: The System Tray App is now the recommended way to run Wallpaper Sync.
 > The Windows Service mode has been deprecated (see [ADR-005](plan/adr/ADR-005-pivot-service-to-tray-app.md)).
 
-A system tray application that automatically updates your Windows wallpaper with weather images!
+A system tray application that automatically updates your Windows wallpaper from a remote image URL!
 
 ## Features ✨
 
@@ -28,7 +28,7 @@ A system tray application that automatically updates your Windows wallpaper with
 ```
 
 This will:
-- Copy the app to `%LOCALAPPDATA%\WeatherWallpaper`
+- Copy the app to `%LOCALAPPDATA%\WallpaperSync`
 - Add a shortcut to your Startup folder
 - Let you configure the image URL and refresh interval
 - Offer to start the app immediately
@@ -37,7 +37,7 @@ This will:
 
 Edit the configuration file at:
 ```
-%LOCALAPPDATA%\WeatherWallpaper\WallpaperApp.json
+%LOCALAPPDATA%\WallpaperSync\WallpaperApp.json
 ```
 
 Example configuration:
@@ -82,7 +82,7 @@ This will:
 
 Logs are saved to:
 ```
-%TEMP%\WeatherWallpaperService\service.log
+%TEMP%\WallpaperSyncService\service.log
 ```
 
 Check this file if you encounter any issues!
@@ -127,4 +127,4 @@ Windows services require a password to run, but the tray app:
 bin\TrayApp\WallpaperApp.TrayApp.exe
 ```
 
-Enjoy your automatically updating weather wallpapers! 🎨
+Enjoy your automatically updating wallpapers! 🎨

@@ -1,6 +1,6 @@
-# Weather Wallpaper App
+# Wallpaper Sync
 
-A Windows desktop application that automatically updates your desktop wallpaper with weather forecast images.
+A Windows desktop application that automatically updates your desktop wallpaper from a remote image URL.
 
 ## Requirements
 
@@ -83,7 +83,7 @@ Run the app as a system tray application for automatic wallpaper updates:
    ```
 
 This will:
-- Copy the app to `%LOCALAPPDATA%\WeatherWallpaper`
+- Copy the app to `%LOCALAPPDATA%\WallpaperSync`
 - Add a shortcut to your Startup folder for auto-start
 - Let you configure the image URL and refresh interval
 - Offer to start the app immediately
@@ -145,7 +145,7 @@ dotnet run -- --download
 
 This will:
 - Read the `ImageUrl` from your configuration
-- Download the image to `%TEMP%/WeatherWallpaper/`
+- Download the image to `%TEMP%/WallpaperSync/`
 - Display the path where the image was saved
 - Return an error if the download fails
 
@@ -181,7 +181,7 @@ The application is configured using `WallpaperApp.json` located in the same dire
 
 - **Development**: `src/WallpaperApp/WallpaperApp.json`
 - **Published**: `publish/WallpaperApp.json`
-- **Installed Service**: `C:\Program Files\WeatherWallpaper\WallpaperApp.json` (future)
+- **Installed Service**: `C:\Program Files\WallpaperSync\WallpaperApp.json` (future)
 
 ### Available Settings
 
@@ -261,7 +261,7 @@ All validation errors are designed to guide you in fixing the configuration issu
 
 ### Story 4: HTTP Client - Fetch Image from URL
 - `ImageFetcher` service that downloads images from URLs
-- Automatic save to temporary directory (`%TEMP%/WeatherWallpaper/`)
+- Automatic save to temporary directory (`%TEMP%/WallpaperSync/`)
 - 30-second timeout for HTTP requests
 - Graceful error handling (returns null on failure, no retries)
 - Unique timestamp-based filenames (`wallpaper-{yyyyMMdd-HHmmss}.png`)
@@ -299,8 +299,8 @@ All validation errors are designed to guide you in fixing the configuration issu
 
 The `ImageFetcher` service provides the following capabilities:
 
-- **Download Location**: All images are saved to `%TEMP%/WeatherWallpaper/`
-  - Example: `C:\Users\YourName\AppData\Local\Temp\WeatherWallpaper\`
+- **Download Location**: All images are saved to `%TEMP%/WallpaperSync/`
+  - Example: `C:\Users\YourName\AppData\Local\Temp\WallpaperSync\`
   - Directory is created automatically if it doesn't exist
 
 - **Filename Format**: `wallpaper-{yyyyMMdd-HHmmss}.png`

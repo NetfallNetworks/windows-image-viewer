@@ -5,7 +5,7 @@ set "SCRIPT_DIR=%~dp0"
 set "REPO_ROOT=%SCRIPT_DIR%.."
 
 echo ========================================
-echo Weather Wallpaper App - Full Validation
+echo Wallpaper Sync - Full Validation
 echo ========================================
 echo.
 echo Running: Pull -^> Test -^> Build -^> Publish

@@ -4,7 +4,7 @@ set -e  # Exit immediately if any command fails
 SCRIPT_DIR="$(dirname "$0")"
 
 echo "========================================"
-echo "Weather Wallpaper App - Full Validation"
+echo "Wallpaper Sync - Full Validation"
 echo "========================================"
 echo ""
 echo "Running: Pull -> Test -> Build -> Publish"
