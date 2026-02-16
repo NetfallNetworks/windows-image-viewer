@@ -9,6 +9,9 @@
     <Nullable>enable</Nullable>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
+    <AssemblyTitle>Wallpaper Sync</AssemblyTitle>
+    <Product>Wallpaper Sync</Product>
+    <ApplicationIcon />
   </PropertyGroup>
 
   <ItemGroup>

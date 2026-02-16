@@ -18,6 +18,8 @@ namespace WallpaperApp.TrayApp
     {
         private NotifyIcon? _notifyIcon;
         private System.Threading.Timer? _updateTimer;
+        private System.Windows.Threading.DispatcherTimer? _clickTimer;
+        private bool _doubleClickHandled;
         private readonly IServiceProvider _serviceProvider;
         private readonly IWallpaperUpdater _wallpaperUpdater;
         private readonly IConfigurationService _configurationService;
@@ -137,11 +139,26 @@ namespace WallpaperApp.TrayApp
 
             _notifyIcon.ContextMenuStrip = contextMenu;
 
-            // Left-click to open settings
+            // Initialize click timer for distinguishing single vs double-click
+            _clickTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(System.Windows.Forms.SystemInformation.DoubleClickTime)
+            };
+            _clickTimer.Tick += (s, e) =>
+            {
+                _clickTimer?.Stop();
+                if (!_doubleClickHandled)
+                {
+                    ShowSettingsWindow();
+                }
+                _doubleClickHandled = false;
+            };
+
+            // Left-click to open settings (with delay to detect double-click)
             _notifyIcon.Click += OnTrayIconClick;
 
             // Double-click to show status
-            _notifyIcon.DoubleClick += (s, e) => ShowStatus();
+            _notifyIcon.DoubleClick += OnTrayIconDoubleClick;
         }
 
         private void OnTrayIconClick(object? sender, EventArgs e)
@@ -151,9 +168,20 @@ namespace WallpaperApp.TrayApp
             {
                 if (mouseEvent.Button == MouseButtons.Left)
                 {
-                    ShowSettingsWindow();
+                    // Start timer to detect if this is part of a double-click
+                    _doubleClickHandled = false;
+                    _clickTimer?.Stop();
+                    _clickTimer?.Start();
                 }
             }
+        }
+
+        private void OnTrayIconDoubleClick(object? sender, EventArgs e)
+        {
+            // Mark that double-click was handled to prevent single-click action
+            _doubleClickHandled = true;
+            _clickTimer?.Stop();
+            ShowStatus();
         }
 
         private void ShowSettingsWindow()
@@ -485,6 +513,7 @@ namespace WallpaperApp.TrayApp
         protected override void OnClosed(EventArgs e)
         {
             _updateTimer?.Dispose();
+            _clickTimer?.Stop();
             _notifyIcon?.Dispose();
             base.OnClosed(e);
         }

@@ -10,6 +10,8 @@ namespace WallpaperApp.TrayApp.Views
     /// </summary>
     public partial class SettingsWindow : Window
     {
+        private readonly SettingsViewModel _viewModel;
+
         public SettingsWindow(
             IConfigurationService configService,
             IAppStateService stateService,
@@ -18,15 +20,21 @@ namespace WallpaperApp.TrayApp.Views
         {
             InitializeComponent();
 
-            var viewModel = new SettingsViewModel(
+            _viewModel = new SettingsViewModel(
                 configService,
                 stateService,
                 wallpaperService,
                 imageValidator);
 
-            viewModel.CloseWindow = () => Close();
+            _viewModel.CloseWindow = () => Close();
 
-            DataContext = viewModel;
+            DataContext = _viewModel;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            _viewModel?.Dispose();
+            base.OnClosed(e);
         }
     }
 }

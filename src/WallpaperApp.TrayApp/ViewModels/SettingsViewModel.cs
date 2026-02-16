@@ -1,8 +1,15 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using WallpaperApp.Configuration;
 using WallpaperApp.Models;
 using WallpaperApp.Services;
@@ -11,14 +18,32 @@ using MessageBox = System.Windows.MessageBox;
 namespace WallpaperApp.TrayApp.ViewModels
 {
     /// <summary>
+    /// Represents a preset time interval option.
+    /// </summary>
+    public class IntervalPreset
+    {
+        public string DisplayName { get; set; } = string.Empty;
+        public int Minutes { get; set; }
+        public bool IsCustom { get; set; }
+    }
+
+    /// <summary>
     /// ViewModel for the Settings window.
     /// </summary>
-    public class SettingsViewModel : INotifyPropertyChanged
+    public class SettingsViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly IConfigurationService _configService;
         private readonly IAppStateService _stateService;
         private readonly IWallpaperService _wallpaperService;
         private readonly IImageValidator _imageValidator;
+        private readonly HttpClient _httpClient;
+
+        // Original values for undo functionality
+        private string _originalImageUrl;
+        private string _originalLocalImagePath;
+        private ImageSource _originalSourceType;
+        private int _originalRefreshIntervalMinutes;
+        private WallpaperFitMode _originalSelectedFitMode;
 
         // Bindable Properties
         private string _imageUrl = string.Empty;
@@ -30,6 +55,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 _imageUrl = value;
                 OnPropertyChanged();
                 ValidateUrl();
+                _ = UpdatePreviewAsync();
             }
         }
 
@@ -41,6 +67,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             {
                 _localImagePath = value;
                 OnPropertyChanged();
+                _ = UpdatePreviewAsync();
             }
         }
 
@@ -55,6 +82,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 OnPropertyChanged(nameof(IsUrlMode));
                 OnPropertyChanged(nameof(IsLocalFileMode));
                 ValidateUrl();
+                _ = UpdatePreviewAsync();
             }
         }
 
@@ -88,6 +116,97 @@ namespace WallpaperApp.TrayApp.ViewModels
             set
             {
                 _selectedFitMode = value;
+                OnPropertyChanged();
+                _ = UpdatePreviewAsync();
+            }
+        }
+
+        // Interval presets
+        public ObservableCollection<IntervalPreset> IntervalPresets { get; }
+
+        private IntervalPreset? _selectedIntervalPreset;
+        public IntervalPreset? SelectedIntervalPreset
+        {
+            get => _selectedIntervalPreset;
+            set
+            {
+                _selectedIntervalPreset = value;
+                OnPropertyChanged();
+                if (value != null && !value.IsCustom)
+                {
+                    RefreshIntervalMinutes = value.Minutes;
+                }
+                OnPropertyChanged(nameof(IsCustomIntervalSelected));
+            }
+        }
+
+        public bool IsCustomIntervalSelected => _selectedIntervalPreset?.IsCustom ?? false;
+
+        private string _customIntervalValue = "30";
+        public string CustomIntervalValue
+        {
+            get => _customIntervalValue;
+            set
+            {
+                _customIntervalValue = value;
+                OnPropertyChanged();
+                UpdateCustomInterval();
+            }
+        }
+
+        private string _customIntervalUnit = "Minutes";
+        public string CustomIntervalUnit
+        {
+            get => _customIntervalUnit;
+            set
+            {
+                _customIntervalUnit = value;
+                OnPropertyChanged();
+                UpdateCustomInterval();
+            }
+        }
+
+        // Preview properties
+        private ImageSource? _previewImage;
+        public ImageSource? PreviewImage
+        {
+            get => _previewImage;
+            set
+            {
+                _previewImage = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _previewStatus = "Select an image to preview";
+        public string PreviewStatus
+        {
+            get => _previewStatus;
+            set
+            {
+                _previewStatus = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private double _screenWidth;
+        public double ScreenWidth
+        {
+            get => _screenWidth;
+            set
+            {
+                _screenWidth = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private double _screenHeight;
+        public double ScreenHeight
+        {
+            get => _screenHeight;
+            set
+            {
+                _screenHeight = value;
                 OnPropertyChanged();
             }
         }
@@ -125,18 +244,60 @@ namespace WallpaperApp.TrayApp.ViewModels
             _stateService = stateService;
             _wallpaperService = wallpaperService;
             _imageValidator = imageValidator;
+            _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+
+            // Initialize interval presets
+            IntervalPresets = new ObservableCollection<IntervalPreset>
+            {
+                new IntervalPreset { DisplayName = "5 minutes", Minutes = 5 },
+                new IntervalPreset { DisplayName = "10 minutes", Minutes = 10 },
+                new IntervalPreset { DisplayName = "15 minutes", Minutes = 15 },
+                new IntervalPreset { DisplayName = "30 minutes", Minutes = 30 },
+                new IntervalPreset { DisplayName = "1 hour", Minutes = 60 },
+                new IntervalPreset { DisplayName = "2 hours", Minutes = 120 },
+                new IntervalPreset { DisplayName = "4 hours", Minutes = 240 },
+                new IntervalPreset { DisplayName = "6 hours", Minutes = 360 },
+                new IntervalPreset { DisplayName = "8 hours", Minutes = 480 },
+                new IntervalPreset { DisplayName = "12 hours", Minutes = 720 },
+                new IntervalPreset { DisplayName = "18 hours", Minutes = 1080 },
+                new IntervalPreset { DisplayName = "24 hours", Minutes = 1440 },
+                new IntervalPreset { DisplayName = "Custom...", Minutes = 30, IsCustom = true }
+            };
+
+            // Get screen resolution
+            var primaryScreen = System.Windows.Forms.Screen.PrimaryScreen;
+            if (primaryScreen != null)
+            {
+                ScreenWidth = primaryScreen.Bounds.Width;
+                ScreenHeight = primaryScreen.Bounds.Height;
+            }
 
             // Load current settings
             LoadCurrentSettings();
+
+            // Save original values for undo
+            SaveOriginalValues();
 
             // Initialize commands
             SaveCommand = new RelayCommand(OnSave);
             CancelCommand = new RelayCommand(OnCancel);
             BrowseCommand = new RelayCommand(OnBrowse);
-            TestWallpaperCommand = new RelayCommand(OnTestWallpaper);
-            ResetToDefaultsCommand = new RelayCommand(OnReset);
+            TestWallpaperCommand = new RelayCommand(async () => await OnTestWallpaperAsync());
+            ResetToDefaultsCommand = new RelayCommand(OnUndoChanges);
             SelectUrlModeCommand = new RelayCommand(() => SourceType = ImageSource.Url);
             SelectLocalFileModeCommand = new RelayCommand(() => SourceType = ImageSource.LocalFile);
+
+            // Initial preview load
+            _ = UpdatePreviewAsync();
+        }
+
+        private void SaveOriginalValues()
+        {
+            _originalImageUrl = _imageUrl;
+            _originalLocalImagePath = _localImagePath;
+            _originalSourceType = _sourceType;
+            _originalRefreshIntervalMinutes = _refreshIntervalMinutes;
+            _originalSelectedFitMode = _selectedFitMode;
         }
 
         private void LoadCurrentSettings()
@@ -149,10 +310,38 @@ namespace WallpaperApp.TrayApp.ViewModels
                 SourceType = settings.SourceType;
                 RefreshIntervalMinutes = settings.RefreshIntervalMinutes;
                 SelectedFitMode = settings.FitMode;
+
+                // Select the matching interval preset
+                var matchingPreset = IntervalPresets.FirstOrDefault(p => !p.IsCustom && p.Minutes == RefreshIntervalMinutes);
+                if (matchingPreset != null)
+                {
+                    SelectedIntervalPreset = matchingPreset;
+                }
+                else
+                {
+                    // Use custom
+                    SelectedIntervalPreset = IntervalPresets.Last(); // Custom option
+                    CustomIntervalValue = RefreshIntervalMinutes.ToString();
+                    CustomIntervalUnit = "Minutes";
+                }
             }
             catch
             {
                 // If loading fails, use defaults
+                SelectedIntervalPreset = IntervalPresets.FirstOrDefault(p => p.Minutes == 15);
+            }
+        }
+
+        private void UpdateCustomInterval()
+        {
+            if (SelectedIntervalPreset?.IsCustom ?? false)
+            {
+                if (int.TryParse(CustomIntervalValue, out int value) && value >= 1)
+                {
+                    int minutes = CustomIntervalUnit == "Hours" ? value * 60 : value;
+                    // Enforce minimum of 1 minute
+                    RefreshIntervalMinutes = Math.Max(1, minutes);
+                }
             }
         }
 
@@ -258,65 +447,224 @@ namespace WallpaperApp.TrayApp.ViewModels
             }
         }
 
-        private void OnTestWallpaper()
+        private async Task OnTestWallpaperAsync()
         {
             try
             {
+                string? imagePath = null;
+                bool isTempFile = false;
+
                 if (SourceType == ImageSource.LocalFile)
                 {
                     if (string.IsNullOrWhiteSpace(LocalImagePath))
                     {
                         MessageBox.Show("Please select a local image file first.",
-                            "Test Wallpaper", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            "Preview Image", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    imagePath = LocalImagePath;
+                }
+                else // URL mode
+                {
+                    ValidateUrl();
+                    if (!IsUrlValid)
+                    {
+                        MessageBox.Show("Please enter a valid HTTPS URL first.",
+                            "Preview Image", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
 
-                    _wallpaperService.SetWallpaper(LocalImagePath, SelectedFitMode);
-                    MessageBox.Show("Wallpaper set successfully!", "Test Wallpaper",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Download the image temporarily
+                    PreviewStatus = "Downloading image...";
+                    try
+                    {
+                        var response = await _httpClient.GetAsync(ImageUrl);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            MessageBox.Show($"Failed to download image: {response.StatusCode}",
+                                "Preview Image", MessageBoxButton.OK, MessageBoxImage.Error);
+                            PreviewStatus = "Download failed";
+                            return;
+                        }
+
+                        var tempPath = Path.Combine(Path.GetTempPath(), "WallpaperPreview", $"preview_{DateTime.Now:yyyyMMddHHmmss}.png");
+                        Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!);
+
+                        using (var fileStream = File.Create(tempPath))
+                        {
+                            await response.Content.CopyToAsync(fileStream);
+                        }
+
+                        if (!_imageValidator.IsValidImage(tempPath, out var format))
+                        {
+                            File.Delete(tempPath);
+                            MessageBox.Show("The URL does not contain a valid image.",
+                                "Preview Image", MessageBoxButton.OK, MessageBoxImage.Error);
+                            PreviewStatus = "Invalid image";
+                            return;
+                        }
+
+                        imagePath = tempPath;
+                        isTempFile = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to download image: {ex.Message}",
+                            "Preview Image", MessageBoxButton.OK, MessageBoxImage.Error);
+                        PreviewStatus = "Download failed";
+                        return;
+                    }
                 }
-                else
+
+                // Set the wallpaper
+                _wallpaperService.SetWallpaper(imagePath, SelectedFitMode);
+                MessageBox.Show("Wallpaper applied successfully!", "Preview Image",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                PreviewStatus = "Ready";
+
+                // Clean up temp file
+                if (isTempFile && imagePath != null && File.Exists(imagePath))
                 {
-                    MessageBox.Show(
-                        "Test wallpaper is only available for local files. Save your settings to test URL mode.",
-                        "Test Wallpaper", MessageBoxButton.OK, MessageBoxImage.Information);
+                    try { File.Delete(imagePath); } catch { }
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to set wallpaper: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                PreviewStatus = "Error";
             }
         }
 
-        private void OnReset()
+        private void OnUndoChanges()
         {
             var result = MessageBox.Show(
-                "Reset all settings to defaults?\n\nThis will:\n" +
-                "- Clear image URL/path\n" +
-                "- Reset refresh interval to 15 minutes\n" +
-                "- Set fit mode to Fit\n" +
-                "- Clear last-known-good image",
-                "Reset Settings", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                "Undo all changes since opening this window?",
+                "Undo Changes", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (result == MessageBoxResult.Yes)
             {
-                ImageUrl = string.Empty;
-                LocalImagePath = string.Empty;
-                RefreshIntervalMinutes = 15;
-                SelectedFitMode = WallpaperFitMode.Fit;
-                SourceType = ImageSource.Url;
+                ImageUrl = _originalImageUrl;
+                LocalImagePath = _originalLocalImagePath;
+                SourceType = _originalSourceType;
+                RefreshIntervalMinutes = _originalRefreshIntervalMinutes;
+                SelectedFitMode = _originalSelectedFitMode;
 
-                // Clear state (but keep IsFirstRun = false)
-                var state = _stateService.LoadState();
-                state.LastKnownGoodImagePath = null;
-                state.LastUpdateTime = null;
-                state.UpdateSuccessCount = 0;
-                state.UpdateFailureCount = 0;
-                _stateService.SaveState(state);
+                // Select the matching interval preset
+                var matchingPreset = IntervalPresets.FirstOrDefault(p => !p.IsCustom && p.Minutes == RefreshIntervalMinutes);
+                if (matchingPreset != null)
+                {
+                    SelectedIntervalPreset = matchingPreset;
+                }
+                else
+                {
+                    SelectedIntervalPreset = IntervalPresets.Last();
+                    CustomIntervalValue = RefreshIntervalMinutes.ToString();
+                    CustomIntervalUnit = "Minutes";
+                }
 
-                MessageBox.Show("Settings reset to defaults.", "Reset Complete",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                _ = UpdatePreviewAsync();
+            }
+        }
+
+        private async Task UpdatePreviewAsync()
+        {
+            try
+            {
+                string? imagePath = null;
+                bool isTempFile = false;
+
+                if (SourceType == ImageSource.LocalFile && !string.IsNullOrWhiteSpace(LocalImagePath))
+                {
+                    if (File.Exists(LocalImagePath))
+                    {
+                        imagePath = LocalImagePath;
+                        PreviewStatus = $"Preview: {Path.GetFileName(LocalImagePath)}";
+                    }
+                    else
+                    {
+                        PreviewStatus = "File not found";
+                        PreviewImage = null;
+                        return;
+                    }
+                }
+                else if (SourceType == ImageSource.Url && !string.IsNullOrWhiteSpace(ImageUrl))
+                {
+                    ValidateUrl();
+                    if (!IsUrlValid)
+                    {
+                        PreviewStatus = "Invalid URL";
+                        PreviewImage = null;
+                        return;
+                    }
+
+                    PreviewStatus = "Loading preview...";
+                    try
+                    {
+                        var response = await _httpClient.GetAsync(ImageUrl);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            PreviewStatus = "Download failed";
+                            PreviewImage = null;
+                            return;
+                        }
+
+                        var tempPath = Path.Combine(Path.GetTempPath(), "WallpaperPreview", $"preview_{DateTime.Now:yyyyMMddHHmmss}.png");
+                        Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!);
+
+                        using (var fileStream = File.Create(tempPath))
+                        {
+                            await response.Content.CopyToAsync(fileStream);
+                        }
+
+                        if (!_imageValidator.IsValidImage(tempPath, out var format))
+                        {
+                            File.Delete(tempPath);
+                            PreviewStatus = "Invalid image";
+                            PreviewImage = null;
+                            return;
+                        }
+
+                        imagePath = tempPath;
+                        isTempFile = true;
+                        PreviewStatus = $"Preview: {format} image from URL";
+                    }
+                    catch
+                    {
+                        PreviewStatus = "Failed to load preview";
+                        PreviewImage = null;
+                        return;
+                    }
+                }
+                else
+                {
+                    PreviewStatus = "Select an image to preview";
+                    PreviewImage = null;
+                    return;
+                }
+
+                // Load the image
+                if (imagePath != null)
+                {
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    PreviewImage = bitmap;
+
+                    // Clean up temp file
+                    if (isTempFile)
+                    {
+                        try { File.Delete(imagePath); } catch { }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                PreviewStatus = $"Error: {ex.Message}";
+                PreviewImage = null;
             }
         }
 
@@ -326,6 +674,11 @@ namespace WallpaperApp.TrayApp.ViewModels
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 
