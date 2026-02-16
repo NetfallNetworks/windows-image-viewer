@@ -28,7 +28,7 @@ namespace WallpaperApp.Services
         }
 
         /// <summary>
-        /// Sets the desktop wallpaper to the specified image file with default fit mode (Fill).
+        /// Sets the desktop wallpaper to the specified image file with default fit mode (Fit).
         /// </summary>
         /// <param name="imagePath">Path to the image file (absolute or relative).</param>
         /// <exception cref="FileNotFoundException">Thrown when the image file does not exist.</exception>
@@ -36,7 +36,7 @@ namespace WallpaperApp.Services
         /// <exception cref="WallpaperException">Thrown when the wallpaper cannot be set due to a Windows API error.</exception>
         public void SetWallpaper(string imagePath)
         {
-            SetWallpaper(imagePath, WallpaperFitMode.Fill); // Default mode
+            SetWallpaper(imagePath, WallpaperFitMode.Fit); // Default mode
         }
 
         /// <summary>
