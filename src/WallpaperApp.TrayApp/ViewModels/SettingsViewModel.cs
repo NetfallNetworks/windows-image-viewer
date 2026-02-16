@@ -6,6 +6,7 @@ using System.Windows.Input;
 using WallpaperApp.Configuration;
 using WallpaperApp.Models;
 using WallpaperApp.Services;
+using MessageBox = System.Windows.MessageBox;
 
 namespace WallpaperApp.TrayApp.ViewModels
 {

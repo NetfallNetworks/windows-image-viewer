@@ -21,7 +21,7 @@ namespace WallpaperApp.TrayApp.Converters
                     WallpaperFitMode.Stretch => "Stretch",
                     WallpaperFitMode.Tile => "Tile",
                     WallpaperFitMode.Center => "Center",
-                    _ => value.ToString()
+                    _ => value.ToString() ?? string.Empty
                 };
             }
             return value?.ToString() ?? string.Empty;

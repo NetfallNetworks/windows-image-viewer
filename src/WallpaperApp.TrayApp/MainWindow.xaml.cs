@@ -84,7 +84,6 @@ namespace WallpaperApp.TrayApp
             var contextMenu = new ContextMenuStrip();
 
             // Enable/Disable Toggle
-            var state = _appStateService.LoadState();
             var toggleItem = new ToolStripMenuItem("Enabled");
             toggleItem.CheckOnClick = true;
             toggleItem.Checked = state.IsEnabled;
