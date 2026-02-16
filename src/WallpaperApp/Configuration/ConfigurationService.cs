@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using System.Text.Json;
 
 namespace WallpaperApp.Configuration
 {
@@ -71,6 +72,37 @@ namespace WallpaperApp.Configuration
             }
 
             return settings;
+        }
+
+        /// <summary>
+        /// Saves configuration to WallpaperApp.json.
+        /// </summary>
+        /// <param name="settings">The settings to save.</param>
+        /// <exception cref="ConfigurationException">Thrown when configuration cannot be saved.</exception>
+        public void SaveConfiguration(AppSettings settings)
+        {
+            try
+            {
+                var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+
+                // Create configuration object with AppSettings section
+                var config = new
+                {
+                    AppSettings = settings
+                };
+
+                // Serialize with indentation for readability
+                var json = JsonSerializer.Serialize(config, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+                File.WriteAllText(configPath, json);
+            }
+            catch (Exception ex)
+            {
+                throw new ConfigurationException("Failed to save configuration to WallpaperApp.json", ex);
+            }
         }
     }
 }

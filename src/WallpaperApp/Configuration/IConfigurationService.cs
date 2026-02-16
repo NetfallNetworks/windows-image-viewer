@@ -11,5 +11,12 @@ namespace WallpaperApp.Configuration
         /// <returns>Validated application settings.</returns>
         /// <exception cref="ConfigurationException">Thrown when configuration is missing or invalid.</exception>
         AppSettings LoadConfiguration();
+
+        /// <summary>
+        /// Saves configuration to WallpaperApp.json.
+        /// </summary>
+        /// <param name="settings">The settings to save.</param>
+        /// <exception cref="ConfigurationException">Thrown when configuration cannot be saved.</exception>
+        void SaveConfiguration(AppSettings settings);
     }
 }

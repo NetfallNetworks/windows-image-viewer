@@ -6,10 +6,10 @@ echo "Running automated tests..."
 echo "========================================"
 echo ""
 
-cd "$(dirname "$0")/../src"
+cd "$(dirname "$0")/.."
 
 # Run tests with minimal verbosity for cleaner output
-dotnet test --verbosity minimal --nologo
+dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj --verbosity minimal --nologo
 
 # Check exit code
 if [ $? -eq 0 ]; then
