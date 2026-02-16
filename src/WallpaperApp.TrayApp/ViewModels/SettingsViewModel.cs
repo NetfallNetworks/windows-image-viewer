@@ -128,15 +128,67 @@ namespace WallpaperApp.TrayApp.ViewModels
 
         private void UpdatePreviewStretch()
         {
-            PreviewStretch = _selectedFitMode switch
+            // For Center and Tile modes, we use an ImageBrush instead of Image.Stretch
+            UseImageBrush = _selectedFitMode == WallpaperFitMode.Center || _selectedFitMode == WallpaperFitMode.Tile;
+
+            if (!UseImageBrush)
             {
-                WallpaperFitMode.Fit => System.Windows.Media.Stretch.Uniform,
-                WallpaperFitMode.Fill => System.Windows.Media.Stretch.UniformToFill,
-                WallpaperFitMode.Stretch => System.Windows.Media.Stretch.Fill,
-                WallpaperFitMode.Center => System.Windows.Media.Stretch.None,
-                WallpaperFitMode.Tile => System.Windows.Media.Stretch.None,
-                _ => System.Windows.Media.Stretch.Uniform
-            };
+                // For Fit, Fill, Stretch - use regular Image element with Stretch
+                PreviewStretch = _selectedFitMode switch
+                {
+                    WallpaperFitMode.Fit => System.Windows.Media.Stretch.Uniform,
+                    WallpaperFitMode.Fill => System.Windows.Media.Stretch.UniformToFill,
+                    WallpaperFitMode.Stretch => System.Windows.Media.Stretch.Fill,
+                    _ => System.Windows.Media.Stretch.Uniform
+                };
+                PreviewBrush = null;
+            }
+            else
+            {
+                // For Center and Tile - create ImageBrush with appropriate settings
+                UpdatePreviewBrush();
+            }
+        }
+
+        private void UpdatePreviewBrush()
+        {
+            if (PreviewImage == null)
+            {
+                PreviewBrush = null;
+                return;
+            }
+
+            var imageBrush = new System.Windows.Media.ImageBrush(PreviewImage);
+
+            if (_selectedFitMode == WallpaperFitMode.Center)
+            {
+                // Center mode: Show image at scaled size, centered, no tiling
+                imageBrush.Stretch = System.Windows.Media.Stretch.None;
+                imageBrush.AlignmentX = System.Windows.Media.AlignmentX.Center;
+                imageBrush.AlignmentY = System.Windows.Media.AlignmentY.Center;
+                imageBrush.TileMode = System.Windows.Media.TileMode.None;
+
+                // Scale the image down to match preview scale
+                imageBrush.Transform = new System.Windows.Media.ScaleTransform(PreviewScale, PreviewScale);
+            }
+            else if (_selectedFitMode == WallpaperFitMode.Tile)
+            {
+                // Tile mode: Show image at scaled size, tiled to fill
+                imageBrush.Stretch = System.Windows.Media.Stretch.None;
+                imageBrush.TileMode = System.Windows.Media.TileMode.Tile;
+
+                // Calculate viewport size (tile size) based on image dimensions and preview scale
+                if (PreviewImage is BitmapSource bitmap)
+                {
+                    double scaledWidth = bitmap.PixelWidth * PreviewScale;
+                    double scaledHeight = bitmap.PixelHeight * PreviewScale;
+
+                    imageBrush.Viewport = new System.Windows.Rect(0, 0, scaledWidth, scaledHeight);
+                    imageBrush.ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute;
+                }
+            }
+
+            PreviewBrush = imageBrush;
         }
 
         // Interval presets
@@ -263,6 +315,38 @@ namespace WallpaperApp.TrayApp.ViewModels
 
                 double aspectRatio = ScreenWidth / ScreenHeight;
                 return maxWidth / aspectRatio;
+            }
+        }
+
+        // Calculate scale factor for preview (how much smaller the preview is compared to real screen)
+        public double PreviewScale
+        {
+            get
+            {
+                if (ScreenWidth <= 0) return 1.0;
+                return PreviewWidth / ScreenWidth;
+            }
+        }
+
+        private bool _useImageBrush;
+        public bool UseImageBrush
+        {
+            get => _useImageBrush;
+            set
+            {
+                _useImageBrush = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private System.Windows.Media.Brush? _previewBrush;
+        public System.Windows.Media.Brush? PreviewBrush
+        {
+            get => _previewBrush;
+            set
+            {
+                _previewBrush = value;
+                OnPropertyChanged();
             }
         }
 
@@ -724,6 +808,12 @@ namespace WallpaperApp.TrayApp.ViewModels
                     bitmap.EndInit();
                     bitmap.Freeze();
                     PreviewImage = bitmap;
+
+                    // Update brush for Center/Tile modes
+                    if (UseImageBrush)
+                    {
+                        UpdatePreviewBrush();
+                    }
 
                     // Clean up temp file
                     if (isTempFile)

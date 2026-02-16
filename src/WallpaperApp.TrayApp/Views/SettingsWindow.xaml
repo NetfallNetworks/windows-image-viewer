@@ -10,6 +10,7 @@
 
     <Window.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:FitModeToStringConverter x:Key="FitModeToStringConverter"/>
     </Window.Resources>
@@ -37,8 +38,14 @@
                             <!-- Background -->
                             <Rectangle Fill="#000000"/>
 
-                            <!-- Image Preview -->
-                            <Image Source="{Binding PreviewImage}" Stretch="{Binding PreviewStretch}"/>
+                            <!-- Image Preview for Fit/Fill/Stretch modes -->
+                            <Image Source="{Binding PreviewImage}"
+                                   Stretch="{Binding PreviewStretch}"
+                                   Visibility="{Binding UseImageBrush, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+
+                            <!-- Rectangle with ImageBrush for Center/Tile modes -->
+                            <Rectangle Fill="{Binding PreviewBrush}"
+                                       Visibility="{Binding UseImageBrush, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                             <!-- Placeholder when no image -->
                             <TextBlock Text="Select an image source to see preview"
