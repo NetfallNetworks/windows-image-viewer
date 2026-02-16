@@ -1,5 +1,49 @@
 # Development Guidelines for Claude
 
+## Setup & Installation
+
+### Installing .NET SDK (Linux/Mac)
+
+If you don't have dotnet installed, use the official installation script:
+
+```bash
+wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+chmod +x dotnet-install.sh
+./dotnet-install.sh --channel 8.0
+```
+
+After installation, verify dotnet is available:
+
+```bash
+dotnet --version
+```
+
+### Installing .NET SDK (Windows)
+
+Download and install from: https://dotnet.microsoft.com/download
+
+Or use winget:
+
+```powershell
+winget install Microsoft.DotNet.SDK.8
+```
+
+### First-Time Setup
+
+Before making any changes, ensure the project builds and all tests pass:
+
+```bash
+# Linux/Mac
+dotnet build -c Release
+dotnet test
+
+# Windows
+.\scripts\build.bat
+.\scripts\test.bat
+```
+
+**If tests fail on initial setup, DO NOT proceed.** Investigate and resolve issues first to establish a clean baseline.
+
 ## Critical: Build & Test Before Pushing
 
 **ALWAYS** run the following before any git push:
@@ -16,6 +60,12 @@ dotnet test
 
 ## Testing Requirements
 
+**Before AND after making changes:**
+1. Run tests to verify starting state is clean
+2. Make your code changes
+3. Run tests again to verify nothing broke
+
+**Test quality standards:**
 - All tests must pass in Release configuration
 - No xUnit analyzer warnings (treat warnings as errors)
 - Verify thread safety tests complete without deadlocks
