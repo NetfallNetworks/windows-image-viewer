@@ -121,8 +121,22 @@ namespace WallpaperApp.TrayApp.ViewModels
             {
                 _selectedFitMode = value;
                 OnPropertyChanged();
+                UpdatePreviewStretch();
                 SchedulePreviewUpdate();
             }
+        }
+
+        private void UpdatePreviewStretch()
+        {
+            PreviewStretch = _selectedFitMode switch
+            {
+                WallpaperFitMode.Fit => System.Windows.Media.Stretch.Uniform,
+                WallpaperFitMode.Fill => System.Windows.Media.Stretch.UniformToFill,
+                WallpaperFitMode.Stretch => System.Windows.Media.Stretch.Fill,
+                WallpaperFitMode.Center => System.Windows.Media.Stretch.None,
+                WallpaperFitMode.Tile => System.Windows.Media.Stretch.None,
+                _ => System.Windows.Media.Stretch.Uniform
+            };
         }
 
         // Interval presets
@@ -189,6 +203,17 @@ namespace WallpaperApp.TrayApp.ViewModels
             set
             {
                 _previewStatus = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private System.Windows.Media.Stretch _previewStretch = System.Windows.Media.Stretch.Uniform;
+        public System.Windows.Media.Stretch PreviewStretch
+        {
+            get => _previewStretch;
+            set
+            {
+                _previewStretch = value;
                 OnPropertyChanged();
             }
         }
@@ -304,6 +329,9 @@ namespace WallpaperApp.TrayApp.ViewModels
 
             // Load current settings
             LoadCurrentSettings();
+
+            // Initialize preview stretch mode based on current fit mode
+            UpdatePreviewStretch();
 
             // Save original values for undo
             SaveOriginalValues();

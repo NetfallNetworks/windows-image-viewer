@@ -38,7 +38,7 @@
                             <Rectangle Fill="#000000"/>
 
                             <!-- Image Preview -->
-                            <Image Source="{Binding PreviewImage}" Stretch="Uniform"/>
+                            <Image Source="{Binding PreviewImage}" Stretch="{Binding PreviewStretch}"/>
 
                             <!-- Placeholder when no image -->
                             <TextBlock Text="Select an image source to see preview"
@@ -149,9 +149,9 @@
                 </TextBlock>
             </StackPanel>
 
-            <!-- Fit Mode Selector -->
+            <!-- Layout Selector -->
             <StackPanel Grid.Row="4" Margin="0,0,0,15">
-                <TextBlock Text="Wallpaper Fit Mode" FontWeight="Bold" FontSize="14" Margin="0,0,0,10"/>
+                <TextBlock Text="Wallpaper Layout" FontWeight="Bold" FontSize="14" Margin="0,0,0,10"/>
                 <ComboBox SelectedItem="{Binding SelectedFitMode}" Height="25">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
@@ -181,7 +181,7 @@
                     </ComboBox.Items>
                 </ComboBox>
                 <TextBlock Margin="0,5,0,0" Foreground="Gray" FontSize="11">
-                    <Run Text="ⓘ Fit shows the entire image; Fill crops to avoid black bars; Stretch may distort"/>
+                    <Run Text="ⓘ How the image is displayed: Fit shows entire image; Fill crops to avoid black bars; Stretch may distort"/>
                 </TextBlock>
             </StackPanel>
 

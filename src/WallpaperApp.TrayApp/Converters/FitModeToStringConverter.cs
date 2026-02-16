@@ -16,7 +16,7 @@ namespace WallpaperApp.TrayApp.Converters
             {
                 return fitMode switch
                 {
-                    WallpaperFitMode.Fill => "Fill (recommended)",
+                    WallpaperFitMode.Fill => "Fill",
                     WallpaperFitMode.Fit => "Fit",
                     WallpaperFitMode.Stretch => "Stretch",
                     WallpaperFitMode.Tile => "Tile",
@@ -33,7 +33,7 @@ namespace WallpaperApp.TrayApp.Converters
             {
                 return str switch
                 {
-                    "Fill (recommended)" => WallpaperFitMode.Fill,
+                    "Fill" => WallpaperFitMode.Fill,
                     "Fit" => WallpaperFitMode.Fit,
                     "Stretch" => WallpaperFitMode.Stretch,
                     "Tile" => WallpaperFitMode.Tile,
