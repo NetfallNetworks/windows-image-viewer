@@ -14,6 +14,8 @@ using WallpaperApp.Configuration;
 using WallpaperApp.Models;
 using WallpaperApp.Services;
 using MessageBox = System.Windows.MessageBox;
+using WpfImageSource = System.Windows.Media.ImageSource;
+using ModelImageSource = WallpaperApp.Models.ImageSource;
 
 namespace WallpaperApp.TrayApp.ViewModels
 {
@@ -39,9 +41,9 @@ namespace WallpaperApp.TrayApp.ViewModels
         private readonly HttpClient _httpClient;
 
         // Original values for undo functionality
-        private string _originalImageUrl;
-        private string _originalLocalImagePath;
-        private ImageSource _originalSourceType;
+        private string _originalImageUrl = string.Empty;
+        private string _originalLocalImagePath = string.Empty;
+        private ModelImageSource _originalSourceType;
         private int _originalRefreshIntervalMinutes;
         private WallpaperFitMode _originalSelectedFitMode;
 
@@ -71,8 +73,8 @@ namespace WallpaperApp.TrayApp.ViewModels
             }
         }
 
-        private ImageSource _sourceType = ImageSource.Url;
-        public ImageSource SourceType
+        private ModelImageSource _sourceType = ModelImageSource.Url;
+        public ModelImageSource SourceType
         {
             get => _sourceType;
             set
@@ -88,14 +90,14 @@ namespace WallpaperApp.TrayApp.ViewModels
 
         public bool IsUrlMode
         {
-            get => SourceType == ImageSource.Url;
-            set { if (value) SourceType = ImageSource.Url; }
+            get => SourceType == ModelImageSource.Url;
+            set { if (value) SourceType = ModelImageSource.Url; }
         }
 
         public bool IsLocalFileMode
         {
-            get => SourceType == ImageSource.LocalFile;
-            set { if (value) SourceType = ImageSource.LocalFile; }
+            get => SourceType == ModelImageSource.LocalFile;
+            set { if (value) SourceType = ModelImageSource.LocalFile; }
         }
 
         private int _refreshIntervalMinutes = 15;
@@ -167,8 +169,8 @@ namespace WallpaperApp.TrayApp.ViewModels
         }
 
         // Preview properties
-        private ImageSource? _previewImage;
-        public ImageSource? PreviewImage
+        private WpfImageSource? _previewImage;
+        public WpfImageSource? PreviewImage
         {
             get => _previewImage;
             set
@@ -284,8 +286,8 @@ namespace WallpaperApp.TrayApp.ViewModels
             BrowseCommand = new RelayCommand(OnBrowse);
             TestWallpaperCommand = new RelayCommand(async () => await OnTestWallpaperAsync());
             ResetToDefaultsCommand = new RelayCommand(OnUndoChanges);
-            SelectUrlModeCommand = new RelayCommand(() => SourceType = ImageSource.Url);
-            SelectLocalFileModeCommand = new RelayCommand(() => SourceType = ImageSource.LocalFile);
+            SelectUrlModeCommand = new RelayCommand(() => SourceType = ModelImageSource.Url);
+            SelectLocalFileModeCommand = new RelayCommand(() => SourceType = ModelImageSource.LocalFile);
 
             // Initial preview load
             _ = UpdatePreviewAsync();
@@ -347,7 +349,7 @@ namespace WallpaperApp.TrayApp.ViewModels
 
         private void ValidateUrl()
         {
-            if (SourceType != ImageSource.Url)
+            if (SourceType != ModelImageSource.Url)
             {
                 UrlValidationError = null;
                 return;
@@ -377,14 +379,14 @@ namespace WallpaperApp.TrayApp.ViewModels
         private void OnSave()
         {
             ValidateUrl();
-            if (!IsUrlValid && SourceType == ImageSource.Url)
+            if (!IsUrlValid && SourceType == ModelImageSource.Url)
             {
                 MessageBox.Show("Please fix validation errors before saving.",
                     "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (SourceType == ImageSource.LocalFile && string.IsNullOrWhiteSpace(LocalImagePath))
+            if (SourceType == ModelImageSource.LocalFile && string.IsNullOrWhiteSpace(LocalImagePath))
             {
                 MessageBox.Show("Please select a local image file.",
                     "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -454,7 +456,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 string? imagePath = null;
                 bool isTempFile = false;
 
-                if (SourceType == ImageSource.LocalFile)
+                if (SourceType == ModelImageSource.LocalFile)
                 {
                     if (string.IsNullOrWhiteSpace(LocalImagePath))
                     {
@@ -574,7 +576,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 string? imagePath = null;
                 bool isTempFile = false;
 
-                if (SourceType == ImageSource.LocalFile && !string.IsNullOrWhiteSpace(LocalImagePath))
+                if (SourceType == ModelImageSource.LocalFile && !string.IsNullOrWhiteSpace(LocalImagePath))
                 {
                     if (File.Exists(LocalImagePath))
                     {
@@ -588,7 +590,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                         return;
                     }
                 }
-                else if (SourceType == ImageSource.Url && !string.IsNullOrWhiteSpace(ImageUrl))
+                else if (SourceType == ModelImageSource.Url && !string.IsNullOrWhiteSpace(ImageUrl))
                 {
                     ValidateUrl();
                     if (!IsUrlValid)
