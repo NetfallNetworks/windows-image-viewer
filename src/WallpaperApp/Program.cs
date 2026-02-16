@@ -13,7 +13,7 @@ namespace WallpaperApp
         public static async Task<int> MainAsync(string[] args)
         {
             Console.WriteLine("========================================");
-            Console.WriteLine("Weather Wallpaper App");
+            Console.WriteLine("Wallpaper App");
             Console.WriteLine("========================================");
             Console.WriteLine();
             Console.WriteLine($"Executable Directory: {AppContext.BaseDirectory}");

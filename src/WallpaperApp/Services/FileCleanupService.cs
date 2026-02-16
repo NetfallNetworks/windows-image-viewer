@@ -13,7 +13,7 @@ namespace WallpaperApp.Services
         /// </summary>
         public FileCleanupService()
         {
-            _tempDirectory = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
+            _tempDirectory = Path.Combine(Path.GetTempPath(), "Wallpaper");
         }
 
         /// <summary>

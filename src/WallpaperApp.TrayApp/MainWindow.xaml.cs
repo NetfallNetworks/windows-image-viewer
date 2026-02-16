@@ -64,7 +64,7 @@ namespace WallpaperApp.TrayApp
             {
                 Icon = CreateDefaultIcon(),
                 Visible = true,
-                Text = "Weather Wallpaper"
+                Text = "Wallpaper"
             };
 
             // Create context menu
@@ -222,7 +222,7 @@ namespace WallpaperApp.TrayApp
             var settings = _configurationService.LoadConfiguration();
             var timeUntilNext = _nextRefreshTime - DateTime.Now;
 
-            var statusMessage = $"Weather Wallpaper Status\n\n" +
+            var statusMessage = $"Wallpaper Status\n\n" +
                               $"Status: {_status}\n" +
                               $"Refresh Interval: {settings.RefreshIntervalMinutes} minutes\n" +
                               $"Next Refresh: {_nextRefreshTime:HH:mm:ss}\n" +
@@ -230,17 +230,17 @@ namespace WallpaperApp.TrayApp
                               $"Image URL: {settings.ImageUrl}\n" +
                               $"Log File: {FileLogger.GetLogPath()}";
 
-            MessageBox.Show(statusMessage, "Weather Wallpaper Status", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(statusMessage, "Wallpaper Status", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void ShowAbout()
         {
             MessageBox.Show(
-                "Weather Wallpaper Tray App\n\n" +
-                "Automatically updates your wallpaper with weather images!\n\n" +
+                "Wallpaper Tray App\n\n" +
+                "Automatically updates your wallpaper!\n\n" +
                 "Right-click the tray icon for options.\n" +
                 "Double-click to view status.",
-                "About Weather Wallpaper",
+                "About Wallpaper",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
@@ -249,7 +249,7 @@ namespace WallpaperApp.TrayApp
         {
             try
             {
-                var tempPath = Path.Combine(Path.GetTempPath(), "WeatherWallpaperService");
+                var tempPath = Path.Combine(Path.GetTempPath(), "WallpaperService");
                 if (Directory.Exists(tempPath))
                 {
                     System.Diagnostics.Process.Start("explorer.exe", tempPath);
@@ -273,7 +273,7 @@ namespace WallpaperApp.TrayApp
         {
             if (_notifyIcon != null)
             {
-                var tooltip = $"Weather Wallpaper - {_status}";
+                var tooltip = $"Wallpaper - {_status}";
                 // Tooltip max length is 63 characters
                 if (tooltip.Length > 63)
                     tooltip = tooltip.Substring(0, 60) + "...";
@@ -291,7 +291,7 @@ namespace WallpaperApp.TrayApp
         {
             var result = MessageBox.Show(
                 "Are you sure you want to exit?\n\nWallpaper updates will stop until you restart the app.",
-                "Exit Weather Wallpaper",
+                "Exit Wallpaper",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 

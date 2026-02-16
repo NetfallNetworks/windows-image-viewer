@@ -20,8 +20,8 @@ namespace WallpaperApp.Services
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _imageValidator = imageValidator ?? throw new ArgumentNullException(nameof(imageValidator));
 
-            // Set temp directory to %TEMP%/WeatherWallpaper/
-            _tempDirectory = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
+            // Set temp directory to %TEMP%/Wallpaper/
+            _tempDirectory = Path.Combine(Path.GetTempPath(), "Wallpaper");
         }
 
         /// <summary>

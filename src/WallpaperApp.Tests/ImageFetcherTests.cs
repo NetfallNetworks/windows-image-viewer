@@ -31,8 +31,8 @@ namespace WallpaperApp.Tests
                     Directory.Delete(_testTempDirectory, recursive: true);
                 }
 
-                // Clean up WeatherWallpaper directory in actual TEMP
-                string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
+                // Clean up Wallpaper directory in actual TEMP
+                string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
                 if (Directory.Exists(weatherWallpaperDir))
                 {
                     // Only delete files created during tests, not the directory itself
@@ -97,7 +97,7 @@ namespace WallpaperApp.Tests
             // Assert
             Assert.NotNull(result);
             Assert.True(File.Exists(result));
-            Assert.Contains("WeatherWallpaper", result);
+            Assert.Contains("Wallpaper", result);
             Assert.EndsWith(".png", result);
         }
 
@@ -201,7 +201,7 @@ namespace WallpaperApp.Tests
 
             // Assert
             Assert.NotNull(result);
-            string expectedPath = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
+            string expectedPath = Path.Combine(Path.GetTempPath(), "Wallpaper");
             Assert.StartsWith(expectedPath, result);
         }
 
@@ -289,7 +289,7 @@ namespace WallpaperApp.Tests
             var fetcher = new ImageFetcher(httpClient, imageValidator);
 
             // Ensure directory doesn't exist (or delete it)
-            string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
+            string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
             if (Directory.Exists(weatherWallpaperDir))
             {
                 // Just verify it gets created/used - don't delete it as it might be in use
@@ -330,7 +330,7 @@ namespace WallpaperApp.Tests
             Assert.Null(result); // Should return null for invalid image
 
             // Verify file was deleted (doesn't exist in temp directory)
-            string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
+            string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
             if (Directory.Exists(weatherWallpaperDir))
             {
                 var files = Directory.GetFiles(weatherWallpaperDir, "wallpaper-*.png");
