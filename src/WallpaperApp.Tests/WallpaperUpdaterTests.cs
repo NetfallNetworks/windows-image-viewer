@@ -1,5 +1,6 @@
 using Moq;
 using WallpaperApp.Configuration;
+using WallpaperApp.Models;
 using WallpaperApp.Services;
 using WallpaperApp.Tests.Infrastructure;
 using Xunit;
@@ -47,7 +48,7 @@ namespace WallpaperApp.Tests
                 .ReturnsAsync(testImagePath);
 
             _mockWallpaperService
-                .Setup(w => w.SetWallpaper(testImagePath))
+                .Setup(w => w.SetWallpaper(testImagePath, It.IsAny<WallpaperFitMode>()))
                 .Verifiable();
 
             var updater = new WallpaperUpdater(
@@ -62,7 +63,7 @@ namespace WallpaperApp.Tests
             Assert.True(result);
             _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
-            _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath), Times.Once);
+            _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath, WallpaperFitMode.Fill), Times.Once);
         }
 
         [Fact]
@@ -93,7 +94,7 @@ namespace WallpaperApp.Tests
             Assert.False(result);
             _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
-            _mockWallpaperService.Verify(w => w.SetWallpaper(It.IsAny<string>()), Times.Never);
+            _mockWallpaperService.Verify(w => w.SetWallpaper(It.IsAny<string>(), It.IsAny<WallpaperFitMode>()), Times.Never);
         }
 
         [Fact]
@@ -114,7 +115,7 @@ namespace WallpaperApp.Tests
                 .ReturnsAsync(testImagePath);
 
             _mockWallpaperService
-                .Setup(w => w.SetWallpaper(testImagePath))
+                .Setup(w => w.SetWallpaper(testImagePath, It.IsAny<WallpaperFitMode>()))
                 .Throws(new WallpaperException("Failed to set wallpaper"));
 
             var updater = new WallpaperUpdater(
@@ -129,7 +130,7 @@ namespace WallpaperApp.Tests
             Assert.False(result);
             _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
-            _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath), Times.Once);
+            _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath, WallpaperFitMode.Fill), Times.Once);
         }
 
         [Fact]
@@ -152,7 +153,7 @@ namespace WallpaperApp.Tests
             Assert.False(result);
             _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync(It.IsAny<string>()), Times.Never);
-            _mockWallpaperService.Verify(w => w.SetWallpaper(It.IsAny<string>()), Times.Never);
+            _mockWallpaperService.Verify(w => w.SetWallpaper(It.IsAny<string>(), It.IsAny<WallpaperFitMode>()), Times.Never);
         }
 
         [Fact]

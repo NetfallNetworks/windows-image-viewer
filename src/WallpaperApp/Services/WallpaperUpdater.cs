@@ -53,7 +53,7 @@ namespace WallpaperApp.Services
 
                 // Step 3: Set wallpaper
                 Console.WriteLine("Setting wallpaper...");
-                _wallpaperService.SetWallpaper(downloadedPath);
+                _wallpaperService.SetWallpaper(downloadedPath, settings.FitMode); // Story WS-4
                 Console.WriteLine("✓ Wallpaper updated");
                 Console.WriteLine();
 
