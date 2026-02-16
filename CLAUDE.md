@@ -44,57 +44,77 @@ dotnet test
 
 **If tests fail on initial setup, DO NOT proceed.** Investigate and resolve issues first to establish a clean baseline.
 
-## Critical: Build & Test Before Pushing
+## ⛔ CRITICAL: MANDATORY TESTING POLICY ⛔
 
-**⚠️ MANDATORY: ALL TESTS MUST PASS BEFORE COMMITTING ⚠️**
+### ABSOLUTE REQUIREMENTS - NO EXCEPTIONS
 
-**NEVER commit code without running and verifying tests pass. This is NON-NEGOTIABLE.**
+**YOU MUST RUN TESTS AFTER EVERY SINGLE CODE CHANGE. PERIOD.**
 
-```bash
-# On Linux/Mac (add dotnet to PATH first)
-export PATH="$PATH:/root/.dotnet"
-dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj
+This is not a suggestion. This is not optional. This is not "when convenient."
 
-# On Windows
-.\scripts\build.bat
-.\scripts\test.bat
+### THE RULE
+
+```
+IF you modify ANY .cs or .xaml file
+THEN you MUST run: dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj
+AND tests MUST show: "Passed! - Failed: 0, Passed: 88, Skipped: 0"
+BEFORE you commit or push ANYTHING
 ```
 
-**Expected result: "Passed! - Failed: 0, Passed: 88"**
+### ENFORCEMENT
 
-If ANY test fails, you MUST fix it before proceeding.
+1. **Before making changes:** Run tests to establish baseline
+2. **After making changes:** Run tests to verify nothing broke
+3. **Before committing:** Run tests one final time
+4. **If tests fail:** FIX THE CODE, don't commit broken code
+5. **Never ever:** Commit without running tests
 
-## Testing Requirements
+### THE COMMAND
 
-**CRITICAL WORKFLOW - Follow this EXACTLY:**
+```bash
+export PATH="$PATH:/root/.dotnet"
+dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj
+```
 
-1. **BEFORE making any code changes:**
-   ```bash
-   export PATH="$PATH:/root/.dotnet"
-   dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj
-   ```
-   Verify all 88 tests pass. If any fail, investigate FIRST.
+### WHAT SUCCESS LOOKS LIKE
 
-2. **Make your code changes**
+```
+Passed!  - Failed:     0, Passed:    88, Skipped:     0, Total:    88
+```
 
-3. **AFTER making changes:**
-   ```bash
-   export PATH="$PATH:/root/.dotnet"
-   dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj
-   ```
-   ALL tests MUST pass. If any fail:
-   - Analyze the failure
-   - Fix the code
-   - Re-run tests
-   - Repeat until ALL tests pass
+**If you see ANY failed tests, you MUST fix them before proceeding.**
 
-4. **ONLY AFTER all tests pass: commit and push**
+### WHAT FAILURE LOOKS LIKE
 
-**DO NOT return to the user until tests pass. This is your responsibility.**
+```
+Failed!  - Failed:     1, Passed:    87, Skipped:     0, Total:    88
+```
 
-**Test quality standards:**
+**This means you broke something. DO NOT COMMIT. FIX IT FIRST.**
+
+### NO EXCUSES
+
+- ❌ "The tests probably pass" - RUN THEM
+- ❌ "It's a small change" - RUN THEM
+- ❌ "I'll test later" - NO, TEST NOW
+- ❌ "Just XAML changes" - RUN THEM
+- ❌ "Tests take too long" - THEY TAKE 2 MINUTES, RUN THEM
+- ❌ "I'm confident it works" - PROVE IT, RUN THEM
+
+### YOUR RESPONSIBILITY
+
+You are PERSONALLY RESPONSIBLE for ensuring:
+1. ✅ Tests are run after EVERY code change
+2. ✅ ALL 88 tests pass before committing
+3. ✅ You show the test results to prove they passed
+4. ✅ No compiler warnings or errors
+5. ✅ You fix any failures immediately
+
+### Test Quality Standards
+
 - All 88 tests must pass - NO EXCEPTIONS
 - Zero test failures allowed
+- Zero tests skipped
 - No compiler warnings (treat warnings as errors)
 - No xUnit analyzer warnings
 - Platform-specific tests must handle both Windows and Linux correctly
@@ -106,10 +126,24 @@ If ANY test fails, you MUST fix it before proceeding.
 
 ## Git Workflow
 
+**MANDATORY SEQUENCE - DO NOT DEVIATE:**
+
 1. Develop on designated feature branch (e.g., `claude/wallpaper-sync-phase-1-9oLWN`)
-2. Run build & test scripts
-3. Commit with clear messages
-4. Push only after all tests pass
+2. **RUN TESTS** - `dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj`
+3. **VERIFY** - Confirm all 88 tests passed in the output
+4. **ONLY IF TESTS PASS:** Commit with clear messages
+5. **BEFORE PUSHING:** Run tests one more time to be absolutely sure
+6. **ONLY IF TESTS PASS:** Push to remote
+
+### Communicating with the User
+
+When reporting your work to the user, you MUST:
+1. ✅ Show the actual test command you ran
+2. ✅ Show the test results (pass/fail counts)
+3. ✅ Explicitly state "All 88 tests passed"
+4. ❌ Do NOT say "tests pass" without proving it
+5. ❌ Do NOT assume tests pass without running them
+6. ❌ Do NOT say "should work" - prove it with tests
 
 ## Code Quality
 
