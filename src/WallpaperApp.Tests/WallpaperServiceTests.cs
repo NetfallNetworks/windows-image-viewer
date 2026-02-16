@@ -13,7 +13,8 @@ namespace WallpaperApp.Tests
         public WallpaperServiceTests()
         {
             _fixture = new TestDirectoryFixture("WallpaperServiceTests");
-            _service = new WallpaperService();
+            var imageValidator = new ImageValidator();
+            _service = new WallpaperService(imageValidator);
         }
 
         public void Dispose()
@@ -77,8 +78,7 @@ namespace WallpaperApp.Tests
 
             // Act & Assert
             var exception = Assert.Throws<InvalidImageException>(() => _service.SetWallpaper(invalidFile));
-            Assert.Contains("Invalid image format", exception.Message);
-            Assert.Contains(".txt", exception.Message);
+            Assert.Contains("Invalid image file", exception.Message);
             Assert.Contains("Only PNG, JPG, and BMP formats are supported", exception.Message);
         }
 
@@ -163,7 +163,7 @@ namespace WallpaperApp.Tests
 
             // Act & Assert
             var exception = Assert.Throws<InvalidImageException>(() => _service.SetWallpaper(filePath));
-            Assert.Contains("Invalid image format", exception.Message);
+            Assert.Contains("Invalid image file", exception.Message);
             Assert.Contains("Only PNG, JPG, and BMP formats are supported", exception.Message);
         }
 

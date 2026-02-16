@@ -11,12 +11,19 @@ namespace WallpaperApp.Services
         private const int SPIF_UPDATEINIFILE = 0x01;
         private const int SPIF_SENDCHANGE = 0x02;
 
+        private readonly IImageValidator _imageValidator;
+
         [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern int SystemParametersInfo(
             int uAction,
             int uParam,
             string lpvParam,
             int fuWinIni);
+
+        public WallpaperService(IImageValidator imageValidator)
+        {
+            _imageValidator = imageValidator ?? throw new ArgumentNullException(nameof(imageValidator));
+        }
 
         /// <summary>
         /// Sets the desktop wallpaper to the specified image file.
@@ -36,13 +43,14 @@ namespace WallpaperApp.Services
                 throw new FileNotFoundException($"Image file not found at: {absolutePath}", absolutePath);
             }
 
-            // Validate file format
-            string extension = Path.GetExtension(absolutePath).ToLowerInvariant();
-            if (extension != ".png" && extension != ".jpg" && extension != ".jpeg" && extension != ".bmp")
+            // Validate using magic bytes instead of extension (Security Fix)
+            if (!_imageValidator.IsValidImage(absolutePath, out var format))
             {
                 throw new InvalidImageException(
-                    $"Invalid image format: {extension}. Only PNG, JPG, and BMP formats are supported.");
+                    "Invalid image file. Only PNG, JPG, and BMP formats are supported.");
             }
+
+            FileLogger.Log($"Validated {format} image: {absolutePath}");
 
             // Call Windows API to set wallpaper
             int result = SystemParametersInfo(

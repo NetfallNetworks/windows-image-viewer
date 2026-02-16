@@ -6,16 +6,19 @@ namespace WallpaperApp.Services
     public class ImageFetcher : IImageFetcher
     {
         private readonly HttpClient _httpClient;
+        private readonly IImageValidator _imageValidator;
         private readonly string _tempDirectory;
 
         /// <summary>
-        /// Initializes a new instance of ImageFetcher with an HttpClient.
+        /// Initializes a new instance of ImageFetcher with an HttpClient and ImageValidator.
         /// </summary>
         /// <param name="httpClient">The HttpClient to use for downloads.
         /// Should be configured with a 30-second timeout.</param>
-        public ImageFetcher(HttpClient httpClient)
+        /// <param name="imageValidator">The validator to check downloaded files.</param>
+        public ImageFetcher(HttpClient httpClient, IImageValidator imageValidator)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _imageValidator = imageValidator ?? throw new ArgumentNullException(nameof(imageValidator));
 
             // Set temp directory to %TEMP%/WeatherWallpaper/
             _tempDirectory = Path.Combine(Path.GetTempPath(), "WeatherWallpaper");
@@ -57,7 +60,15 @@ namespace WallpaperApp.Services
                     await response.Content.CopyToAsync(fileStream);
                 }
 
-                LogInformation($"Downloaded image from {url} to {fullPath}");
+                // Validate the downloaded file (Security Fix - Story WS-1)
+                if (!_imageValidator.IsValidImage(fullPath, out var format))
+                {
+                    LogError($"Downloaded file failed validation: {url}");
+                    File.Delete(fullPath); // Delete invalid file
+                    return null;
+                }
+
+                LogInformation($"Downloaded valid {format} image from {url} to {fullPath}");
                 return fullPath;
             }
             catch (TaskCanceledException)

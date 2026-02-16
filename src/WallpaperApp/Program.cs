@@ -65,7 +65,8 @@ namespace WallpaperApp
                     Console.WriteLine($"Story 4: Downloading image from: {settings.ImageUrl}");
 
                     using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-                    var imageFetcher = new ImageFetcher(httpClient);
+                    var imageValidator = new ImageValidator();
+                    var imageFetcher = new ImageFetcher(httpClient, imageValidator);
 
                     var downloadedPath = await imageFetcher.DownloadImageAsync(settings.ImageUrl);
 
@@ -102,7 +103,8 @@ namespace WallpaperApp
                     Console.WriteLine($"Story 3: Setting wallpaper to: {testImagePath}");
                     Console.WriteLine();
 
-                    var wallpaperService = new WallpaperService();
+                    var imageValidator = new ImageValidator();
+                    var wallpaperService = new WallpaperService(imageValidator);
                     wallpaperService.SetWallpaper(testImagePath);
 
                     Console.WriteLine("✓ Wallpaper set successfully");
