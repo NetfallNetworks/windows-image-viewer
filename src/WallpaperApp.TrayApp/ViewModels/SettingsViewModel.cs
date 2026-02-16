@@ -225,10 +225,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             get
             {
                 const double maxWidth = 620.0;
-                if (ScreenWidth <= 0 || ScreenHeight <= 0) return maxWidth;
-
-                double aspectRatio = ScreenWidth / ScreenHeight;
-                return maxWidth;
+                return maxWidth; // Always use max width, height adjusts to maintain aspect ratio
             }
         }
 
