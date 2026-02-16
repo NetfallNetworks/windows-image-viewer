@@ -24,7 +24,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo ✅ Build successful!
+echo [OK] Build successful!
 echo.
 
 echo ========================================
@@ -45,7 +45,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo ✅ All tests passed!
+echo [OK] All tests passed!
 echo.
 
 echo ========================================
@@ -81,11 +81,11 @@ if errorlevel 1 (
 
 echo.
 echo ========================================
-echo ✅ BUILD PIPELINE COMPLETE!
+echo [SUCCESS] BUILD PIPELINE COMPLETE!
 echo ========================================
-echo   ✅ Build successful
-echo   ✅ All tests passed (88/88)
-echo   ✅ Applications published to .\publish\
+echo   [OK] Build successful
+echo   [OK] All tests passed (88/88)
+echo   [OK] Applications published to .\publish\
 echo ========================================
 pause
 exit /b 0
