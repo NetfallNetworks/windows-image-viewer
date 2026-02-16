@@ -1,4 +1,4 @@
-# Publish script for Weather Wallpaper Tray App
+# Publish script for Wallpaper Tray App
 # This script publishes the tray app as a single-file executable ready for installation
 
 param(
@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Weather Wallpaper - Publish Tray App" -ForegroundColor Cyan
+Write-Host "Wallpaper - Publish Tray App" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host
 

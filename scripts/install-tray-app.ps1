@@ -1,4 +1,4 @@
-# Installation script for Weather Wallpaper Tray App
+# Installation script for Wallpaper Tray App
 # This script copies the app to a permanent location and adds it to Windows Startup
 
 param(
@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Weather Wallpaper - Install Tray App" -ForegroundColor Cyan
+Write-Host "Wallpaper - Install Tray App" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host
 
@@ -16,7 +16,7 @@ Write-Host
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootPath = Split-Path -Parent $scriptPath
 $buildPath = Join-Path $rootPath "bin\TrayApp"
-$installPath = Join-Path $env:LOCALAPPDATA "WeatherWallpaper"
+$installPath = Join-Path $env:LOCALAPPDATA "Wallpaper"
 $startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Start Menu\Programs\Startup")
 
 # Check if build exists
@@ -68,14 +68,14 @@ Write-Host
 if ($AutoStart) {
     Write-Host "Adding to Windows Startup..." -ForegroundColor Yellow
 
-    $shortcutPath = Join-Path $startupFolder "Weather Wallpaper.lnk"
+    $shortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
     $targetPath = Join-Path $installPath "WallpaperApp.TrayApp.exe"
 
     $WshShell = New-Object -ComObject WScript.Shell
     $Shortcut = $WshShell.CreateShortcut($shortcutPath)
     $Shortcut.TargetPath = $targetPath
     $Shortcut.WorkingDirectory = $installPath
-    $Shortcut.Description = "Weather Wallpaper Tray App"
+    $Shortcut.Description = "Wallpaper Tray App"
     $Shortcut.Save()
 
     Write-Host "Startup shortcut created" -ForegroundColor Green
@@ -113,7 +113,7 @@ Write-Host
 
 $startNow = Read-Host "Would you like to start the tray app now? (y/n)"
 if ($startNow -eq "y" -or $startNow -eq "Y") {
-    Write-Host "Starting Weather Wallpaper..." -ForegroundColor Yellow
+    Write-Host "Starting Wallpaper..." -ForegroundColor Yellow
     Start-Process -FilePath (Join-Path $installPath "WallpaperApp.TrayApp.exe") -WorkingDirectory $installPath
     Start-Sleep -Seconds 2
     Write-Host "App started! Check your system tray (bottom-right corner)" -ForegroundColor Green
