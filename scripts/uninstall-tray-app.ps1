@@ -1,17 +1,17 @@
-# Uninstallation script for Weather Wallpaper Tray App
+# Uninstallation script for Wallpaper Tray App
 # This script removes the app from Windows Startup and deletes installation files
 
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Weather Wallpaper - Uninstall Tray App" -ForegroundColor Cyan
+Write-Host "Wallpaper - Uninstall Tray App" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host
 
 # Get paths
-$installPath = Join-Path $env:LOCALAPPDATA "WeatherWallpaper"
+$installPath = Join-Path $env:LOCALAPPDATA "Wallpaper"
 $startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Start Menu\Programs\Startup")
-$shortcutPath = Join-Path $startupFolder "Weather Wallpaper.lnk"
+$shortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
 
 # Check if running
 $processName = "WallpaperApp.TrayApp"
@@ -52,7 +52,7 @@ if (Test-Path $installPath) {
 Write-Host
 
 # Clean up temp files (optional)
-$tempPath = Join-Path $env:TEMP "WeatherWallpaperService"
+$tempPath = Join-Path $env:TEMP "WallpaperService"
 if (Test-Path $tempPath) {
     $cleanTemp = Read-Host "Would you like to delete downloaded wallpaper images? (y/n)"
     if ($cleanTemp -eq "y" -or $cleanTemp -eq "Y") {
@@ -67,6 +67,6 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "UNINSTALL COMPLETE!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host
-Write-Host "The Weather Wallpaper tray app has been removed." -ForegroundColor Cyan
-Write-Host "Thank you for using Weather Wallpaper!" -ForegroundColor Cyan
+Write-Host "The Wallpaper tray app has been removed." -ForegroundColor Cyan
+Write-Host "Thank you for using Wallpaper!" -ForegroundColor Cyan
 Write-Host
