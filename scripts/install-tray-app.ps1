@@ -77,8 +77,19 @@ if ($AutoStart) {
     Write-Host
 }
 
-# Configuration info
+# Ensure configuration file exists
 $configPath = Join-Path $installPath "WallpaperApp.json"
+if (-not (Test-Path $configPath)) {
+    Write-Host "Creating default configuration..." -ForegroundColor Yellow
+    $defaultConfig = @{
+        AppSettings = @{
+            ImageUrl = "https://weather.zamflam.com/latest.png"
+            RefreshIntervalMinutes = 15
+        }
+    }
+    $defaultConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $configPath -Encoding UTF8
+    Write-Host "Default configuration created" -ForegroundColor Green
+}
 Write-Host "Configuration location: $configPath" -ForegroundColor Cyan
 Write-Host "  (You can edit settings through the tray app later)" -ForegroundColor Gray
 Write-Host

@@ -25,6 +25,7 @@
   <ItemGroup>
     <None Update="WallpaperApp.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </None>
   </ItemGroup>
 
