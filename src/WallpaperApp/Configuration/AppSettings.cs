@@ -21,9 +21,9 @@ namespace WallpaperApp.Configuration
 
         /// <summary>
         /// How the wallpaper image should be displayed (fill, fit, stretch, tile, center).
-        /// Default: Fit (shows entire image, may add letterboxing).
+        /// Default: Fill (recommended - maintains aspect ratio while filling screen).
         /// </summary>
-        public WallpaperFitMode FitMode { get; set; } = WallpaperFitMode.Fit;
+        public WallpaperFitMode FitMode { get; set; } = WallpaperFitMode.Fill;
 
         /// <summary>
         /// Whether to show desktop notifications for wallpaper updates.

@@ -67,21 +67,29 @@ namespace WallpaperApp.Services
 
             FileLogger.Log($"Validated {format} image: {absolutePath}");
 
-            // Set wallpaper style in registry (Story WS-4)
-            SetWallpaperStyleRegistry(fitMode);
-
-            // Call Windows API to set wallpaper
-            int result = SystemParametersInfo(
-                SPI_SETDESKWALLPAPER,
-                0,
-                absolutePath,
-                SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-
-            if (result == 0)
+            try
             {
-                int errorCode = Marshal.GetLastWin32Error();
+                // Set wallpaper style in registry (Story WS-4)
+                SetWallpaperStyleRegistry(fitMode);
+
+                // Call Windows API to set wallpaper
+                int result = SystemParametersInfo(
+                    SPI_SETDESKWALLPAPER,
+                    0,
+                    absolutePath,
+                    SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+
+                if (result == 0)
+                {
+                    int errorCode = Marshal.GetLastWin32Error();
+                    throw new WallpaperException(
+                        $"Failed to set wallpaper. Windows API error code: {errorCode}");
+                }
+            }
+            catch (DllNotFoundException ex)
+            {
                 throw new WallpaperException(
-                    $"Failed to set wallpaper. Windows API error code: {errorCode}");
+                    "Windows API not available on this platform. This application requires Windows.", ex);
             }
         }
 

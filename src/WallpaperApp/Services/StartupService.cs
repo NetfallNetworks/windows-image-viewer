@@ -41,14 +41,23 @@ namespace WallpaperApp.Services
             // Create shortcut using IWshRuntimeLibrary (Windows Script Host)
             try
             {
-                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                Type? shellType = Type.GetTypeFromProgID("WScript.Shell");
                 if (shellType == null)
                 {
                     throw new InvalidOperationException("Could not create WScript.Shell object");
                 }
 
-                dynamic shell = Activator.CreateInstance(shellType);
-                dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                dynamic? shell = Activator.CreateInstance(shellType);
+                if (shell == null)
+                {
+                    throw new InvalidOperationException("Could not instantiate WScript.Shell");
+                }
+
+                dynamic? shortcut = shell.CreateShortcut(shortcutPath);
+                if (shortcut == null)
+                {
+                    throw new InvalidOperationException("Could not create shortcut");
+                }
                 shortcut.TargetPath = targetPath;
                 shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath);
                 shortcut.Description = "Wallpaper Sync - Automatic wallpaper updates";

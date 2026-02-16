@@ -86,7 +86,15 @@ namespace WallpaperApp.Tests
             // Assert
             // Note: This test makes a real HTTP call. It will succeed if the network is available
             // and the server is up. For a true unit test, HTTP should be mocked.
-            Assert.Equal(0, exitCode);
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.Equal(0, exitCode);
+            }
+            else
+            {
+                // On non-Windows, setting wallpaper will fail with WallpaperException
+                Assert.Equal(1, exitCode);
+            }
         }
 
         [Fact]
@@ -116,7 +124,15 @@ namespace WallpaperApp.Tests
             var exitCode = Program.Main(new[] { testImagePath });
 
             // Assert
-            Assert.Equal(0, exitCode);
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.Equal(0, exitCode);
+            }
+            else
+            {
+                // On non-Windows, setting wallpaper will fail with WallpaperException
+                Assert.Equal(1, exitCode);
+            }
         }
 
         [Fact]
