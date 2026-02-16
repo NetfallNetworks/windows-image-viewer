@@ -58,8 +58,17 @@ namespace WallpaperApp.TrayApp.ViewModels
             }
         }
 
-        public bool IsUrlMode => SourceType == ImageSource.Url;
-        public bool IsLocalFileMode => SourceType == ImageSource.LocalFile;
+        public bool IsUrlMode
+        {
+            get => SourceType == ImageSource.Url;
+            set { if (value) SourceType = ImageSource.Url; }
+        }
+
+        public bool IsLocalFileMode
+        {
+            get => SourceType == ImageSource.LocalFile;
+            set { if (value) SourceType = ImageSource.LocalFile; }
+        }
 
         private int _refreshIntervalMinutes = 15;
         public int RefreshIntervalMinutes
