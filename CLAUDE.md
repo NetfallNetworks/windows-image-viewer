@@ -56,8 +56,8 @@ This is not a suggestion. This is not optional. This is not "when convenient."
 
 ```
 IF you modify ANY .cs or .xaml file
-THEN you MUST run: dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj
-AND tests MUST show: "Passed! - Failed: 0, Passed: 88, Skipped: 0"
+THEN you MUST run: ./scripts/build.sh && ./scripts/test.sh
+AND tests MUST show: "✅ All tests passed!" with 88 tests passing
 BEFORE you commit or push ANYTHING
 ```
 
@@ -69,11 +69,24 @@ BEFORE you commit or push ANYTHING
 4. **If tests fail:** FIX THE CODE, don't commit broken code
 5. **Never ever:** Commit without running tests
 
-### THE COMMAND
+### THE COMMANDS
 
+**On Linux/Mac:**
+```bash
+./scripts/build.sh && ./scripts/test.sh
+```
+
+**On Windows:**
+```powershell
+.\scripts\build.bat
+.\scripts\test.bat
+```
+
+**Alternative (if scripts aren't executable):**
 ```bash
 export PATH="$PATH:/root/.dotnet"
-dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj
+dotnet build WallpaperApp.sln -c Release --warnaserror
+dotnet test --verbosity minimal --nologo
 ```
 
 ### WHAT SUCCESS LOOKS LIKE
@@ -129,21 +142,23 @@ You are PERSONALLY RESPONSIBLE for ensuring:
 **MANDATORY SEQUENCE - DO NOT DEVIATE:**
 
 1. Develop on designated feature branch (e.g., `claude/wallpaper-sync-phase-1-9oLWN`)
-2. **RUN TESTS** - `dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj`
-3. **VERIFY** - Confirm all 88 tests passed in the output
-4. **ONLY IF TESTS PASS:** Commit with clear messages
-5. **BEFORE PUSHING:** Run tests one more time to be absolutely sure
-6. **ONLY IF TESTS PASS:** Push to remote
+2. **BUILD** - `./scripts/build.sh` (Linux/Mac) or `.\scripts\build.bat` (Windows)
+3. **RUN TESTS** - `./scripts/test.sh` (Linux/Mac) or `.\scripts\test.bat` (Windows)
+4. **VERIFY** - Confirm "✅ All tests passed!" appears
+5. **ONLY IF BUILD & TESTS PASS:** Commit with clear messages
+6. **BEFORE PUSHING:** Build and test one more time to be absolutely sure
+7. **ONLY IF BUILD & TESTS PASS:** Push to remote
 
 ### Communicating with the User
 
 When reporting your work to the user, you MUST:
-1. ✅ Show the actual test command you ran
-2. ✅ Show the test results (pass/fail counts)
-3. ✅ Explicitly state "All 88 tests passed"
-4. ❌ Do NOT say "tests pass" without proving it
-5. ❌ Do NOT assume tests pass without running them
-6. ❌ Do NOT say "should work" - prove it with tests
+1. ✅ Show the actual build and test commands you ran
+2. ✅ Show the build output confirming successful compilation
+3. ✅ Show the test results (pass/fail counts)
+4. ✅ Explicitly state "✅ All tests passed!" (88 tests)
+5. ❌ Do NOT say "tests pass" without proving it with actual command output
+6. ❌ Do NOT assume tests pass without running them
+7. ❌ Do NOT say "should work" - prove it with build and tests
 
 ## Code Quality
 

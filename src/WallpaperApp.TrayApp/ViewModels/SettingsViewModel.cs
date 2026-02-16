@@ -40,7 +40,7 @@ namespace WallpaperApp.TrayApp.ViewModels
         private readonly IWallpaperService _wallpaperService;
         private readonly IImageValidator _imageValidator;
         private readonly HttpClient _httpClient;
-        private Timer? _previewDebounceTimer;
+        private System.Threading.Timer? _previewDebounceTimer;
 
         // Original values for undo functionality
         private string _originalImageUrl = string.Empty;
@@ -603,11 +603,11 @@ namespace WallpaperApp.TrayApp.ViewModels
             _previewDebounceTimer?.Dispose();
 
             // Schedule new update after 1000ms
-            _previewDebounceTimer = new Timer(
+            _previewDebounceTimer = new System.Threading.Timer(
                 async _ => await Application.Current.Dispatcher.InvokeAsync(async () => await UpdatePreviewAsync()),
                 null,
                 1000, // 1 second debounce
-                Timeout.Infinite);
+                System.Threading.Timeout.Infinite);
         }
 
         private async Task UpdatePreviewAsync()
