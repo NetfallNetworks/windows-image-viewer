@@ -30,19 +30,19 @@ winget install Microsoft.DotNet.SDK.8
 
 ### First-Time Setup
 
-Before making any changes, ensure the project builds and all tests pass:
+Before making any changes, run the build pipeline to ensure everything works:
 
 ```bash
 # Linux/Mac
-dotnet build -c Release
-dotnet test
+./scripts/build.sh
 
 # Windows
 .\scripts\build.bat
-.\scripts\test.bat
 ```
 
-**If tests fail on initial setup, DO NOT proceed.** Investigate and resolve issues first to establish a clean baseline.
+This will build, test, and publish all applications.
+
+**If the pipeline fails on initial setup, DO NOT proceed.** Investigate and resolve issues first to establish a clean baseline.
 
 ## ⛔ CRITICAL: MANDATORY TESTING POLICY ⛔
 
@@ -56,8 +56,8 @@ This is not a suggestion. This is not optional. This is not "when convenient."
 
 ```
 IF you modify ANY .cs or .xaml file
-THEN you MUST run: ./scripts/build.sh && ./scripts/test.sh
-AND tests MUST show: "✅ All tests passed!" with 88 tests passing
+THEN you MUST run: ./scripts/build.sh
+AND it MUST show: "✅ BUILD PIPELINE COMPLETE!" with all tests passing
 BEFORE you commit or push ANYTHING
 ```
 
@@ -69,33 +69,44 @@ BEFORE you commit or push ANYTHING
 4. **If tests fail:** FIX THE CODE, don't commit broken code
 5. **Never ever:** Commit without running tests
 
-### THE COMMANDS
+### THE COMMAND
 
 **On Linux/Mac:**
 ```bash
-./scripts/build.sh && ./scripts/test.sh
+./scripts/build.sh
 ```
 
 **On Windows:**
 ```powershell
 .\scripts\build.bat
-.\scripts\test.bat
 ```
 
-**Alternative (if scripts aren't executable):**
+This single command does EVERYTHING:
+1. ✅ Builds all projects with warnings as errors
+2. ✅ Runs all 88 tests
+3. ✅ Publishes applications to ./publish/
+
+**Alternative (if script isn't executable):**
 ```bash
 export PATH="$PATH:/root/.dotnet"
-dotnet build WallpaperApp.sln -c Release --warnaserror
-dotnet test --verbosity minimal --nologo
+dotnet build WallpaperApp.sln -c Release --warnaserror && \
+dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj --verbosity minimal --nologo && \
+dotnet publish src/WallpaperApp/WallpaperApp.csproj -c Release -o publish/WallpaperApp
 ```
 
 ### WHAT SUCCESS LOOKS LIKE
 
 ```
-Passed!  - Failed:     0, Passed:    88, Skipped:     0, Total:    88
+======================================
+✅ BUILD PIPELINE COMPLETE!
+======================================
+  ✅ Build successful
+  ✅ All tests passed (88/88)
+  ✅ Applications published to ./publish/
+======================================
 ```
 
-**If you see ANY failed tests, you MUST fix them before proceeding.**
+**If you see ANY failed tests or build errors, you MUST fix them before proceeding.**
 
 ### WHAT FAILURE LOOKS LIKE
 
@@ -142,23 +153,22 @@ You are PERSONALLY RESPONSIBLE for ensuring:
 **MANDATORY SEQUENCE - DO NOT DEVIATE:**
 
 1. Develop on designated feature branch (e.g., `claude/wallpaper-sync-phase-1-9oLWN`)
-2. **BUILD** - `./scripts/build.sh` (Linux/Mac) or `.\scripts\build.bat` (Windows)
-3. **RUN TESTS** - `./scripts/test.sh` (Linux/Mac) or `.\scripts\test.bat` (Windows)
-4. **VERIFY** - Confirm "✅ All tests passed!" appears
-5. **ONLY IF BUILD & TESTS PASS:** Commit with clear messages
-6. **BEFORE PUSHING:** Build and test one more time to be absolutely sure
-7. **ONLY IF BUILD & TESTS PASS:** Push to remote
+2. **RUN BUILD PIPELINE** - `./scripts/build.sh` (Linux/Mac) or `.\scripts\build.bat` (Windows)
+3. **VERIFY** - Confirm "✅ BUILD PIPELINE COMPLETE!" appears
+4. **ONLY IF PIPELINE SUCCEEDS:** Commit with clear messages
+5. **BEFORE PUSHING:** Run build pipeline one more time to be absolutely sure
+6. **ONLY IF PIPELINE SUCCEEDS:** Push to remote
 
 ### Communicating with the User
 
 When reporting your work to the user, you MUST:
-1. ✅ Show the actual build and test commands you ran
-2. ✅ Show the build output confirming successful compilation
-3. ✅ Show the test results (pass/fail counts)
-4. ✅ Explicitly state "✅ All tests passed!" (88 tests)
-5. ❌ Do NOT say "tests pass" without proving it with actual command output
-6. ❌ Do NOT assume tests pass without running them
-7. ❌ Do NOT say "should work" - prove it with build and tests
+1. ✅ Show the actual build pipeline command you ran (./scripts/build.sh)
+2. ✅ Show the complete pipeline output (build, tests, publish)
+3. ✅ Explicitly state "✅ BUILD PIPELINE COMPLETE!" appeared
+4. ✅ Confirm all 88 tests passed in the output
+5. ❌ Do NOT say "pipeline succeeds" without proving it with actual command output
+6. ❌ Do NOT assume success without running the full pipeline
+7. ❌ Do NOT say "should work" - prove it by running ./scripts/build.sh
 
 ## Code Quality
 
