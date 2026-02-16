@@ -38,16 +38,36 @@ namespace WallpaperApp.Configuration
             var settings = config.GetSection("AppSettings").Get<AppSettings>()
                 ?? throw new ConfigurationException("AppSettings section not found in WallpaperApp.json");
 
-            // Validation: ImageUrl cannot be empty
-            if (string.IsNullOrWhiteSpace(settings.ImageUrl))
+            // Validate based on source type (Story WS-3)
+            if (settings.SourceType == Models.ImageSource.LocalFile)
             {
-                throw new ConfigurationException("ImageUrl cannot be empty");
-            }
+                // Validation: LocalImagePath is required for local file mode
+                if (string.IsNullOrWhiteSpace(settings.LocalImagePath))
+                {
+                    throw new ConfigurationException(
+                        "LocalImagePath is required when SourceType is LocalFile");
+                }
 
-            // Validation: ImageUrl must use HTTPS
-            if (!settings.ImageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                // Validation: Local file must exist
+                if (!File.Exists(settings.LocalImagePath))
+                {
+                    throw new ConfigurationException(
+                        $"Local image file not found: {settings.LocalImagePath}");
+                }
+            }
+            else // ImageSource.Url
             {
-                throw new ConfigurationException("ImageUrl must use HTTPS protocol for security");
+                // Validation: ImageUrl cannot be empty
+                if (string.IsNullOrWhiteSpace(settings.ImageUrl))
+                {
+                    throw new ConfigurationException("ImageUrl cannot be empty");
+                }
+
+                // Validation: ImageUrl must use HTTPS
+                if (!settings.ImageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ConfigurationException("ImageUrl must use HTTPS protocol for security");
+                }
             }
 
             return settings;
