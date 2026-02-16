@@ -69,7 +69,7 @@ namespace WallpaperApp.Tests
             Assert.True(result);
             _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
-            _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath, WallpaperFitMode.Fill), Times.Once);
+            _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath, WallpaperFitMode.Fit), Times.Once);
             _mockAppStateService.Verify(s => s.UpdateLastKnownGood(testImagePath), Times.Once);
             _mockAppStateService.Verify(s => s.IncrementSuccessCount(), Times.Once);
             _mockFileCleanupService.Verify(c => c.CleanupOldFiles(It.IsAny<int>(), It.IsAny<int>()), Times.Once);
@@ -148,7 +148,7 @@ namespace WallpaperApp.Tests
             Assert.False(result);
             _mockConfigurationService.Verify(c => c.LoadConfiguration(), Times.Once);
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
-            _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath, WallpaperFitMode.Fill), Times.Once);
+            _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath, WallpaperFitMode.Fit), Times.Once);
             _mockAppStateService.Verify(s => s.IncrementFailureCount(), Times.Once);
         }
 
@@ -287,7 +287,7 @@ namespace WallpaperApp.Tests
             // Assert
             Assert.True(result); // Success via fallback
             _mockImageFetcher.Verify(f => f.DownloadImageAsync("https://weather.zamflam.com/latest.png"), Times.Once);
-            _mockWallpaperService.Verify(w => w.SetWallpaper(lastKnownGoodPath, WallpaperFitMode.Fill), Times.Once);
+            _mockWallpaperService.Verify(w => w.SetWallpaper(lastKnownGoodPath, WallpaperFitMode.Fit), Times.Once);
             _mockAppStateService.Verify(s => s.IncrementFailureCount(), Times.Once); // Still counts as a failure
         }
 

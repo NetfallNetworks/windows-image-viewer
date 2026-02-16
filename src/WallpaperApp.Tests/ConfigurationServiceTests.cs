@@ -152,7 +152,7 @@ namespace WallpaperApp.Tests
             var settings = service.LoadConfiguration();
 
             // Assert - New properties should have defaults
-            Assert.Equal(WallpaperFitMode.Fill, settings.FitMode);
+            Assert.Equal(WallpaperFitMode.Fit, settings.FitMode);
             Assert.False(settings.EnableNotifications);
             Assert.Null(settings.LocalImagePath);
             Assert.Equal(ImageSource.Url, settings.SourceType);
