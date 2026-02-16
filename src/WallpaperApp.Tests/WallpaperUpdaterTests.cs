@@ -15,6 +15,7 @@ namespace WallpaperApp.Tests
         private readonly Mock<IImageFetcher> _mockImageFetcher;
         private readonly Mock<IWallpaperService> _mockWallpaperService;
         private readonly Mock<IAppStateService> _mockAppStateService;
+        private readonly Mock<IFileCleanupService> _mockFileCleanupService;
 
         public WallpaperUpdaterTests()
         {
@@ -25,6 +26,7 @@ namespace WallpaperApp.Tests
             _mockImageFetcher = new Mock<IImageFetcher>();
             _mockWallpaperService = new Mock<IWallpaperService>();
             _mockAppStateService = new Mock<IAppStateService>();
+            _mockFileCleanupService = new Mock<IFileCleanupService>();
         }
 
         public void Dispose()
@@ -57,7 +59,8 @@ namespace WallpaperApp.Tests
                 _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object,
-                _mockAppStateService.Object);
+                _mockAppStateService.Object,
+                _mockFileCleanupService.Object);
 
             // Act
             var result = await updater.UpdateWallpaperAsync();
@@ -69,6 +72,7 @@ namespace WallpaperApp.Tests
             _mockWallpaperService.Verify(w => w.SetWallpaper(testImagePath, WallpaperFitMode.Fill), Times.Once);
             _mockAppStateService.Verify(s => s.UpdateLastKnownGood(testImagePath), Times.Once);
             _mockAppStateService.Verify(s => s.IncrementSuccessCount(), Times.Once);
+            _mockFileCleanupService.Verify(c => c.CleanupOldFiles(It.IsAny<int>(), It.IsAny<int>()), Times.Once);
         }
 
         [Fact]
@@ -95,7 +99,8 @@ namespace WallpaperApp.Tests
                 _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object,
-                _mockAppStateService.Object);
+                _mockAppStateService.Object,
+                _mockFileCleanupService.Object);
 
             // Act
             var result = await updater.UpdateWallpaperAsync();
@@ -133,7 +138,8 @@ namespace WallpaperApp.Tests
                 _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object,
-                _mockAppStateService.Object);
+                _mockAppStateService.Object,
+                _mockFileCleanupService.Object);
 
             // Act
             var result = await updater.UpdateWallpaperAsync();
@@ -158,7 +164,8 @@ namespace WallpaperApp.Tests
                 _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object,
-                _mockAppStateService.Object);
+                _mockAppStateService.Object,
+                _mockFileCleanupService.Object);
 
             // Act
             var result = await updater.UpdateWallpaperAsync();
@@ -179,7 +186,8 @@ namespace WallpaperApp.Tests
                     null!,
                     _mockImageFetcher.Object,
                     _mockWallpaperService.Object,
-                    _mockAppStateService.Object));
+                    _mockAppStateService.Object,
+                    _mockFileCleanupService.Object));
         }
 
         [Fact]
@@ -191,7 +199,8 @@ namespace WallpaperApp.Tests
                     _mockConfigurationService.Object,
                     null!,
                     _mockWallpaperService.Object,
-                    _mockAppStateService.Object));
+                    _mockAppStateService.Object,
+                    _mockFileCleanupService.Object));
         }
 
         [Fact]
@@ -203,7 +212,8 @@ namespace WallpaperApp.Tests
                     _mockConfigurationService.Object,
                     _mockImageFetcher.Object,
                     null!,
-                    _mockAppStateService.Object));
+                    _mockAppStateService.Object,
+                    _mockFileCleanupService.Object));
         }
 
         [Fact]
@@ -215,6 +225,20 @@ namespace WallpaperApp.Tests
                     _mockConfigurationService.Object,
                     _mockImageFetcher.Object,
                     _mockWallpaperService.Object,
+                    null!,
+                    _mockFileCleanupService.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullFileCleanupService_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() =>
+                new WallpaperUpdater(
+                    _mockConfigurationService.Object,
+                    _mockImageFetcher.Object,
+                    _mockWallpaperService.Object,
+                    _mockAppStateService.Object,
                     null!));
         }
 
@@ -254,7 +278,8 @@ namespace WallpaperApp.Tests
                 _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object,
-                _mockAppStateService.Object);
+                _mockAppStateService.Object,
+                _mockFileCleanupService.Object);
 
             // Act
             var result = await updater.UpdateWallpaperAsync();
@@ -293,7 +318,8 @@ namespace WallpaperApp.Tests
                 _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object,
-                _mockAppStateService.Object);
+                _mockAppStateService.Object,
+                _mockFileCleanupService.Object);
 
             // Act
             var result = await updater.UpdateWallpaperAsync();
@@ -331,7 +357,8 @@ namespace WallpaperApp.Tests
                 _mockConfigurationService.Object,
                 _mockImageFetcher.Object,
                 _mockWallpaperService.Object,
-                _mockAppStateService.Object);
+                _mockAppStateService.Object,
+                _mockFileCleanupService.Object);
 
             // Act
             var result = await updater.UpdateWallpaperAsync();

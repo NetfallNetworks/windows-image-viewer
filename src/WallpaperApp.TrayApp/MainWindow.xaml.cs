@@ -48,6 +48,7 @@ namespace WallpaperApp.TrayApp
             services.AddSingleton<IConfigurationService, ConfigurationService>();
             services.AddSingleton<IImageValidator, ImageValidator>();
             services.AddSingleton<IAppStateService, AppStateService>();
+            services.AddSingleton<IFileCleanupService, FileCleanupService>();
             services.AddSingleton<IWallpaperService, WallpaperService>();
             services.AddHttpClient<IImageFetcher, ImageFetcher>()
                 .ConfigureHttpClient(client =>

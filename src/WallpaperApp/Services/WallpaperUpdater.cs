@@ -11,17 +11,20 @@ namespace WallpaperApp.Services
         private readonly IImageFetcher _imageFetcher;
         private readonly IWallpaperService _wallpaperService;
         private readonly IAppStateService _appStateService;
+        private readonly IFileCleanupService _fileCleanupService;
 
         public WallpaperUpdater(
             IConfigurationService configurationService,
             IImageFetcher imageFetcher,
             IWallpaperService wallpaperService,
-            IAppStateService appStateService)
+            IAppStateService appStateService,
+            IFileCleanupService fileCleanupService)
         {
             _configurationService = configurationService ?? throw new ArgumentNullException(nameof(configurationService));
             _imageFetcher = imageFetcher ?? throw new ArgumentNullException(nameof(imageFetcher));
             _wallpaperService = wallpaperService ?? throw new ArgumentNullException(nameof(wallpaperService));
             _appStateService = appStateService ?? throw new ArgumentNullException(nameof(appStateService));
+            _fileCleanupService = fileCleanupService ?? throw new ArgumentNullException(nameof(fileCleanupService));
         }
 
         /// <summary>
@@ -88,6 +91,9 @@ namespace WallpaperApp.Services
                 // Story WS-5: Save as last-known-good on success
                 _appStateService.UpdateLastKnownGood(downloadedPath);
                 _appStateService.IncrementSuccessCount();
+
+                // Story WS-6: Cleanup old files after successful update
+                _fileCleanupService.CleanupOldFiles();
 
                 return true;
             }
