@@ -17,6 +17,23 @@ namespace WallpaperApp.Tests
         {
             if (Directory.Exists(_testDirectory))
             {
+                // Remove read-only attributes from all files before deleting
+                foreach (var file in Directory.GetFiles(_testDirectory, "*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        var fileInfo = new FileInfo(file);
+                        if (fileInfo.IsReadOnly)
+                        {
+                            fileInfo.IsReadOnly = false;
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore errors when removing read-only attribute
+                    }
+                }
+
                 Directory.Delete(_testDirectory, true);
             }
         }

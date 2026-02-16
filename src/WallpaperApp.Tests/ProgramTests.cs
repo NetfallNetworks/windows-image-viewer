@@ -68,17 +68,31 @@ namespace WallpaperApp.Tests
         }
 
         [Fact]
-        public void DownloadMode_ValidConfig_DownloadsImage()
+        public async Task DownloadMode_ValidConfig_DownloadsImage()
         {
             // Arrange - Create valid config file
             var configContent = @"{
   ""AppSettings"": {
-    ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
+    ""ImageUrl"": ""https://weather.zamflam.com/assets/diagram.png"",
     ""RefreshIntervalMinutes"": 15
   }
 }";
             // Write config to AppContext.BaseDirectory where ConfigurationService looks for it
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json"), configContent);
+
+            // Check if the URL is actually reachable before testing
+            // This makes the test more robust against network failures
+            bool urlIsReachable = false;
+            try
+            {
+                using var testClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+                var response = await testClient.GetAsync("https://weather.zamflam.com/assets/diagram.png", HttpCompletionOption.ResponseHeadersRead);
+                urlIsReachable = response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                // URL not reachable - test will verify graceful failure
+            }
 
             // Act
             var exitCode = Program.Main(new[] { "--download" });
@@ -86,13 +100,15 @@ namespace WallpaperApp.Tests
             // Assert
             // Note: This test makes a real HTTP call. It will succeed if the network is available
             // and the server is up. For a true unit test, HTTP should be mocked.
-            if (OperatingSystem.IsWindows())
+            if (OperatingSystem.IsWindows() && urlIsReachable)
             {
+                // On Windows with reachable URL, download should succeed
                 Assert.Equal(0, exitCode);
             }
             else
             {
-                // On non-Windows, setting wallpaper will fail with WallpaperException
+                // On non-Windows or when URL is unreachable, expect failure
+                // This is expected behavior - the app should fail gracefully
                 Assert.Equal(1, exitCode);
             }
         }
