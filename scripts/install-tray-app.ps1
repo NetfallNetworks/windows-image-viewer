@@ -31,21 +31,15 @@ if (-not (Test-Path $exePath)) {
     exit 1
 }
 
-# Check if already running
+# Check if already running and stop it
 $processName = "WallpaperApp.TrayApp"
 $runningProcess = Get-Process -Name $processName -ErrorAction SilentlyContinue
 if ($runningProcess) {
-    Write-Host "WARNING: The tray app is currently running." -ForegroundColor Yellow
-    Write-Host "   Please close it first (right-click tray icon -> Exit)" -ForegroundColor Yellow
+    Write-Host "Stopping running instance..." -ForegroundColor Yellow
+    $runningProcess | Stop-Process -Force
+    Start-Sleep -Seconds 1
+    Write-Host "Stopped existing instance" -ForegroundColor Green
     Write-Host
-    $continue = Read-Host "Press Enter to continue after closing the app, or Ctrl+C to cancel"
-
-    # Check again
-    $runningProcess = Get-Process -Name $processName -ErrorAction SilentlyContinue
-    if ($runningProcess) {
-        Write-Host "ERROR: App is still running. Please close it and try again." -ForegroundColor Red
-        exit 1
-    }
 }
 
 # Create install directory
@@ -83,22 +77,13 @@ if ($AutoStart) {
     Write-Host
 }
 
-# Configuration setup
-Write-Host "Configuration Setup" -ForegroundColor Yellow
-Write-Host
+# Configuration info
 $configPath = Join-Path $installPath "WallpaperApp.json"
-Write-Host "The app will use the configuration at:" -ForegroundColor Cyan
-Write-Host "  $configPath" -ForegroundColor White
+Write-Host "Configuration location: $configPath" -ForegroundColor Cyan
+Write-Host "  (You can edit settings through the tray app later)" -ForegroundColor Gray
 Write-Host
 
-$editConfig = Read-Host "Would you like to edit the configuration now? (y/n)"
-if ($editConfig -eq "y" -or $editConfig -eq "Y") {
-    notepad $configPath
-    Write-Host "Configuration saved" -ForegroundColor Green
-    Write-Host
-}
-
-# Offer to start now
+# Installation complete - launch the app
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "INSTALLATION COMPLETE!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
@@ -111,19 +96,12 @@ if ($AutoStart) {
 }
 Write-Host
 
-$startNow = Read-Host "Would you like to start the tray app now? (y/n)"
-if ($startNow -eq "y" -or $startNow -eq "Y") {
-    Write-Host "Starting Wallpaper..." -ForegroundColor Yellow
-    Start-Process -FilePath (Join-Path $installPath "WallpaperApp.TrayApp.exe") -WorkingDirectory $installPath
-    Start-Sleep -Seconds 2
-    Write-Host "App started! Check your system tray (bottom-right corner)" -ForegroundColor Green
-    Write-Host
-    Write-Host "Tip: Right-click the tray icon for options" -ForegroundColor Cyan
-} else {
-    Write-Host "You can start it manually by running:" -ForegroundColor Yellow
-    Write-Host "  $installPath\WallpaperApp.TrayApp.exe" -ForegroundColor White
-    Write-Host
-    Write-Host "Or just log out and back in - it will start automatically!" -ForegroundColor Cyan
-}
+# Automatically start the app
+Write-Host "Starting Wallpaper..." -ForegroundColor Yellow
+Start-Process -FilePath (Join-Path $installPath "WallpaperApp.TrayApp.exe") -WorkingDirectory $installPath
+Start-Sleep -Seconds 2
 
+Write-Host "App started! Check your system tray (bottom-right corner)" -ForegroundColor Green
+Write-Host
+Write-Host "Tip: Right-click the tray icon for options and settings" -ForegroundColor Cyan
 Write-Host
