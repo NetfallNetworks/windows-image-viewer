@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using WallpaperApp.Configuration;
 using WallpaperApp.Services;
+using WallpaperApp.TrayApp.Views;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
 using DrawingFont = System.Drawing.Font;
@@ -20,6 +21,10 @@ namespace WallpaperApp.TrayApp
         private readonly IServiceProvider _serviceProvider;
         private readonly IWallpaperUpdater _wallpaperUpdater;
         private readonly IConfigurationService _configurationService;
+        private readonly IAppStateService _appStateService;
+        private readonly IWallpaperService _wallpaperService;
+        private readonly IImageValidator _imageValidator;
+        private readonly IStartupService _startupService;
         private DateTime _nextRefreshTime;
         private string _status = "Initializing...";
 
@@ -35,6 +40,10 @@ namespace WallpaperApp.TrayApp
             // Get services
             _wallpaperUpdater = _serviceProvider.GetRequiredService<IWallpaperUpdater>();
             _configurationService = _serviceProvider.GetRequiredService<IConfigurationService>();
+            _appStateService = _serviceProvider.GetRequiredService<IAppStateService>();
+            _wallpaperService = _serviceProvider.GetRequiredService<IWallpaperService>();
+            _imageValidator = _serviceProvider.GetRequiredService<IImageValidator>();
+            _startupService = _serviceProvider.GetRequiredService<IStartupService>();
 
             // Initialize system tray
             InitializeTrayIcon();
@@ -50,6 +59,7 @@ namespace WallpaperApp.TrayApp
             services.AddSingleton<IAppStateService, AppStateService>();
             services.AddSingleton<IFileCleanupService, FileCleanupService>();
             services.AddSingleton<IWallpaperService, WallpaperService>();
+            services.AddSingleton<IStartupService, StartupService>();
             services.AddHttpClient<IImageFetcher, ImageFetcher>()
                 .ConfigureHttpClient(client =>
                 {
@@ -60,15 +70,28 @@ namespace WallpaperApp.TrayApp
 
         private void InitializeTrayIcon()
         {
+            // Load current state to set initial icon
+            var state = _appStateService.LoadState();
+
             _notifyIcon = new NotifyIcon
             {
-                Icon = CreateDefaultIcon(),
+                Icon = CreateTrayIcon(state.IsEnabled),
                 Visible = true,
-                Text = "Wallpaper"
+                Text = state.IsEnabled ? "Wallpaper Sync" : "Wallpaper Sync (Disabled)"
             };
 
             // Create context menu
             var contextMenu = new ContextMenuStrip();
+
+            // Enable/Disable Toggle
+            var state = _appStateService.LoadState();
+            var toggleItem = new ToolStripMenuItem("Enabled");
+            toggleItem.CheckOnClick = true;
+            toggleItem.Checked = state.IsEnabled;
+            toggleItem.Click += OnToggleEnabled;
+            contextMenu.Items.Add(toggleItem);
+
+            contextMenu.Items.Add(new ToolStripSeparator());
 
             var refreshItem = new ToolStripMenuItem("🔄 Refresh Now");
             refreshItem.Click += async (s, e) => await RefreshNowAsync();
@@ -86,6 +109,13 @@ namespace WallpaperApp.TrayApp
 
             contextMenu.Items.Add(new ToolStripSeparator());
 
+            var startupItem = new ToolStripMenuItem("Run at Startup");
+            startupItem.CheckOnClick = true;
+            startupItem.Click += OnToggleStartup;
+            contextMenu.Items.Add(startupItem);
+
+            contextMenu.Items.Add(new ToolStripSeparator());
+
             var aboutItem = new ToolStripMenuItem("ℹ️ About");
             aboutItem.Click += (s, e) => ShowAbout();
             contextMenu.Items.Add(aboutItem);
@@ -94,22 +124,85 @@ namespace WallpaperApp.TrayApp
             exitItem.Click += (s, e) => ExitApplication();
             contextMenu.Items.Add(exitItem);
 
+            // Update checkmarks when menu opens
+            contextMenu.Opening += (s, e) =>
+            {
+                var currentState = _appStateService.LoadState();
+                toggleItem.Checked = currentState.IsEnabled;
+                startupItem.Checked = _startupService.IsStartupEnabled();
+            };
+
             _notifyIcon.ContextMenuStrip = contextMenu;
+
+            // Left-click to open settings
+            _notifyIcon.Click += OnTrayIconClick;
 
             // Double-click to show status
             _notifyIcon.DoubleClick += (s, e) => ShowStatus();
         }
 
-        private DrawingIcon CreateDefaultIcon()
+        private void OnTrayIconClick(object? sender, EventArgs e)
         {
-            // Create a simple icon (you can replace this with a real .ico file)
+            // Only handle left-click (right-click shows context menu)
+            if (sender is NotifyIcon notifyIcon && e is MouseEventArgs mouseEvent)
+            {
+                if (mouseEvent.Button == MouseButtons.Left)
+                {
+                    ShowSettingsWindow();
+                }
+            }
+        }
+
+        private void ShowSettingsWindow()
+        {
+            try
+            {
+                var settingsWindow = new SettingsWindow(
+                    _configurationService,
+                    _appStateService,
+                    _wallpaperService,
+                    _imageValidator);
+
+                settingsWindow.Show();
+                settingsWindow.Activate(); // Bring to front
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogError("Failed to open settings window", ex);
+                MessageBox.Show($"Failed to open settings: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private DrawingIcon CreateTrayIcon(bool isEnabled)
+        {
             var bitmap = new Bitmap(32, 32);
             using (var g = Graphics.FromImage(bitmap))
             {
-                g.Clear(Color.FromArgb(0, 120, 212)); // Windows blue
-                g.DrawString("W", new DrawingFont("Segoe UI", 20, DrawingFontStyle.Bold), Brushes.White, new PointF(4, 2));
+                // Choose color based on enabled state
+                var bgColor = isEnabled
+                    ? Color.FromArgb(0, 120, 212)   // Blue (#0078D4)
+                    : Color.FromArgb(128, 128, 128); // Gray (#808080)
+
+                g.Clear(bgColor);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                var font = new DrawingFont("Segoe UI", 20, DrawingFontStyle.Bold);
+                g.DrawString("W", font, Brushes.White, new PointF(4, 2));
             }
             return DrawingIcon.FromHandle(bitmap.GetHicon());
+        }
+
+        private void UpdateTrayIcon(bool isEnabled)
+        {
+            if (_notifyIcon != null)
+            {
+                _notifyIcon.Icon?.Dispose();
+                _notifyIcon.Icon = CreateTrayIcon(isEnabled);
+                _notifyIcon.Text = isEnabled
+                    ? "Wallpaper Sync"
+                    : "Wallpaper Sync (Disabled)";
+            }
         }
 
         private async void StartWallpaperUpdates()
@@ -117,6 +210,28 @@ namespace WallpaperApp.TrayApp
             try
             {
                 FileLogger.Log("=== Tray App Starting ===");
+
+                // Check for first run and show welcome wizard
+                var state = _appStateService.LoadState();
+                if (state.IsFirstRun)
+                {
+                    FileLogger.Log("First run detected - showing welcome wizard");
+                    var wizard = new WelcomeWizard(_configurationService, _appStateService);
+                    wizard.ShowDialog(); // Modal - blocks until wizard completes
+
+                    // Reload state after wizard
+                    state = _appStateService.LoadState();
+                }
+
+                // Check if enabled
+                if (!state.IsEnabled)
+                {
+                    FileLogger.Log("Wallpaper updates are disabled - not starting timer");
+                    _status = "Disabled";
+                    UpdateTrayIconText();
+                    UpdateTrayIcon(false);
+                    return;
+                }
 
                 // Load configuration
                 var settings = _configurationService.LoadConfiguration();
@@ -285,6 +400,66 @@ namespace WallpaperApp.TrayApp
         private void ShowBalloonTip(string title, string message, ToolTipIcon icon)
         {
             _notifyIcon?.ShowBalloonTip(3000, title, message, icon);
+        }
+
+        private void OnToggleEnabled(object? sender, EventArgs e)
+        {
+            var state = _appStateService.LoadState();
+            state.IsEnabled = !state.IsEnabled;
+            _appStateService.SaveState(state);
+
+            if (state.IsEnabled)
+            {
+                FileLogger.Log("Wallpaper updates enabled by user");
+                StartWallpaperUpdates();
+                ShowBalloonTip("Wallpaper Sync Enabled",
+                    "Automatic updates resumed", ToolTipIcon.Info);
+            }
+            else
+            {
+                FileLogger.Log("Wallpaper updates disabled by user");
+                StopWallpaperUpdates();
+                ShowBalloonTip("Wallpaper Sync Disabled",
+                    "Automatic updates paused", ToolTipIcon.Info);
+            }
+
+            UpdateTrayIcon(state.IsEnabled);
+        }
+
+        private void StopWallpaperUpdates()
+        {
+            _updateTimer?.Dispose();
+            _updateTimer = null;
+            _status = "Disabled";
+            UpdateTrayIconText();
+            FileLogger.Log("Wallpaper updates stopped");
+        }
+
+        private void OnToggleStartup(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (_startupService.IsStartupEnabled())
+                {
+                    _startupService.DisableStartup();
+                    FileLogger.Log("Startup disabled by user");
+                    ShowBalloonTip("Startup Disabled",
+                        "Wallpaper Sync will not run at Windows startup", ToolTipIcon.Info);
+                }
+                else
+                {
+                    _startupService.EnableStartup();
+                    FileLogger.Log("Startup enabled by user");
+                    ShowBalloonTip("Startup Enabled",
+                        "Wallpaper Sync will run at Windows startup", ToolTipIcon.Info);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogError("Failed to toggle startup", ex);
+                MessageBox.Show($"Failed to change startup setting: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ExitApplication()
