@@ -32,3 +32,4 @@ validate-output.log
 test-output.log
 build-output.log
 publish-output.log
+dotnet-install.sh
