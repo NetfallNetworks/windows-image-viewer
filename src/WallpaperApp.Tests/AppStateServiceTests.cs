@@ -224,7 +224,7 @@ namespace WallpaperApp.Tests
         }
 
         [Fact]
-        public void ConcurrentAccess_ThreadSafe()
+        public async Task ConcurrentAccess_ThreadSafe()
         {
             // Arrange
             var service = new AppStateService(_testStateFilePath);
@@ -240,7 +240,7 @@ namespace WallpaperApp.Tests
                 }
             }));
 
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
 
             var finalState = service.LoadState();
 
