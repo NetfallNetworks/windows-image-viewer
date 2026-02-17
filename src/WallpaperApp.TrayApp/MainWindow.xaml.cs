@@ -209,11 +209,11 @@ namespace WallpaperApp.TrayApp
         {
             try
             {
-                // Try to load the icon from embedded resources
-                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                var resourceName = "WallpaperApp.TrayApp.Resources.app.ico";
+                // Try to load the icon from WPF resources via pack URI
+                var uri = new Uri("pack://application:,,,/Resources/app.ico");
+                var streamInfo = Application.GetResourceStream(uri);
 
-                using (var stream = assembly.GetManifestResourceStream(resourceName))
+                using (var stream = streamInfo?.Stream)
                 {
                     if (stream != null)
                     {
