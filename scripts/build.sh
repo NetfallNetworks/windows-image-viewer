@@ -53,11 +53,30 @@ echo "Publishing WallpaperApp (console/service)..."
 dotnet publish src/WallpaperApp/WallpaperApp.csproj -c Release -o publish/WallpaperApp --verbosity minimal --nologo
 
 if [ "$IS_WINDOWS" = true ]; then
-    # Publish tray app on Windows (to bin/TrayApp for install-tray-app.ps1)
+    # Publish tray app on Windows (to bin/TrayApp - source for installer)
     echo "Publishing WallpaperApp.TrayApp (system tray)..."
     dotnet publish src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj -c Release -o bin/TrayApp --self-contained true --runtime win-x64 /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --verbosity minimal --nologo
+
+    echo ""
+    echo "Building installer (MSI)..."
+    if command -v wix &>/dev/null; then
+        wix extension add --global WixToolset.UI.wixext >/dev/null 2>&1 || true
+        wix build installer/Package.wxs \
+            -ext WixToolset.UI.wixext \
+            -o installer/WallpaperSync-Setup.msi \
+            -arch x64
+        echo "✅ Installer built: installer/WallpaperSync-Setup.msi"
+    else
+        echo "⚠️  WiX not found - skipping installer build"
+        echo "   To install: dotnet tool install --global wix"
+    fi
 else
     echo "⚠️  Skipping WallpaperApp.TrayApp publish (Windows-only)"
+    echo "⚠️  Skipping installer build (Windows-only)"
+    echo ""
+    echo "   The MSI installer requires Windows to build because WPF/WinForms"
+    echo "   cannot be cross-compiled from Linux. Run scripts\\build.bat on"
+    echo "   Windows to produce installer\\WallpaperSync-Setup.msi."
 fi
 
 echo ""
@@ -69,8 +88,14 @@ echo "  ✅ All tests passed (88/88)"
 echo "  ✅ Console app published to ./publish/WallpaperApp/"
 if [ "$IS_WINDOWS" = true ]; then
     echo "  ✅ Tray app published to ./bin/TrayApp/"
-    echo ""
-    echo "Next step: Run ./scripts/install-tray-app.ps1 to install"
+    if [ -f "installer/WallpaperSync-Setup.msi" ]; then
+        echo "  ✅ Installer built: ./installer/WallpaperSync-Setup.msi"
+        echo ""
+        echo "Ship installer/WallpaperSync-Setup.msi to end users."
+        echo "Double-click to install - no PowerShell or admin rights needed."
+    else
+        echo "  -- Installer skipped (run: dotnet tool install --global wix)"
+    fi
 fi
 echo "========================================"
 exit 0
