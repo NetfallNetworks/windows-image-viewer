@@ -173,17 +173,19 @@ namespace WallpaperApp.TrayApp.ViewModels
             }
             else if (_selectedFitMode == WallpaperFitMode.Tile)
             {
-                // Tile mode: Show image at scaled size, tiled to fill
+                // Tile mode: Show image at actual size, tiled to fill (matches Windows behavior)
                 imageBrush.Stretch = System.Windows.Media.Stretch.None;
                 imageBrush.TileMode = System.Windows.Media.TileMode.Tile;
 
-                // Calculate viewport size (tile size) based on image dimensions and preview scale
+                // Use actual image dimensions for tiling (not scaled)
+                // This matches how Windows tiles wallpapers at their native resolution
                 if (PreviewImage is BitmapSource bitmap)
                 {
-                    double scaledWidth = bitmap.PixelWidth * PreviewScale;
-                    double scaledHeight = bitmap.PixelHeight * PreviewScale;
+                    // Convert pixel dimensions to WPF device-independent units (96 DPI)
+                    double tileWidth = bitmap.PixelWidth * (96.0 / bitmap.DpiX);
+                    double tileHeight = bitmap.PixelHeight * (96.0 / bitmap.DpiY);
 
-                    imageBrush.Viewport = new System.Windows.Rect(0, 0, scaledWidth, scaledHeight);
+                    imageBrush.Viewport = new System.Windows.Rect(0, 0, tileWidth, tileHeight);
                     imageBrush.ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute;
                 }
             }
@@ -301,7 +303,7 @@ namespace WallpaperApp.TrayApp.ViewModels
         {
             get
             {
-                const double maxWidth = 620.0;
+                const double maxWidth = 400.0;
                 return maxWidth; // Always use max width, height adjusts to maintain aspect ratio
             }
         }
@@ -310,8 +312,8 @@ namespace WallpaperApp.TrayApp.ViewModels
         {
             get
             {
-                const double maxWidth = 620.0;
-                if (ScreenWidth <= 0 || ScreenHeight <= 0) return 350.0;
+                const double maxWidth = 400.0;
+                if (ScreenWidth <= 0 || ScreenHeight <= 0) return 225.0;
 
                 double aspectRatio = ScreenWidth / ScreenHeight;
                 return maxWidth / aspectRatio;
@@ -793,9 +795,37 @@ namespace WallpaperApp.TrayApp.ViewModels
                 }
                 else
                 {
-                    PreviewStatus = "Select an image to preview";
-                    PreviewImage = null;
-                    return;
+                    // Load default demo image when no source is selected
+                    const string defaultDemoUrl = "https://source.unsplash.com/random/1920x1080";
+                    PreviewStatus = "Loading demo image...";
+                    try
+                    {
+                        var response = await _httpClient.GetAsync(defaultDemoUrl);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            PreviewStatus = "Select an image to preview";
+                            PreviewImage = null;
+                            return;
+                        }
+
+                        var tempPath = Path.Combine(Path.GetTempPath(), "WallpaperPreview", $"demo_{DateTime.Now:yyyyMMddHHmmss}.png");
+                        Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!);
+
+                        using (var fileStream = File.Create(tempPath))
+                        {
+                            await response.Content.CopyToAsync(fileStream);
+                        }
+
+                        imagePath = tempPath;
+                        isTempFile = true;
+                        PreviewStatus = "Demo preview (configure image source to see your wallpaper)";
+                    }
+                    catch
+                    {
+                        PreviewStatus = "Select an image to preview";
+                        PreviewImage = null;
+                        return;
+                    }
                 }
 
                 // Load the image
