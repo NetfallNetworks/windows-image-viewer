@@ -76,9 +76,8 @@
         Condition: only on fresh install (not upgrade/uninstall), and only if
         the user left the "Launch" checkbox checked.
       -->
-      <Custom Action="LaunchApp" After="ExitDialog">
-        WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed AND NOT REMOVE
-      </Custom>
+      <Custom Action="LaunchApp" After="ExitDialog"
+              Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed AND NOT REMOVE" />
     </InstallUISequence>
 
     <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1">
