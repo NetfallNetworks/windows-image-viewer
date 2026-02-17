@@ -90,8 +90,12 @@ try {
         $ms.Dispose()
         $imageData += $data
 
-        $writer.Write([byte]$bitmap.Width)      # Width (0 = 256)
-        $writer.Write([byte]$bitmap.Height)     # Height (0 = 256)
+        # Width and Height: 0 means 256 pixels (byte can only hold 0-255)
+        $width = if ($bitmap.Width -eq 256) { 0 } else { $bitmap.Width }
+        $height = if ($bitmap.Height -eq 256) { 0 } else { $bitmap.Height }
+
+        $writer.Write([byte]$width)             # Width (0 = 256)
+        $writer.Write([byte]$height)            # Height (0 = 256)
         $writer.Write([byte]0)                  # Color palette (0 = no palette)
         $writer.Write([byte]0)                  # Reserved
         $writer.Write([uint16]1)                # Color planes
