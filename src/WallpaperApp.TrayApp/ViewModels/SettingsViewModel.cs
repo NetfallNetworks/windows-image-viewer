@@ -439,7 +439,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             SaveOriginalValues();
 
             // Initialize commands
-            SaveCommand = new RelayCommand(OnSave);
+            SaveCommand = new RelayCommand(async () => await OnSaveAsync());
             CancelCommand = new RelayCommand(OnCancel);
             BrowseCommand = new RelayCommand(OnBrowse);
             TestWallpaperCommand = new RelayCommand(async () => await OnTestWallpaperAsync());
@@ -534,7 +534,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             UrlValidationError = null;
         }
 
-        private void OnSave()
+        private async Task OnSaveAsync()
         {
             ValidateUrl();
             if (!IsUrlValid && SourceType == ModelImageSource.Url)
@@ -562,19 +562,61 @@ namespace WallpaperApp.TrayApp.ViewModels
 
             try
             {
-                // Save to JSON
                 _configService.SaveConfiguration(settings);
-
-                MessageBox.Show("Settings saved successfully.", "Success",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // Close window
-                CloseWindow?.Invoke();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to save settings: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Apply wallpaper immediately with the new settings (best effort)
+            await ApplyWallpaperNowAsync(settings);
+
+            CloseWindow?.Invoke();
+        }
+
+        private async Task ApplyWallpaperNowAsync(AppSettings settings)
+        {
+            try
+            {
+                if (settings.SourceType == ModelImageSource.LocalFile &&
+                    !string.IsNullOrWhiteSpace(settings.LocalImagePath) &&
+                    File.Exists(settings.LocalImagePath))
+                {
+                    _wallpaperService.SetWallpaper(settings.LocalImagePath, settings.FitMode);
+                    _stateService.UpdateLastKnownGood(settings.LocalImagePath);
+                }
+                else if (settings.SourceType == ModelImageSource.Url &&
+                         !string.IsNullOrWhiteSpace(settings.ImageUrl))
+                {
+                    var tempDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
+                    Directory.CreateDirectory(tempDir);
+                    var tempPath = Path.Combine(tempDir, $"wallpaper-{DateTime.Now:yyyyMMdd-HHmmss-fff}.png");
+
+                    var response = await _httpClient.GetAsync(settings.ImageUrl);
+                    if (!response.IsSuccessStatusCode)
+                        return;
+
+                    using (var fileStream = File.Create(tempPath))
+                    {
+                        await response.Content.CopyToAsync(fileStream);
+                    }
+
+                    if (!_imageValidator.IsValidImage(tempPath, out _))
+                    {
+                        try { File.Delete(tempPath); } catch { }
+                        return;
+                    }
+
+                    _wallpaperService.SetWallpaper(tempPath, settings.FitMode);
+                    _stateService.UpdateLastKnownGood(tempPath);
+                }
+            }
+            catch
+            {
+                // Best effort — wallpaper apply failure does not block save
             }
         }
 
