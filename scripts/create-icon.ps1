@@ -4,7 +4,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$InputPng = "icon-source.png",
+    [string]$InputPng = "wallpaper-app-icon.png",
 
     [Parameter(Mandatory=$false)]
     [string]$OutputIco = "src\WallpaperApp.TrayApp\Resources\app.ico"
@@ -30,7 +30,7 @@ $OutputIco = Join-Path $repoRoot $OutputIco
 if (-not (Test-Path $InputPng)) {
     Write-Host "ERROR: Input file not found: $InputPng" -ForegroundColor Red
     Write-Host ""
-    Write-Host "Please save your icon as 'icon-source.png' in the root directory," -ForegroundColor Yellow
+    Write-Host "Please save your icon as 'wallpaper-app-icon.png' in the root directory," -ForegroundColor Yellow
     Write-Host "or specify a different path with -InputPng" -ForegroundColor Yellow
     exit 1
 }

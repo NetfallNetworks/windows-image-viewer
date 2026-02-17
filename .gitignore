@@ -33,6 +33,3 @@ test-output.log
 build-output.log
 publish-output.log
 dotnet-install.sh
-
-## Icon source files (keep the generated .ico)
-icon-source.png
