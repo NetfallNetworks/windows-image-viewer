@@ -162,28 +162,44 @@ namespace WallpaperApp.TrayApp.ViewModels
 
             if (_selectedFitMode == WallpaperFitMode.Center)
             {
-                // Center mode: Show image at scaled size, centered, no tiling
+                // Center mode: Show image at preview-scaled size, centered, no tiling
                 imageBrush.Stretch = System.Windows.Media.Stretch.None;
                 imageBrush.AlignmentX = System.Windows.Media.AlignmentX.Center;
                 imageBrush.AlignmentY = System.Windows.Media.AlignmentY.Center;
                 imageBrush.TileMode = System.Windows.Media.TileMode.None;
 
-                // Scale the image down to match preview scale
-                imageBrush.Transform = new System.Windows.Media.ScaleTransform(PreviewScale, PreviewScale);
-            }
-            else if (_selectedFitMode == WallpaperFitMode.Tile)
-            {
-                // Tile mode: Show image at actual size, tiled to fill (matches Windows behavior)
-                imageBrush.Stretch = System.Windows.Media.Stretch.None;
-                imageBrush.TileMode = System.Windows.Media.TileMode.Tile;
-
-                // Use actual image dimensions for tiling (not scaled)
-                // This matches how Windows tiles wallpapers at their native resolution
+                // Use Viewport to scale the image down to match preview scale
+                // This shows the image centered at the correct preview size
                 if (PreviewImage is BitmapSource bitmap)
                 {
                     // Convert pixel dimensions to WPF device-independent units (96 DPI)
-                    double tileWidth = bitmap.PixelWidth * (96.0 / bitmap.DpiX);
-                    double tileHeight = bitmap.PixelHeight * (96.0 / bitmap.DpiY);
+                    double imageWidth = bitmap.PixelWidth * (96.0 / bitmap.DpiX);
+                    double imageHeight = bitmap.PixelHeight * (96.0 / bitmap.DpiY);
+
+                    // Scale down for preview
+                    double scaledWidth = imageWidth * PreviewScale;
+                    double scaledHeight = imageHeight * PreviewScale;
+
+                    imageBrush.Viewport = new System.Windows.Rect(0, 0, scaledWidth, scaledHeight);
+                    imageBrush.ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute;
+                }
+            }
+            else if (_selectedFitMode == WallpaperFitMode.Tile)
+            {
+                // Tile mode: Show image tiled at preview-scaled size
+                imageBrush.Stretch = System.Windows.Media.Stretch.None;
+                imageBrush.TileMode = System.Windows.Media.TileMode.Tile;
+
+                // Scale tile dimensions to match preview scale
+                if (PreviewImage is BitmapSource bitmap)
+                {
+                    // Convert pixel dimensions to WPF device-independent units (96 DPI)
+                    double imageWidth = bitmap.PixelWidth * (96.0 / bitmap.DpiX);
+                    double imageHeight = bitmap.PixelHeight * (96.0 / bitmap.DpiY);
+
+                    // Scale down for preview
+                    double tileWidth = imageWidth * PreviewScale;
+                    double tileHeight = imageHeight * PreviewScale;
 
                     imageBrush.Viewport = new System.Windows.Rect(0, 0, tileWidth, tileHeight);
                     imageBrush.ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute;
