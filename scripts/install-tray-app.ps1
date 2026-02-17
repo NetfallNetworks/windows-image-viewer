@@ -84,7 +84,7 @@ if (-not (Test-Path $configPath)) {
     Write-Host "Creating default configuration..." -ForegroundColor Yellow
     $defaultConfig = @{
         AppSettings = @{
-            ImageUrl = "https://weather.zamflam.com/latest.png"
+            ImageUrl = "https://weather.zamflam.com/assets/diagram.png"
             RefreshIntervalMinutes = 15
         }
     }
