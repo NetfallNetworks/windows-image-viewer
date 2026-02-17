@@ -2,12 +2,12 @@
 <!--
   WiX v4 installer for Wallpaper Sync
 
-  Build requirements:
-    dotnet tool install --global wix
-    wix extension add --global WixToolset.UI.wixext
+  Build requirements (WiX v4 is pinned in .config\dotnet-tools.json):
+    dotnet tool restore
+    dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
 
   Build command (from repo root):
-    wix build installer\Package.wxs ^
+    dotnet tool run wix build installer\Package.wxs ^
       -ext WixToolset.UI.wixext ^
       -o installer\WallpaperSync-Setup.msi ^
       -arch x64

@@ -59,16 +59,17 @@ if [ "$IS_WINDOWS" = true ]; then
 
     echo ""
     echo "Building installer (MSI)..."
-    if command -v wix &>/dev/null; then
-        wix extension add --global WixToolset.UI.wixext >/dev/null 2>&1 || true
-        wix build installer/Package.wxs \
+    # Restore WiX v4 from the local tool manifest (.config/dotnet-tools.json)
+    if dotnet tool restore >/dev/null 2>&1; then
+        dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5 >/dev/null 2>&1 || true
+        dotnet tool run wix build installer/Package.wxs \
             -ext WixToolset.UI.wixext \
             -o installer/WallpaperSync-Setup.msi \
             -arch x64
         echo "✅ Installer built: installer/WallpaperSync-Setup.msi"
     else
-        echo "⚠️  WiX not found - skipping installer build"
-        echo "   To install: dotnet tool install --global wix"
+        echo "⚠️  WiX tool restore failed - skipping installer build"
+        echo "   Check .config/dotnet-tools.json and run: dotnet tool restore"
     fi
 else
     echo "⚠️  Skipping WallpaperApp.TrayApp publish (Windows-only)"

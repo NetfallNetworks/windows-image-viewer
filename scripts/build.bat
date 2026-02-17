@@ -88,32 +88,27 @@ echo Step 4/4: Building Installer (MSI)...
 echo ========================================
 echo.
 
-REM Check if WiX toolset is installed
-where wix >nul 2>&1
+REM Restore WiX v4 from the local tool manifest (.config/dotnet-tools.json).
+REM This pins the version to 4.0.5 and avoids conflicts with any globally
+REM installed WiX (e.g. v6) the developer may have for other projects.
+echo Restoring WiX v4 toolset (pinned in .config\dotnet-tools.json)...
+dotnet tool restore
+
 if errorlevel 1 (
-    echo [INFO] WiX toolset not found. Installing...
-    dotnet tool install --global wix
-    if errorlevel 1 (
-        echo.
-        echo [WARN] Could not install WiX toolset automatically.
-        echo        To install manually, run:
-        echo          dotnet tool install --global wix
-        echo          wix extension add --global WixToolset.UI.wixext
-        echo.
-        echo        Skipping installer build. All other steps succeeded.
-        goto BuildSuccess
-    )
-    echo [OK] WiX toolset installed.
     echo.
+    echo [WARN] Could not restore WiX toolset.
+    echo        Skipping installer build. All other steps succeeded.
+    goto BuildSuccess
 )
 
-REM Ensure the WiX UI extension is available (idempotent - safe to run multiple times)
-echo Ensuring WiX UI extension is available...
-wix extension add --global WixToolset.UI.wixext >nul 2>&1
+REM Cache the WiX UI extension (idempotent - safe to run multiple times).
+REM The /4.0.5 suffix pins the extension to the matching WiX v4 version.
+echo Ensuring WiX UI extension v4 is available...
+dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5 >nul 2>&1
 
 REM Build the MSI installer
 echo Building WallpaperSync-Setup.msi...
-wix build installer\Package.wxs ^
+dotnet tool run wix build installer\Package.wxs ^
     -ext WixToolset.UI.wixext ^
     -o installer\WallpaperSync-Setup.msi ^
     -arch x64
@@ -126,8 +121,8 @@ if errorlevel 1 (
     echo.
     echo Troubleshooting:
     echo   1. Ensure bin\TrayApp\WallpaperApp.TrayApp.exe exists (Step 3 must succeed)
-    echo   2. Run: wix extension list --global
-    echo   3. Re-run: wix extension add --global WixToolset.UI.wixext
+    echo   2. Re-run: dotnet tool restore
+    echo   3. Re-run: dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
     pause
     exit /b 1
 )
