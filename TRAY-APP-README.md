@@ -15,11 +15,13 @@ A system tray application that automatically updates your Windows wallpaper from
 
 ## Installation 🚀
 
-### Step 1: Build the App
+### Step 1: Build, Test, and Publish
 
 ```powershell
-.\scripts\publish-tray-app.ps1
+.\scripts\build.bat
 ```
+
+This builds all projects, runs tests, and publishes the tray app to `bin\TrayApp\`.
 
 ### Step 2: Install and Configure
 
@@ -114,8 +116,8 @@ Windows services require a password to run, but the tray app:
 ## Commands Summary
 
 ```powershell
-# Build
-.\scripts\publish-tray-app.ps1
+# Build, test, and publish
+.\scripts\build.bat
 
 # Install (auto-start enabled)
 .\scripts\install-tray-app.ps1
@@ -123,7 +125,7 @@ Windows services require a password to run, but the tray app:
 # Uninstall
 .\scripts\uninstall-tray-app.ps1
 
-# Manual run (for testing)
+# Manual run (for testing, after build.bat)
 bin\TrayApp\WallpaperApp.TrayApp.exe
 ```
 

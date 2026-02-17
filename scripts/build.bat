@@ -66,9 +66,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Publish tray app
+REM Publish tray app (to bin\TrayApp for install-tray-app.ps1)
 echo Publishing WallpaperApp.TrayApp (system tray)...
-dotnet publish src\WallpaperApp.TrayApp\WallpaperApp.TrayApp.csproj -c Release -o publish\WallpaperApp.TrayApp --verbosity minimal --nologo
+dotnet publish src\WallpaperApp.TrayApp\WallpaperApp.TrayApp.csproj -c Release -o bin\TrayApp --self-contained true --runtime win-x64 /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --verbosity minimal --nologo
 
 if errorlevel 1 (
     echo.
@@ -85,7 +85,10 @@ echo [SUCCESS] BUILD PIPELINE COMPLETE!
 echo ========================================
 echo   [OK] Build successful
 echo   [OK] All tests passed (88/88)
-echo   [OK] Applications published to .\publish\
+echo   [OK] Console app published to .\publish\WallpaperApp\
+echo   [OK] Tray app published to .\bin\TrayApp\
+echo.
+echo Next step: Run .\scripts\install-tray-app.ps1 to install
 echo ========================================
 pause
 exit /b 0

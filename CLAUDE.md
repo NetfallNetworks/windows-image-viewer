@@ -84,7 +84,8 @@ BEFORE you commit or push ANYTHING
 This single command does EVERYTHING:
 1. ✅ Builds all projects with warnings as errors
 2. ✅ Runs all 88 tests
-3. ✅ Publishes applications to ./publish/
+3. ✅ Publishes console app to ./publish/WallpaperApp/
+4. ✅ Publishes tray app to ./bin/TrayApp/ (ready for install-tray-app.ps1)
 
 **Alternative (if script isn't executable):**
 ```bash
@@ -102,7 +103,10 @@ dotnet publish src/WallpaperApp/WallpaperApp.csproj -c Release -o publish/Wallpa
 ======================================
   ✅ Build successful
   ✅ All tests passed (88/88)
-  ✅ Applications published to ./publish/
+  ✅ Console app published to .\publish\WallpaperApp\
+  ✅ Tray app published to .\bin\TrayApp\
+
+Next step: Run .\scripts\install-tray-app.ps1 to install
 ======================================
 ```
 

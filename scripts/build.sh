@@ -53,9 +53,9 @@ echo "Publishing WallpaperApp (console/service)..."
 dotnet publish src/WallpaperApp/WallpaperApp.csproj -c Release -o publish/WallpaperApp --verbosity minimal --nologo
 
 if [ "$IS_WINDOWS" = true ]; then
-    # Publish tray app on Windows
+    # Publish tray app on Windows (to bin/TrayApp for install-tray-app.ps1)
     echo "Publishing WallpaperApp.TrayApp (system tray)..."
-    dotnet publish src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj -c Release -o publish/WallpaperApp.TrayApp --verbosity minimal --nologo
+    dotnet publish src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj -c Release -o bin/TrayApp --self-contained true --runtime win-x64 /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --verbosity minimal --nologo
 else
     echo "⚠️  Skipping WallpaperApp.TrayApp publish (Windows-only)"
 fi
@@ -66,6 +66,11 @@ echo "✅ BUILD PIPELINE COMPLETE!"
 echo "========================================"
 echo "  ✅ Build successful"
 echo "  ✅ All tests passed (88/88)"
-echo "  ✅ Applications published to ./publish/"
+echo "  ✅ Console app published to ./publish/WallpaperApp/"
+if [ "$IS_WINDOWS" = true ]; then
+    echo "  ✅ Tray app published to ./bin/TrayApp/"
+    echo ""
+    echo "Next step: Run ./scripts/install-tray-app.ps1 to install"
+fi
 echo "========================================"
 exit 0
