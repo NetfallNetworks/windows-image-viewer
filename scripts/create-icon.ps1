@@ -10,10 +10,21 @@ param(
     [string]$OutputIco = "src\WallpaperApp.TrayApp\Resources\app.ico"
 )
 
+# Change to repository root (script is in scripts/ subdirectory)
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+Set-Location $repoRoot
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Creating Windows Icon from PNG" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "Working directory: $repoRoot" -ForegroundColor Gray
+Write-Host ""
+
+# Resolve full paths
+$InputPng = Join-Path $repoRoot $InputPng
+$OutputIco = Join-Path $repoRoot $OutputIco
 
 # Check if input file exists
 if (-not (Test-Path $InputPng)) {
@@ -29,7 +40,7 @@ Add-Type -AssemblyName System.Drawing
 
 try {
     Write-Host "Loading source image: $InputPng" -ForegroundColor Green
-    $originalImage = [System.Drawing.Image]::FromFile((Resolve-Path $InputPng).Path)
+    $originalImage = [System.Drawing.Image]::FromFile($InputPng)
 
     Write-Host "Original size: $($originalImage.Width)x$($originalImage.Height)" -ForegroundColor Gray
     Write-Host ""
