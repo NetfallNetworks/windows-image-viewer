@@ -6,7 +6,8 @@
         Title="Wallpaper Sync - Settings"
         Width="700" Height="850"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        Icon="pack://application:,,,/Resources/app.ico">
 
     <Window.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>

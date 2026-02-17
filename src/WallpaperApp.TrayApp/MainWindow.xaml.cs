@@ -207,6 +207,35 @@ namespace WallpaperApp.TrayApp
 
         private DrawingIcon CreateTrayIcon(bool isEnabled)
         {
+            try
+            {
+                // Try to load the icon from embedded resources
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = "WallpaperApp.TrayApp.Resources.app.ico";
+
+                using (var stream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (stream != null)
+                    {
+                        // Load the icon and optionally apply grayscale if disabled
+                        var icon = new DrawingIcon(stream);
+
+                        // If disabled, create a grayed-out version
+                        if (!isEnabled)
+                        {
+                            return CreateGrayscaleIcon(icon);
+                        }
+
+                        return icon;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogError("Failed to load icon from resources, using fallback", ex);
+            }
+
+            // Fallback: Create a simple icon programmatically
             var bitmap = new Bitmap(32, 32);
             using (var g = Graphics.FromImage(bitmap))
             {
@@ -222,6 +251,38 @@ namespace WallpaperApp.TrayApp
                 g.DrawString("W", font, Brushes.White, new PointF(4, 2));
             }
             return DrawingIcon.FromHandle(bitmap.GetHicon());
+        }
+
+        private DrawingIcon CreateGrayscaleIcon(DrawingIcon colorIcon)
+        {
+            // Convert icon to grayscale bitmap for disabled state
+            var bitmap = colorIcon.ToBitmap();
+            var grayBitmap = new Bitmap(bitmap.Width, bitmap.Height);
+
+            using (var g = Graphics.FromImage(grayBitmap))
+            {
+                // Create grayscale color matrix
+                var colorMatrix = new System.Drawing.Imaging.ColorMatrix(new float[][]
+                {
+                    new float[] {0.3f, 0.3f, 0.3f, 0, 0},
+                    new float[] {0.59f, 0.59f, 0.59f, 0, 0},
+                    new float[] {0.11f, 0.11f, 0.11f, 0, 0},
+                    new float[] {0, 0, 0, 0.5f, 0},  // 50% opacity
+                    new float[] {0, 0, 0, 0, 1}
+                });
+
+                var attributes = new System.Drawing.Imaging.ImageAttributes();
+                attributes.SetColorMatrix(colorMatrix);
+
+                g.DrawImage(bitmap,
+                    new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                    0, 0, bitmap.Width, bitmap.Height,
+                    GraphicsUnit.Pixel,
+                    attributes);
+            }
+
+            bitmap.Dispose();
+            return DrawingIcon.FromHandle(grayBitmap.GetHicon());
         }
 
         private void UpdateTrayIcon(bool isEnabled)
