@@ -34,7 +34,7 @@ namespace WallpaperApp.TrayApp.ViewModels
         public bool IsPage1 => CurrentPage == 0;
         public bool IsPage2 => CurrentPage == 1;
 
-        private string _demoUrl = "https://source.unsplash.com/random/1920x1080";
+        private string _demoUrl = "https://weather.zamflam.com/assets/diagram.png";
         public string DemoUrl
         {
             get => _demoUrl;

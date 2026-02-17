@@ -3,14 +3,14 @@
 ## Available Scripts
 
 ### Development Scripts
-- `build.bat` / `build.sh` - Build ALL projects (console app, tray app, tests)
-- `test.bat` / `test.sh` - Run unit tests
+- `build.bat` / `build.sh` - Build, test, and publish ALL projects (includes tray app to bin\TrayApp\)
+- `test.bat` / `test.sh` - Run unit tests only
 - `validate.bat` / `validate.sh` - Full validation pipeline
 
-### Tray App Scripts (NEW!)
-- `publish-tray-app.ps1` - Publish the system tray application (single-file .exe)
-- `install-tray-app.ps1` - Install and configure auto-start
+### Tray App Scripts
+- `install-tray-app.ps1` - Install tray app to startup (run after build.bat)
 - `uninstall-tray-app.ps1` - Remove the tray app
+- `publish-tray-app.ps1` - (Optional) Rebuild just the tray app without tests
 
 For detailed tray app documentation, see [TRAY-APP-README.md](../TRAY-APP-README.md)
 
@@ -167,14 +167,16 @@ more < validate-output.log
 
 ## Next Steps
 
-After running tests successfully, publish and install the tray app:
+After running tests successfully, install the tray app:
 
 ```powershell
-# Publish the system tray app (creates single-file .exe)
-.\scripts\publish-tray-app.ps1
+# Build and publish everything (including tray app)
+.\scripts\build.bat
 
-# Install it (adds to Windows Startup)
+# Install the tray app (adds to Windows Startup)
 .\scripts\install-tray-app.ps1
 ```
+
+**Note**: `build.bat` now publishes the tray app to `bin\TrayApp\` automatically, so `publish-tray-app.ps1` is optional (only needed if you want to rebuild just the tray app without running tests).
 
 See [TRAY-APP-README.md](../TRAY-APP-README.md) for complete usage instructions.

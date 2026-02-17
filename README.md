@@ -72,9 +72,9 @@ Run the app as a system tray application for automatic wallpaper updates:
 
 #### Installation
 
-1. Build and publish the tray app:
+1. Build, test, and publish:
    ```powershell
-   .\scripts\publish-tray-app.ps1
+   .\scripts\build.bat
    ```
 
 2. Install and configure:

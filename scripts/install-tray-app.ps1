@@ -21,7 +21,8 @@ $startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Star
 
 # Check if build exists
 if (-not (Test-Path $buildPath)) {
-    Write-Host "ERROR: Build not found. Please run .\scripts\publish-tray-app.ps1 first!" -ForegroundColor Red
+    Write-Host "ERROR: Build not found at $buildPath" -ForegroundColor Red
+    Write-Host "Please run .\scripts\build.bat first!" -ForegroundColor Yellow
     exit 1
 }
 
@@ -83,7 +84,7 @@ if (-not (Test-Path $configPath)) {
     Write-Host "Creating default configuration..." -ForegroundColor Yellow
     $defaultConfig = @{
         AppSettings = @{
-            ImageUrl = "https://weather.zamflam.com/latest.png"
+            ImageUrl = "https://weather.zamflam.com/assets/diagram.png"
             RefreshIntervalMinutes = 15
         }
     }

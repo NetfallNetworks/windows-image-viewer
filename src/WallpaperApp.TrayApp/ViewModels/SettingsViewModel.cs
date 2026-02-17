@@ -162,28 +162,46 @@ namespace WallpaperApp.TrayApp.ViewModels
 
             if (_selectedFitMode == WallpaperFitMode.Center)
             {
-                // Center mode: Show image at scaled size, centered, no tiling
+                // Center mode: Show image at preview-scaled size, centered, no tiling
                 imageBrush.Stretch = System.Windows.Media.Stretch.None;
                 imageBrush.AlignmentX = System.Windows.Media.AlignmentX.Center;
                 imageBrush.AlignmentY = System.Windows.Media.AlignmentY.Center;
                 imageBrush.TileMode = System.Windows.Media.TileMode.None;
 
-                // Scale the image down to match preview scale
-                imageBrush.Transform = new System.Windows.Media.ScaleTransform(PreviewScale, PreviewScale);
+                // Use Viewport to scale the image down to match preview scale
+                // This shows the image centered at the correct preview size
+                if (PreviewImage is BitmapSource bitmap)
+                {
+                    // Convert pixel dimensions to WPF device-independent units (96 DPI)
+                    double imageWidth = bitmap.PixelWidth * (96.0 / bitmap.DpiX);
+                    double imageHeight = bitmap.PixelHeight * (96.0 / bitmap.DpiY);
+
+                    // Scale down for preview
+                    double scaledWidth = imageWidth * PreviewScale;
+                    double scaledHeight = imageHeight * PreviewScale;
+
+                    imageBrush.Viewport = new System.Windows.Rect(0, 0, scaledWidth, scaledHeight);
+                    imageBrush.ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute;
+                }
             }
             else if (_selectedFitMode == WallpaperFitMode.Tile)
             {
-                // Tile mode: Show image at scaled size, tiled to fill
+                // Tile mode: Show image tiled at preview-scaled size
                 imageBrush.Stretch = System.Windows.Media.Stretch.None;
                 imageBrush.TileMode = System.Windows.Media.TileMode.Tile;
 
-                // Calculate viewport size (tile size) based on image dimensions and preview scale
+                // Scale tile dimensions to match preview scale
                 if (PreviewImage is BitmapSource bitmap)
                 {
-                    double scaledWidth = bitmap.PixelWidth * PreviewScale;
-                    double scaledHeight = bitmap.PixelHeight * PreviewScale;
+                    // Convert pixel dimensions to WPF device-independent units (96 DPI)
+                    double imageWidth = bitmap.PixelWidth * (96.0 / bitmap.DpiX);
+                    double imageHeight = bitmap.PixelHeight * (96.0 / bitmap.DpiY);
 
-                    imageBrush.Viewport = new System.Windows.Rect(0, 0, scaledWidth, scaledHeight);
+                    // Scale down for preview
+                    double tileWidth = imageWidth * PreviewScale;
+                    double tileHeight = imageHeight * PreviewScale;
+
+                    imageBrush.Viewport = new System.Windows.Rect(0, 0, tileWidth, tileHeight);
                     imageBrush.ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute;
                 }
             }
@@ -301,7 +319,7 @@ namespace WallpaperApp.TrayApp.ViewModels
         {
             get
             {
-                const double maxWidth = 620.0;
+                const double maxWidth = 400.0;
                 return maxWidth; // Always use max width, height adjusts to maintain aspect ratio
             }
         }
@@ -310,8 +328,8 @@ namespace WallpaperApp.TrayApp.ViewModels
         {
             get
             {
-                const double maxWidth = 620.0;
-                if (ScreenWidth <= 0 || ScreenHeight <= 0) return 350.0;
+                const double maxWidth = 400.0;
+                if (ScreenWidth <= 0 || ScreenHeight <= 0) return 225.0;
 
                 double aspectRatio = ScreenWidth / ScreenHeight;
                 return maxWidth / aspectRatio;
@@ -421,7 +439,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             SaveOriginalValues();
 
             // Initialize commands
-            SaveCommand = new RelayCommand(OnSave);
+            SaveCommand = new RelayCommand(async () => await OnSaveAsync());
             CancelCommand = new RelayCommand(OnCancel);
             BrowseCommand = new RelayCommand(OnBrowse);
             TestWallpaperCommand = new RelayCommand(async () => await OnTestWallpaperAsync());
@@ -516,7 +534,7 @@ namespace WallpaperApp.TrayApp.ViewModels
             UrlValidationError = null;
         }
 
-        private void OnSave()
+        private async Task OnSaveAsync()
         {
             ValidateUrl();
             if (!IsUrlValid && SourceType == ModelImageSource.Url)
@@ -544,19 +562,61 @@ namespace WallpaperApp.TrayApp.ViewModels
 
             try
             {
-                // Save to JSON
                 _configService.SaveConfiguration(settings);
-
-                MessageBox.Show("Settings saved successfully.", "Success",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // Close window
-                CloseWindow?.Invoke();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to save settings: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Apply wallpaper immediately with the new settings (best effort)
+            await ApplyWallpaperNowAsync(settings);
+
+            CloseWindow?.Invoke();
+        }
+
+        private async Task ApplyWallpaperNowAsync(AppSettings settings)
+        {
+            try
+            {
+                if (settings.SourceType == ModelImageSource.LocalFile &&
+                    !string.IsNullOrWhiteSpace(settings.LocalImagePath) &&
+                    File.Exists(settings.LocalImagePath))
+                {
+                    _wallpaperService.SetWallpaper(settings.LocalImagePath, settings.FitMode);
+                    _stateService.UpdateLastKnownGood(settings.LocalImagePath);
+                }
+                else if (settings.SourceType == ModelImageSource.Url &&
+                         !string.IsNullOrWhiteSpace(settings.ImageUrl))
+                {
+                    var tempDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
+                    Directory.CreateDirectory(tempDir);
+                    var tempPath = Path.Combine(tempDir, $"wallpaper-{DateTime.Now:yyyyMMdd-HHmmss-fff}.png");
+
+                    var response = await _httpClient.GetAsync(settings.ImageUrl);
+                    if (!response.IsSuccessStatusCode)
+                        return;
+
+                    using (var fileStream = File.Create(tempPath))
+                    {
+                        await response.Content.CopyToAsync(fileStream);
+                    }
+
+                    if (!_imageValidator.IsValidImage(tempPath, out _))
+                    {
+                        try { File.Delete(tempPath); } catch { }
+                        return;
+                    }
+
+                    _wallpaperService.SetWallpaper(tempPath, settings.FitMode);
+                    _stateService.UpdateLastKnownGood(tempPath);
+                }
+            }
+            catch
+            {
+                // Best effort — wallpaper apply failure does not block save
             }
         }
 
@@ -793,9 +853,37 @@ namespace WallpaperApp.TrayApp.ViewModels
                 }
                 else
                 {
-                    PreviewStatus = "Select an image to preview";
-                    PreviewImage = null;
-                    return;
+                    // Load default demo image when no source is selected
+                    const string defaultDemoUrl = "https://weather.zamflam.com/assets/diagram.png";
+                    PreviewStatus = "Loading demo image...";
+                    try
+                    {
+                        var response = await _httpClient.GetAsync(defaultDemoUrl);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            PreviewStatus = "Select an image to preview";
+                            PreviewImage = null;
+                            return;
+                        }
+
+                        var tempPath = Path.Combine(Path.GetTempPath(), "WallpaperPreview", $"demo_{DateTime.Now:yyyyMMddHHmmss}.png");
+                        Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!);
+
+                        using (var fileStream = File.Create(tempPath))
+                        {
+                            await response.Content.CopyToAsync(fileStream);
+                        }
+
+                        imagePath = tempPath;
+                        isTempFile = true;
+                        PreviewStatus = "Demo preview (configure image source to see your wallpaper)";
+                    }
+                    catch
+                    {
+                        PreviewStatus = "Select an image to preview";
+                        PreviewImage = null;
+                        return;
+                    }
                 }
 
                 // Load the image

@@ -11,7 +11,7 @@
     <SelfContained>true</SelfContained>
     <AssemblyTitle>Wallpaper Sync</AssemblyTitle>
     <Product>Wallpaper Sync</Product>
-    <ApplicationIcon />
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +23,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WallpaperApp\WallpaperApp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\app.ico" />
   </ItemGroup>
 
   <ItemGroup>
