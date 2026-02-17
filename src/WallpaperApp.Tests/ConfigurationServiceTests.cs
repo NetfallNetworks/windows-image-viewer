@@ -1,58 +1,57 @@
 using WallpaperApp.Configuration;
 using WallpaperApp.Models;
-using WallpaperApp.Tests.Infrastructure;
 using Xunit;
 
 namespace WallpaperApp.Tests
 {
-    [Collection("CurrentDirectory Tests")]
     public class ConfigurationServiceTests : IDisposable
     {
-        private readonly TestDirectoryFixture _fixture;
+        // Each test gets its own isolated directory so tests don't interfere with each other.
+        private readonly string _testDirectory;
+        private readonly string _userConfigPath;
+        private readonly string _defaultConfigPath;
 
         public ConfigurationServiceTests()
         {
-            _fixture = new TestDirectoryFixture("ConfigurationServiceTests");
+            _testDirectory = Path.Combine(Path.GetTempPath(), $"ConfigServiceTests_{Guid.NewGuid()}");
+            Directory.CreateDirectory(_testDirectory);
+            _userConfigPath = Path.Combine(_testDirectory, "user", "WallpaperApp.json");
+            _defaultConfigPath = Path.Combine(_testDirectory, "defaults", "WallpaperApp.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(_userConfigPath)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(_defaultConfigPath)!);
         }
 
         public void Dispose()
         {
-            // Clean up config file from AppContext.BaseDirectory
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            if (File.Exists(configPath))
+            if (Directory.Exists(_testDirectory))
             {
-                try
-                {
-                    File.Delete(configPath);
-                }
-                catch
-                {
-                    // Ignore cleanup failures
-                }
+                try { Directory.Delete(_testDirectory, true); }
+                catch { /* ignore cleanup failures */ }
             }
-
-            _fixture.Dispose();
         }
+
+        private ConfigurationService CreateService() =>
+            new ConfigurationService(_userConfigPath, _defaultConfigPath);
+
+        private void WriteUserConfig(string json) =>
+            File.WriteAllText(_userConfigPath, json);
+
+        private void WriteDefaultConfig(string json) =>
+            File.WriteAllText(_defaultConfigPath, json);
+
+        // ── Basic load/validation ────────────────────────────────────────────
 
         [Fact]
         public void LoadConfiguration_ValidConfig_ReturnsAppSettings()
         {
-            // Arrange
-            var configContent = @"{
+            WriteUserConfig(@"{
   ""AppSettings"": {
     ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
     ""RefreshIntervalMinutes"": 15
   }
-}";
-            // Write to AppContext.BaseDirectory (where ConfigurationService looks for config)
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
+}");
+            var settings = CreateService().LoadConfiguration();
 
-            // Act
-            var settings = service.LoadConfiguration();
-
-            // Assert
             Assert.NotNull(settings);
             Assert.Equal("https://weather.zamflam.com/latest.png", settings.ImageUrl);
             Assert.Equal(15, settings.RefreshIntervalMinutes);
@@ -61,17 +60,8 @@ namespace WallpaperApp.Tests
         [Fact]
         public void LoadConfiguration_MissingFile_ThrowsException()
         {
-            // Arrange
-            // Make sure config file doesn't exist in AppContext.BaseDirectory
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            if (File.Exists(configPath))
-            {
-                File.Delete(configPath);
-            }
-            var service = new ConfigurationService();
-
-            // Act & Assert
-            var exception = Assert.Throws<ConfigurationException>(() => service.LoadConfiguration());
+            // Neither user config nor default config exist.
+            var exception = Assert.Throws<ConfigurationException>(() => CreateService().LoadConfiguration());
             Assert.Contains("WallpaperApp.json not found", exception.Message);
             Assert.Contains("Create it with ImageUrl setting", exception.Message);
         }
@@ -79,79 +69,55 @@ namespace WallpaperApp.Tests
         [Fact]
         public void LoadConfiguration_NonHttpsUrl_ThrowsException()
         {
-            // Arrange
-            var configContent = @"{
+            WriteUserConfig(@"{
   ""AppSettings"": {
     ""ImageUrl"": ""http://weather.zamflam.com/latest.png"",
     ""RefreshIntervalMinutes"": 15
   }
-}";
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
-
-            // Act & Assert
-            var exception = Assert.Throws<ConfigurationException>(() => service.LoadConfiguration());
+}");
+            var exception = Assert.Throws<ConfigurationException>(() => CreateService().LoadConfiguration());
             Assert.Contains("ImageUrl must use HTTPS protocol for security", exception.Message);
         }
 
         [Fact]
         public void LoadConfiguration_EmptyUrl_ThrowsException()
         {
-            // Arrange
-            var configContent = @"{
+            WriteUserConfig(@"{
   ""AppSettings"": {
     ""ImageUrl"": """",
     ""RefreshIntervalMinutes"": 15
   }
-}";
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
-
-            // Act & Assert
-            var exception = Assert.Throws<ConfigurationException>(() => service.LoadConfiguration());
+}");
+            var exception = Assert.Throws<ConfigurationException>(() => CreateService().LoadConfiguration());
             Assert.Contains("ImageUrl cannot be empty", exception.Message);
         }
 
         [Fact]
         public void LoadConfiguration_NullUrl_ThrowsException()
         {
-            // Arrange
-            var configContent = @"{
+            WriteUserConfig(@"{
   ""AppSettings"": {
     ""RefreshIntervalMinutes"": 15
   }
-}";
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
-
-            // Act & Assert
-            var exception = Assert.Throws<ConfigurationException>(() => service.LoadConfiguration());
+}");
+            var exception = Assert.Throws<ConfigurationException>(() => CreateService().LoadConfiguration());
             Assert.Contains("ImageUrl cannot be empty", exception.Message);
         }
 
-        // === Story WS-3: Enhanced Configuration Model Tests ===
+        // ── Default-property handling ────────────────────────────────────────
 
         [Fact]
         public void LoadConfiguration_OldFormat_AddsDefaults()
         {
-            // Arrange - Old format JSON (only ImageUrl and RefreshIntervalMinutes)
-            var configContent = @"{
+            // Old-format JSON (only the two original fields) — new fields should use C# defaults.
+            WriteUserConfig(@"{
   ""AppSettings"": {
     ""ImageUrl"": ""https://example.com/image.png"",
     ""RefreshIntervalMinutes"": 15
   }
-}";
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
+}");
+            var settings = CreateService().LoadConfiguration();
 
-            // Act
-            var settings = service.LoadConfiguration();
-
-            // Assert - New properties should have defaults
             Assert.Equal(WallpaperFitMode.Fit, settings.FitMode);
             Assert.False(settings.EnableNotifications);
             Assert.Null(settings.LocalImagePath);
@@ -159,79 +125,9 @@ namespace WallpaperApp.Tests
         }
 
         [Fact]
-        public void LoadConfiguration_LocalFileMode_ValidPath_Succeeds()
-        {
-            // Arrange - Create a test image file
-            var testImagePath = Path.Combine(_fixture.TestDirectory, "test.png");
-            File.WriteAllBytes(testImagePath, new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }); // PNG header
-
-            var configContent = $@"{{
-  ""AppSettings"": {{
-    ""ImageUrl"": """",
-    ""RefreshIntervalMinutes"": 15,
-    ""SourceType"": 1,
-    ""LocalImagePath"": ""{testImagePath.Replace("\\", "\\\\")}""
-  }}
-}}";
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
-
-            // Act
-            var settings = service.LoadConfiguration();
-
-            // Assert
-            Assert.Equal(ImageSource.LocalFile, settings.SourceType);
-            Assert.Equal(testImagePath, settings.LocalImagePath);
-        }
-
-        [Fact]
-        public void LoadConfiguration_LocalFileMode_MissingPath_ThrowsException()
-        {
-            // Arrange
-            var configContent = @"{
-  ""AppSettings"": {
-    ""ImageUrl"": """",
-    ""RefreshIntervalMinutes"": 15,
-    ""SourceType"": 1
-  }
-}";
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
-
-            // Act & Assert
-            var exception = Assert.Throws<ConfigurationException>(() => service.LoadConfiguration());
-            Assert.Contains("LocalImagePath is required when SourceType is LocalFile", exception.Message);
-        }
-
-        [Fact]
-        public void LoadConfiguration_LocalFileMode_FileNotFound_ThrowsException()
-        {
-            // Arrange
-            var configContent = @"{
-  ""AppSettings"": {
-    ""ImageUrl"": """",
-    ""RefreshIntervalMinutes"": 15,
-    ""SourceType"": 1,
-    ""LocalImagePath"": ""C:\\nonexistent\\image.png""
-  }
-}";
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
-
-            // Act & Assert
-            var exception = Assert.Throws<ConfigurationException>(() => service.LoadConfiguration());
-            Assert.Contains("Local image file not found", exception.Message);
-            Assert.Contains("nonexistent", exception.Message);
-        }
-
-        [Fact]
         public void LoadConfiguration_AllNewProperties_LoadsCorrectly()
         {
-            // Arrange
-            var configContent = @"{
+            WriteUserConfig(@"{
   ""AppSettings"": {
     ""ImageUrl"": ""https://example.com/image.png"",
     ""RefreshIntervalMinutes"": 30,
@@ -239,19 +135,187 @@ namespace WallpaperApp.Tests
     ""EnableNotifications"": true,
     ""SourceType"": 0
   }
-}";
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            File.WriteAllText(configPath, configContent);
-            var service = new ConfigurationService();
+}");
+            var settings = CreateService().LoadConfiguration();
 
-            // Act
-            var settings = service.LoadConfiguration();
-
-            // Assert
             Assert.Equal(30, settings.RefreshIntervalMinutes);
             Assert.Equal(WallpaperFitMode.Stretch, settings.FitMode);
             Assert.True(settings.EnableNotifications);
             Assert.Equal(ImageSource.Url, settings.SourceType);
+        }
+
+        // ── Local-file mode ──────────────────────────────────────────────────
+
+        [Fact]
+        public void LoadConfiguration_LocalFileMode_ValidPath_Succeeds()
+        {
+            var testImagePath = Path.Combine(_testDirectory, "test.png");
+            File.WriteAllBytes(testImagePath, new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+
+            WriteUserConfig($@"{{
+  ""AppSettings"": {{
+    ""ImageUrl"": """",
+    ""RefreshIntervalMinutes"": 15,
+    ""SourceType"": 1,
+    ""LocalImagePath"": ""{testImagePath.Replace("\\", "\\\\")}""
+  }}
+}}");
+            var settings = CreateService().LoadConfiguration();
+
+            Assert.Equal(ImageSource.LocalFile, settings.SourceType);
+            Assert.Equal(testImagePath, settings.LocalImagePath);
+        }
+
+        [Fact]
+        public void LoadConfiguration_LocalFileMode_MissingPath_ThrowsException()
+        {
+            WriteUserConfig(@"{
+  ""AppSettings"": {
+    ""ImageUrl"": """",
+    ""RefreshIntervalMinutes"": 15,
+    ""SourceType"": 1
+  }
+}");
+            var exception = Assert.Throws<ConfigurationException>(() => CreateService().LoadConfiguration());
+            Assert.Contains("LocalImagePath is required when SourceType is LocalFile", exception.Message);
+        }
+
+        [Fact]
+        public void LoadConfiguration_LocalFileMode_FileNotFound_ThrowsException()
+        {
+            WriteUserConfig(@"{
+  ""AppSettings"": {
+    ""ImageUrl"": """",
+    ""RefreshIntervalMinutes"": 15,
+    ""SourceType"": 1,
+    ""LocalImagePath"": ""/nonexistent/image.png""
+  }
+}");
+            var exception = Assert.Throws<ConfigurationException>(() => CreateService().LoadConfiguration());
+            Assert.Contains("Local image file not found", exception.Message);
+            Assert.Contains("nonexistent", exception.Message);
+        }
+
+        // ── First-run seeding ────────────────────────────────────────────────
+
+        [Fact]
+        public void LoadConfiguration_NoUserConfig_SeedsFromDefault()
+        {
+            // Default config exists, user config does not.
+            WriteDefaultConfig(@"{
+  ""AppSettings"": {
+    ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
+    ""RefreshIntervalMinutes"": 15
+  }
+}");
+            // User config does not exist yet.
+            Assert.False(File.Exists(_userConfigPath));
+
+            var settings = CreateService().LoadConfiguration();
+
+            // Settings loaded correctly from the seeded file.
+            Assert.Equal("https://weather.zamflam.com/latest.png", settings.ImageUrl);
+            Assert.Equal(15, settings.RefreshIntervalMinutes);
+            // User config file was created.
+            Assert.True(File.Exists(_userConfigPath));
+        }
+
+        [Fact]
+        public void LoadConfiguration_SeedsUserConfig_ContentMatchesDefault()
+        {
+            var defaultJson = @"{
+  ""AppSettings"": {
+    ""ImageUrl"": ""https://weather.zamflam.com/latest.png"",
+    ""RefreshIntervalMinutes"": 15
+  }
+}";
+            WriteDefaultConfig(defaultJson);
+
+            CreateService().LoadConfiguration();
+
+            var seededJson = File.ReadAllText(_userConfigPath);
+            Assert.Equal(defaultJson, seededJson);
+        }
+
+        [Fact]
+        public void LoadConfiguration_UserConfigTakesPrecedenceOverDefault()
+        {
+            // Both user config and default exist with different URLs.
+            WriteDefaultConfig(@"{
+  ""AppSettings"": {
+    ""ImageUrl"": ""https://default.example.com/image.png"",
+    ""RefreshIntervalMinutes"": 15
+  }
+}");
+            WriteUserConfig(@"{
+  ""AppSettings"": {
+    ""ImageUrl"": ""https://user.example.com/image.png"",
+    ""RefreshIntervalMinutes"": 30
+  }
+}");
+            var settings = CreateService().LoadConfiguration();
+
+            // User config wins — default is ignored when user config exists.
+            Assert.Equal("https://user.example.com/image.png", settings.ImageUrl);
+            Assert.Equal(30, settings.RefreshIntervalMinutes);
+        }
+
+        // ── Save / round-trip ────────────────────────────────────────────────
+
+        [Fact]
+        public void SaveConfiguration_WritesToUserConfigPath()
+        {
+            var service = CreateService();
+            var settings = new AppSettings
+            {
+                ImageUrl = "https://example.com/image.png",
+                RefreshIntervalMinutes = 20
+            };
+
+            service.SaveConfiguration(settings);
+
+            Assert.True(File.Exists(_userConfigPath));
+            var json = File.ReadAllText(_userConfigPath);
+            Assert.Contains("https://example.com/image.png", json);
+        }
+
+        [Fact]
+        public void SaveConfiguration_ThenLoad_RoundTrips()
+        {
+            var service = CreateService();
+            var original = new AppSettings
+            {
+                ImageUrl = "https://example.com/image.png",
+                RefreshIntervalMinutes = 30,
+                FitMode = WallpaperFitMode.Stretch,
+                EnableNotifications = true,
+                SourceType = ImageSource.Url
+            };
+
+            service.SaveConfiguration(original);
+            var loaded = service.LoadConfiguration();
+
+            Assert.Equal(original.ImageUrl, loaded.ImageUrl);
+            Assert.Equal(original.RefreshIntervalMinutes, loaded.RefreshIntervalMinutes);
+            Assert.Equal(original.FitMode, loaded.FitMode);
+            Assert.Equal(original.EnableNotifications, loaded.EnableNotifications);
+            Assert.Equal(original.SourceType, loaded.SourceType);
+        }
+
+        [Fact]
+        public void SaveConfiguration_WritesHumanReadableJson()
+        {
+            var service = CreateService();
+            service.SaveConfiguration(new AppSettings
+            {
+                ImageUrl = "https://example.com/image.png",
+                RefreshIntervalMinutes = 15
+            });
+
+            var json = File.ReadAllText(_userConfigPath);
+            Assert.Contains("AppSettings", json);
+            Assert.Contains("ImageUrl", json);
+            Assert.Contains("\n", json); // Indented (human-readable).
         }
     }
 }
