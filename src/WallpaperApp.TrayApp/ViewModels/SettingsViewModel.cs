@@ -796,7 +796,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 else
                 {
                     // Load default demo image when no source is selected
-                    const string defaultDemoUrl = "https://source.unsplash.com/random/1920x1080";
+                    const string defaultDemoUrl = "https://weather.zamflam.com/assets/diagram.png";
                     PreviewStatus = "Loading demo image...";
                     try
                     {
