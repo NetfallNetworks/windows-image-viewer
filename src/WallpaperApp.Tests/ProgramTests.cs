@@ -9,13 +9,43 @@ namespace WallpaperApp.Tests
     {
         private readonly TestDirectoryFixture _fixture;
 
+        // Path where ConfigurationService (production constructor) stores user config.
+        private readonly string _userConfigPath;
+        // Backup of any pre-existing user config so we can restore it after the test.
+        private readonly string? _userConfigBackup;
+
         public ProgramTests()
         {
             _fixture = new TestDirectoryFixture("ProgramTests");
+
+            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string configDirectory = Path.Combine(appDataPath, "WallpaperSync");
+            Directory.CreateDirectory(configDirectory);
+            _userConfigPath = Path.Combine(configDirectory, "WallpaperApp.json");
+
+            // Back up and remove any existing user config so every test starts clean.
+            if (File.Exists(_userConfigPath))
+            {
+                _userConfigBackup = Path.Combine(Path.GetTempPath(), $"ProgramTests_backup_{Guid.NewGuid()}.json");
+                File.Copy(_userConfigPath, _userConfigBackup);
+                File.Delete(_userConfigPath);
+            }
         }
 
         public void Dispose()
         {
+            // Remove any config written by this test.
+            if (File.Exists(_userConfigPath))
+            {
+                try { File.Delete(_userConfigPath); } catch { }
+            }
+
+            // Restore user config that existed before this test ran.
+            if (_userConfigBackup != null && File.Exists(_userConfigBackup))
+            {
+                try { File.Move(_userConfigBackup, _userConfigPath, overwrite: true); } catch { }
+            }
+
             _fixture.Dispose();
         }
 
@@ -77,8 +107,8 @@ namespace WallpaperApp.Tests
     ""RefreshIntervalMinutes"": 15
   }
 }";
-            // Write config to AppContext.BaseDirectory where ConfigurationService looks for it
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json"), configContent);
+            // Write config to the user config path where ConfigurationService now looks for it.
+            File.WriteAllText(_userConfigPath, configContent);
 
             // Act
             var exitCode = Program.Main(new[] { "--download" });
@@ -104,11 +134,13 @@ namespace WallpaperApp.Tests
         [Fact]
         public void DownloadMode_MissingConfig_ReturnsErrorCode()
         {
-            // Arrange - Make sure config file doesn't exist in AppContext.BaseDirectory
-            var configPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
-            if (File.Exists(configPath))
+            // Arrange - Ensure no config exists at either location the service checks.
+            // User config is already cleared by the constructor (backed up and deleted).
+            // Also clear the bundled default from the test output dir if present.
+            var defaultConfigPath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
+            if (File.Exists(defaultConfigPath))
             {
-                File.Delete(configPath);
+                File.Delete(defaultConfigPath);
             }
 
             // Act
