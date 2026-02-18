@@ -127,10 +127,12 @@
         Config file: NeverOverwrite="yes" preserves user settings across upgrades.
         On first install the bundled default config is written.
         On upgrade the user's existing config is left untouched.
+        Source from the project tree (not build output) so we always ship the
+        canonical default, regardless of what's in bin\TrayApp at build time.
       -->
       <Component Id="ConfigFile" Guid="*" NeverOverwrite="yes">
         <File Id="ConfigJson"
-              Source="bin\TrayApp\WallpaperApp.json"
+              Source="src\WallpaperApp.TrayApp\WallpaperApp.json"
               KeyPath="yes" />
       </Component>
 
