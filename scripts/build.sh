@@ -73,11 +73,32 @@ if [ "$IS_WINDOWS" = true ]; then
     fi
 else
     echo "⚠️  Skipping WallpaperApp.TrayApp publish (Windows-only)"
-    echo "⚠️  Skipping installer build (Windows-only)"
+    echo "⚠️  Skipping full installer build (Windows-only)"
     echo ""
-    echo "   The MSI installer requires Windows to build because WPF/WinForms"
-    echo "   cannot be cross-compiled from Linux. Run scripts\\build.bat on"
-    echo "   Windows to produce installer\\WallpaperSync-Setup.msi."
+
+    # Validate WiX installer source schema on Linux.
+    # WiX v4 is a cross-platform .NET tool, so we can catch XML schema errors
+    # (WIX0005, WIX0400, etc.) here before they surface on Windows.
+    # WIX0103 (file not found) is expected on Linux - the TrayApp exe is a
+    # Windows-only build artifact and won't exist here. Filter it out.
+    echo "Validating WiX installer source schema..."
+    if dotnet tool restore >/dev/null 2>&1; then
+        dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5 >/dev/null 2>&1 || true
+        WIX_OUT=$(dotnet tool run wix build installer/Package.wxs \
+            -ext WixToolset.UI.wixext \
+            -o /tmp/WallpaperSync-validate.msi \
+            -arch x64 2>&1 || true)
+        # WIX0103 = source file not found (expected: exe is Windows-only)
+        REAL_ERRORS=$(echo "$WIX_OUT" | grep ": error WIX" | grep -v "WIX0103" || true)
+        if [ -n "$REAL_ERRORS" ]; then
+            echo "❌ WiX installer source has errors - fix before pushing:"
+            echo "$REAL_ERRORS"
+            exit 1
+        fi
+        echo "✅ WiX installer source schema OK"
+    else
+        echo "⚠️  WiX tool restore failed - skipping installer validation"
+    fi
 fi
 
 echo ""
