@@ -37,7 +37,7 @@
 
     <!-- Add/Remove Programs (a.k.a. Settings > Apps) metadata -->
     <Icon Id="WallpaperSyncIcon"
-          SourceFile="..\src\WallpaperApp.TrayApp\Resources\app.ico" />
+          SourceFile="src\WallpaperApp.TrayApp\Resources\app.ico" />
     <Property Id="ARPPRODUCTICON"   Value="WallpaperSyncIcon" />
     <Property Id="ARPHELPLINK"
               Value="https://github.com/NetfallNetworks/windows-image-viewer" />
@@ -119,7 +119,7 @@
       <!-- Main single-file self-contained executable (~150 MB) -->
       <Component Id="MainExecutable" Guid="*">
         <File Id="WallpaperTrayExe"
-              Source="..\bin\TrayApp\WallpaperApp.TrayApp.exe"
+              Source="bin\TrayApp\WallpaperApp.TrayApp.exe"
               KeyPath="yes" />
       </Component>
 
@@ -130,7 +130,7 @@
       -->
       <Component Id="ConfigFile" Guid="*" NeverOverwrite="yes">
         <File Id="ConfigJson"
-              Source="..\bin\TrayApp\WallpaperApp.json"
+              Source="bin\TrayApp\WallpaperApp.json"
               KeyPath="yes" />
       </Component>
 
