@@ -305,7 +305,8 @@ namespace WallpaperApp.TrayApp
 
                 // Check for first run and show welcome wizard
                 var state = _appStateService.LoadState();
-                if (state.IsFirstRun)
+                bool wasFirstRun = state.IsFirstRun;
+                if (wasFirstRun)
                 {
                     FileLogger.Log("First run detected - showing welcome wizard");
                     var wizard = new WelcomeWizard(_configurationService, _appStateService);
@@ -313,6 +314,15 @@ namespace WallpaperApp.TrayApp
 
                     // Reload state after wizard
                     state = _appStateService.LoadState();
+                }
+
+                // When launched from the installer with --open-settings, open the settings
+                // window so the user can configure immediately without hunting for the tray icon.
+                // Skip this on first run - the welcome wizard already handled setup.
+                if (!wasFirstRun && Environment.GetCommandLineArgs().Contains("--open-settings"))
+                {
+                    FileLogger.Log("--open-settings flag detected, opening settings window");
+                    ShowSettingsWindow();
                 }
 
                 // Check if enabled
