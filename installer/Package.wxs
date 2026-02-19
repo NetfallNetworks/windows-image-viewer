@@ -63,15 +63,37 @@
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
 
     <!--
-      Type 34 custom action: run an EXE from a directory path.
-      asyncNoWait = fire-and-forget; installer exits immediately after launch.
-      Wired via the UI fragment below - DoAction on the Finish button.
+      Launch the app after a fresh install.
+
+      Scheduled in InstallExecuteSequence After="InstallFinalize" so the install
+      is fully committed before the exe starts. Execute="deferred" + asyncNoWait
+      means the installer fires the process and returns immediately (no waiting
+      for the app to close).
+
+      Type 34 (Directory+ExeCommand) immediate CAs also fail with error 2717
+      when called via DoAction from ExitDialog for the same server-side reason
+      as KillApp. Deferred execution in the execute sequence avoids this.
+
+      Condition "NOT Installed": only on fresh install, not on upgrade or repair.
+      Since this runs before ExitDialog shows, WIXUI_EXITDIALOGOPTIONALCHECKBOX
+      is always at its default value (1), so the app always launches on install.
+      The "Launch Wallpaper Sync" checkbox on the Finish dialog is informational.
     -->
     <CustomAction Id="LaunchApp"
                   Directory="INSTALLFOLDER"
                   ExeCommand='"[INSTALLFOLDER]WallpaperApp.TrayApp.exe" --open-settings'
                   Return="asyncNoWait"
-                  Execute="immediate" />
+                  Execute="deferred" />
+
+    <InstallExecuteSequence>
+      <!--
+        Deferred CAs must be between InstallInitialize and InstallFinalize.
+        asyncNoWait fires the process and returns immediately so the install
+        can proceed to InstallFinalize and commit the transaction.
+      -->
+      <Custom Action="LaunchApp" Before="InstallFinalize"
+              Condition="NOT Installed" />
+    </InstallExecuteSequence>
 
     <!--
       ── Uninstall: close the running app ─────────────────────────────────────
@@ -300,13 +322,9 @@
   -->
   <Fragment>
     <UI>
-      <!-- Fresh install: launch the app if the checkbox is checked -->
-      <Publish Dialog="ExitDialog" Control="Finish"
-               Event="DoAction" Value="LaunchApp" Order="1"
-               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
       <!-- Uninstall: remove downloaded images if the checkbox is checked -->
       <Publish Dialog="ExitDialog" Control="Finish"
-               Event="DoAction" Value="RemoveImages" Order="2"
+               Event="DoAction" Value="RemoveImages" Order="1"
                Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND REMOVE = 'ALL'" />
     </UI>
   </Fragment>
