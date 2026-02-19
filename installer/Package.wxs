@@ -5,10 +5,12 @@
   Build requirements (WiX v4 is pinned in .config\dotnet-tools.json):
     dotnet tool restore
     dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
+    dotnet tool run wix extension add WixToolset.Util.wixext/4.0.5
 
   Build command (from repo root):
     dotnet tool run wix build installer\Package.wxs ^
       -ext WixToolset.UI.wixext ^
+      -ext WixToolset.Util.wixext ^
       -o installer\WallpaperSync-Setup.msi ^
       -arch x64
 
@@ -17,7 +19,8 @@
   Uninstall via: Windows Settings > Apps, or Control Panel > Programs
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
   <Package Name="Wallpaper Sync"
            Manufacturer="Wallpaper Sync"
@@ -71,37 +74,50 @@
                   Execute="immediate" />
 
     <!--
-      ── Uninstall custom actions ─────────────────────────────────────────────
+      ── Uninstall: close the running app ─────────────────────────────────────
 
-      KillApp: force-terminates the running tray process before MSI removes the
-      exe. /T also kills child processes. Return="ignore" so uninstall proceeds
-      cleanly even if the app wasn't running.
+      util:CloseApplication terminates the tray process before MSI removes the
+      exe. It is a no-op if the process isn't running so it is safe to leave it
+      unconditional. It runs via the WixCloseApplications action injected by the
+      Util extension into InstallExecuteSequence (before CostFinalize).
 
-      CleanupInstallFolder: after MSI removes the tracked files it leaves behind
-      any runtime files the app created (state.json, etc.) because they aren't in
-      the component table. This CA force-removes the whole install directory so
-      nothing is left behind. Runs After="RemoveFiles" once the tracked files are
-      already gone.
+      Type 34 (Directory+ExeCommand) immediate CAs cannot reliably launch new
+      processes when Windows Installer runs entirely server-side (no separate
+      client process), which causes error 2717 at runtime. util:CloseApplication
+      avoids that class of problem entirely.
 
-      RemoveImages: deletes the folder where the app caches downloaded wallpapers.
-      Not run automatically - only fires when the user checks the box on the
-      Finish dialog (see the UI fragment below).
+      ── Uninstall: remove runtime files ─────────────────────────────────────
 
-      SetUninstallCheckboxText: swaps the Finish-dialog checkbox label so it
-      reads "Also remove downloaded wallpaper images" during uninstall instead of
-      "Launch Wallpaper Sync". Runs just before ExitDialog opens.
+      MSI only removes files it installed. state.json is created at runtime and
+      would be left behind. RemoveFile + RemoveFolder in CleanupComponent handle
+      this natively, without a custom action.
+
+      ── Uninstall: optional image removal ────────────────────────────────────
+
+      RemoveImages fires from the Finish dialog checkbox (see UI fragment below).
+      It runs client-side (DoAction from UI), not in the execute sequence, so the
+      Type 34 immediate CA works correctly in that context.
+
+      ── Uninstall: checkbox label swap ───────────────────────────────────────
+
+      SetUninstallCheckboxText swaps the Finish-dialog checkbox label so it reads
+      "Also remove downloaded wallpaper images" during uninstall.
     -->
-    <CustomAction Id="KillApp"
-                  Directory="SystemFolder"
-                  ExeCommand='"[SystemFolder]taskkill.exe" /F /IM WallpaperApp.TrayApp.exe /T'
-                  Return="ignore"
-                  Execute="immediate" />
 
-    <CustomAction Id="CleanupInstallFolder"
-                  Directory="SystemFolder"
-                  ExeCommand='"[SystemFolder]cmd.exe" /C rmdir /s /q "[LocalAppDataFolder]WallpaperSync"'
-                  Return="ignore"
-                  Execute="immediate" />
+    <!--
+      Kill the tray app before uninstall so the exe isn't locked.
+      TerminateProcess="yes" → SIGKILL-equivalent (taskkill /F) if graceful
+      close doesn't work within the timeout.
+    -->
+    <!--
+      CloseMessage="yes": send WM_CLOSE first (graceful).
+      TerminateProcess="0": if still running after timeout, call TerminateProcess(exit=0).
+    -->
+    <util:CloseApplication Id="CloseWallpaperSync"
+                           Target="WallpaperApp.TrayApp.exe"
+                           CloseMessage="yes"
+                           RebootPrompt="no"
+                           TerminateProcess="0" />
 
     <CustomAction Id="RemoveImages"
                   Directory="SystemFolder"
@@ -112,15 +128,6 @@
     <CustomAction Id="SetUninstallCheckboxText"
                   Property="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
                   Value="Also remove downloaded wallpaper images" />
-
-    <InstallExecuteSequence>
-      <!-- Kill before files are removed so the exe isn't locked -->
-      <Custom Action="KillApp" Before="RemoveFiles"
-              Condition="REMOVE = 'ALL'" />
-      <!-- Sweep up runtime files (state.json, etc.) the app left behind -->
-      <Custom Action="CleanupInstallFolder" After="RemoveFiles"
-              Condition="REMOVE = 'ALL'" />
-    </InstallExecuteSequence>
 
     <InstallUISequence>
       <!--
@@ -187,6 +194,24 @@
         <File Id="ConfigJson"
               Source="src\WallpaperApp.TrayApp\WallpaperApp.json"
               KeyPath="yes" />
+      </Component>
+
+      <!--
+        Cleanup component: removes files the app creates at runtime (not tracked
+        by MSI) and the install folder itself on uninstall.
+        RemoveFile removes state.json (written by the app at runtime).
+        RemoveFolder removes the now-empty INSTALLFOLDER directory.
+        A RegistryValue is required as the KeyPath (RemoveFile can't be a KeyPath).
+      -->
+      <Component Id="CleanupComponent" Guid="*">
+        <RemoveFile Id="RemoveStateJson" Name="state.json" On="uninstall" />
+        <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\WallpaperSync"
+                       Name="CleanupInstalled"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
       </Component>
 
     </ComponentGroup>

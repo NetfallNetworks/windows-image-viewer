@@ -101,15 +101,17 @@ if errorlevel 1 (
     goto BuildSuccess
 )
 
-REM Cache the WiX UI extension (idempotent - safe to run multiple times).
+REM Cache the WiX extensions (idempotent - safe to run multiple times).
 REM The /4.0.5 suffix pins the extension to the matching WiX v4 version.
-echo Ensuring WiX UI extension v4 is available...
+echo Ensuring WiX extensions v4 are available...
 dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5 >nul 2>&1
+dotnet tool run wix extension add WixToolset.Util.wixext/4.0.5 >nul 2>&1
 
 REM Build the MSI installer
 echo Building WallpaperSync-Setup.msi...
 dotnet tool run wix build installer\Package.wxs ^
     -ext WixToolset.UI.wixext ^
+    -ext WixToolset.Util.wixext ^
     -o installer\WallpaperSync-Setup.msi ^
     -arch x64
 
@@ -136,7 +138,7 @@ echo ========================================
 echo [SUCCESS] BUILD PIPELINE COMPLETE!
 echo ========================================
 echo   [OK] Build successful
-echo   [OK] All tests passed (88/88)
+echo   [OK] All tests passed (94/94)
 echo   [OK] Console app published to .\publish\WallpaperApp\
 echo   [OK] Tray app published to .\bin\TrayApp\
 if exist "installer\WallpaperSync-Setup.msi" (
