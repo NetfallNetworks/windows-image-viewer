@@ -123,8 +123,13 @@
     </InstallExecuteSequence>
 
     <InstallUISequence>
-      <!-- Flip the Finish-dialog checkbox label before ExitDialog appears -->
-      <Custom Action="SetUninstallCheckboxText" Before="ExitDialog"
+      <!--
+        Schedule before ExecuteAction (not ExitDialog — ExitDialog has a negative
+        sequence number and cannot be used as a scheduling anchor in WiX v4).
+        The property is set before the uninstall runs, so it is already correct
+        when ExitDialog shows at the end.
+      -->
+      <Custom Action="SetUninstallCheckboxText" Before="ExecuteAction"
               Condition="REMOVE = 'ALL'" />
     </InstallUISequence>
 
