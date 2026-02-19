@@ -55,29 +55,17 @@
     <ui:WixUI Id="WixUI_Minimal" />
 
     <!--
-      "Launch Wallpaper Sync" checkbox on the Finish dialog.
-      Checked by default so most users get it started immediately.
-    -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
-              Value="Launch Wallpaper Sync" />
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-
-    <!--
       Launch the app after a fresh install.
 
-      Scheduled in InstallExecuteSequence After="InstallFinalize" so the install
-      is fully committed before the exe starts. Execute="deferred" + asyncNoWait
-      means the installer fires the process and returns immediately (no waiting
-      for the app to close).
+      Scheduled Before="InstallFinalize" so the install is fully committed before
+      the exe starts. Execute="deferred" + asyncNoWait means the installer fires
+      the process and returns immediately (no waiting for the app to close).
 
-      Type 34 (Directory+ExeCommand) immediate CAs also fail with error 2717
-      when called via DoAction from ExitDialog for the same server-side reason
-      as KillApp. Deferred execution in the execute sequence avoids this.
+      Type 34 (Directory+ExeCommand) immediate CAs fail with error 2717 when
+      Windows Installer runs server-side. Deferred execution in the execute
+      sequence avoids this.
 
       Condition "NOT Installed": only on fresh install, not on upgrade or repair.
-      Since this runs before ExitDialog shows, WIXUI_EXITDIALOGOPTIONALCHECKBOX
-      is always at its default value (1), so the app always launches on install.
-      The "Launch Wallpaper Sync" checkbox on the Finish dialog is informational.
     -->
     <CustomAction Id="LaunchApp"
                   Directory="INSTALLFOLDER"
@@ -113,24 +101,8 @@
       MSI only removes files it installed. state.json is created at runtime and
       would be left behind. RemoveFile + RemoveFolder in CleanupComponent handle
       this natively, without a custom action.
-
-      ── Uninstall: optional image removal ────────────────────────────────────
-
-      RemoveImages fires from the Finish dialog checkbox (see UI fragment below).
-      It runs client-side (DoAction from UI), not in the execute sequence, so the
-      Type 34 immediate CA works correctly in that context.
-
-      ── Uninstall: checkbox label swap ───────────────────────────────────────
-
-      SetUninstallCheckboxText swaps the Finish-dialog checkbox label so it reads
-      "Also remove downloaded wallpaper images" during uninstall.
     -->
 
-    <!--
-      Kill the tray app before uninstall so the exe isn't locked.
-      TerminateProcess="yes" → SIGKILL-equivalent (taskkill /F) if graceful
-      close doesn't work within the timeout.
-    -->
     <!--
       CloseMessage="yes": send WM_CLOSE first (graceful).
       TerminateProcess="0": if still running after timeout, call TerminateProcess(exit=0).
@@ -140,27 +112,6 @@
                            CloseMessage="yes"
                            RebootPrompt="no"
                            TerminateProcess="0" />
-
-    <CustomAction Id="RemoveImages"
-                  Directory="SystemFolder"
-                  ExeCommand='"[SystemFolder]cmd.exe" /C rmdir /s /q "[TempFolder]WallpaperService"'
-                  Return="asyncNoWait"
-                  Execute="immediate" />
-
-    <CustomAction Id="SetUninstallCheckboxText"
-                  Property="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
-                  Value="Also remove downloaded wallpaper images" />
-
-    <InstallUISequence>
-      <!--
-        Schedule before ExecuteAction (not ExitDialog — ExitDialog has a negative
-        sequence number and cannot be used as a scheduling anchor in WiX v4).
-        The property is set before the uninstall runs, so it is already correct
-        when ExitDialog shows at the end.
-      -->
-      <Custom Action="SetUninstallCheckboxText" Before="ExecuteAction"
-              Condition="REMOVE = 'ALL'" />
-    </InstallUISequence>
 
     <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
@@ -309,24 +260,5 @@
     </ComponentGroup>
   </Fragment>
 
-  <!--
-    Wire the "Launch Wallpaper Sync" checkbox to a DoAction on the Finish button.
-
-    <ui:WixUI> has no child elements - it only accepts the Id attribute.
-    The correct WiX v4 mechanism for extending built-in WixUI dialog controls
-    is a standalone <Publish> inside a <UI> fragment, which the linker merges
-    into the WixUI library's dialog table at build time.
-
-    WiX v4 requires Condition as an attribute on ALL elements - <Publish>,
-    <Custom>, etc. Inner text for conditions was removed across the board.
-  -->
-  <Fragment>
-    <UI>
-      <!-- Uninstall: remove downloaded images if the checkbox is checked -->
-      <Publish Dialog="ExitDialog" Control="Finish"
-               Event="DoAction" Value="RemoveImages" Order="1"
-               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND REMOVE = 'ALL'" />
-    </UI>
-  </Fragment>
 
 </Wix>
