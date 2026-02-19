@@ -1,48 +1,64 @@
 # Development Guidelines for Claude
 
+## Detecting the Current Platform
+
+**Always detect the OS before running any build, test, or publish command.**
+
+```bash
+# Works in Git Bash (Windows) and Linux/Mac terminals
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
+    IS_WINDOWS=true
+else
+    IS_WINDOWS=false
+fi
+```
+
+Key differences:
+- **Windows** (Git Bash / `OSTYPE=msys`): `dotnet` is in system PATH, full solution builds (WPF TrayApp + installer)
+- **Linux/Mac**: may need `export PATH="$PATH:/root/.dotnet"`, WPF TrayApp and installer steps are skipped
+- **MSI installer**: Windows-only — `dotnet tool restore && dotnet tool run wix build ...`
+- **Flag syntax**: use `-p:Prop=Value` in Git Bash, not `/p:Prop=Value` (the slash gets path-mangled)
+
+---
+
 ## Setup & Installation
 
 ### Installing .NET SDK (Linux/Mac)
-
-If you don't have dotnet installed, use the official installation script:
 
 ```bash
 wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
 chmod +x dotnet-install.sh
 ./dotnet-install.sh --channel 8.0
-```
-
-After installation, verify dotnet is available:
-
-```bash
+export PATH="$PATH:/root/.dotnet"
 dotnet --version
 ```
 
 ### Installing .NET SDK (Windows)
 
-Download and install from: https://dotnet.microsoft.com/download
-
-Or use winget:
-
 ```powershell
 winget install Microsoft.DotNet.SDK.8
 ```
 
+Or download from: https://dotnet.microsoft.com/download
+
 ### First-Time Setup
 
-Before making any changes, run the build pipeline to ensure everything works:
+Before making any changes, run the build pipeline to establish a clean baseline:
 
 ```bash
 # Linux/Mac
 ./scripts/build.sh
 
-# Windows
+# Windows (Git Bash) — preferred wrapper
+cmd.exe /c scripts\\build.bat
+
+# Windows (PowerShell)
 .\scripts\build.bat
 ```
 
-This will build, test, and publish all applications.
+**If the pipeline fails on initial setup, DO NOT proceed.**
 
-**If the pipeline fails on initial setup, DO NOT proceed.** Investigate and resolve issues first to establish a clean baseline.
+---
 
 ## ⛔ CRITICAL: MANDATORY TESTING POLICY ⛔
 
@@ -50,14 +66,12 @@ This will build, test, and publish all applications.
 
 **YOU MUST RUN TESTS AFTER EVERY SINGLE CODE CHANGE. PERIOD.**
 
-This is not a suggestion. This is not optional. This is not "when convenient."
-
 ### THE RULE
 
 ```
-IF you modify ANY .cs or .xaml file
-THEN you MUST run: ./scripts/build.sh
-AND it MUST show: "✅ BUILD PIPELINE COMPLETE!" with all tests passing
+IF you modify ANY .cs, .xaml, or .wxs file
+THEN detect the OS and run the correct pipeline
+AND all tests must pass with zero warnings
 BEFORE you commit or push ANYTHING
 ```
 
@@ -65,49 +79,96 @@ BEFORE you commit or push ANYTHING
 
 1. **Before making changes:** Run tests to establish baseline
 2. **After making changes:** Run tests to verify nothing broke
-3. **Before committing:** Run tests one final time
+3. **Before committing:** Confirm tests still pass
 4. **If tests fail:** FIX THE CODE, don't commit broken code
 5. **Never ever:** Commit without running tests
 
-### THE COMMAND
+### THE COMMANDS
 
-**On Linux/Mac:**
+**Prefer the wrapper script — it runs the complete pipeline in the correct order.**
+
+#### Windows (Git Bash)
+```bash
+cmd.exe /c scripts\\build.bat
+```
+
+#### Windows (PowerShell / cmd)
+```bat
+.\scripts\build.bat
+```
+
+#### Linux/Mac
 ```bash
 ./scripts/build.sh
 ```
 
-**On Windows:**
-```powershell
-.\scripts\build.bat
+### TARGETED COMMANDS (when wrapper isn't practical)
+
+You may run individual steps instead of the full wrapper, **but only if the commands
+exactly match what the wrapper script does.** Always run at minimum: build + tests.
+
+#### Windows targeted commands (Git Bash)
+```bash
+# Step 1 — build (full solution including WPF TrayApp)
+dotnet build WallpaperApp.sln -c Release --warnaserror --verbosity minimal --nologo
+
+# Step 2 — test (mandatory — never skip)
+dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj --verbosity minimal --nologo
+
+# Step 3 — publish TrayApp (note: -p: not /p: in Git Bash)
+dotnet publish src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj \
+  -c Release -o bin/TrayApp --self-contained true --runtime win-x64 \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+  --verbosity minimal --nologo
+
+# Step 4 — build MSI installer (Windows only)
+dotnet tool restore
+dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
+dotnet tool run wix build installer/Package.wxs \
+  -ext WixToolset.UI.wixext -o installer/WallpaperSync-Setup.msi -arch x64
 ```
 
-This single command does EVERYTHING:
-1. ✅ Builds all projects with warnings as errors
-2. ✅ Runs all 88 tests
-3. ✅ Publishes console app to ./publish/WallpaperApp/
-4. ✅ Publishes tray app to ./bin/TrayApp/ (ready for install-tray-app.ps1)
-
-**Alternative (if script isn't executable):**
+#### Linux/Mac targeted commands
 ```bash
 export PATH="$PATH:/root/.dotnet"
-dotnet build WallpaperApp.sln -c Release --warnaserror && \
-dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj --verbosity minimal --nologo && \
-dotnet publish src/WallpaperApp/WallpaperApp.csproj -c Release -o publish/WallpaperApp
+
+# Step 1 — build (WPF TrayApp excluded on Linux)
+dotnet build src/WallpaperApp/WallpaperApp.csproj -c Release --warnaserror --verbosity minimal --nologo
+dotnet build src/WallpaperApp.Tests/WallpaperApp.Tests.csproj -c Release --warnaserror --verbosity minimal --nologo
+
+# Step 2 — test (mandatory — never skip)
+dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj --verbosity minimal --nologo
+
+# Step 3 — publish console app only
+dotnet publish src/WallpaperApp/WallpaperApp.csproj -c Release -o publish/WallpaperApp --verbosity minimal --nologo
+
+# Steps 3b & 4 skipped on Linux (WPF TrayApp and MSI are Windows-only)
 ```
 
 ### WHAT SUCCESS LOOKS LIKE
 
+**Windows (`build.bat`):**
 ```
-======================================
-✅ BUILD PIPELINE COMPLETE!
-======================================
-  ✅ Build successful
-  ✅ All tests passed (88/88)
-  ✅ Console app published to .\publish\WallpaperApp\
-  ✅ Tray app published to .\bin\TrayApp\
+========================================
+[SUCCESS] BUILD PIPELINE COMPLETE!
+========================================
+  [OK] Build successful
+  [OK] All tests passed (94/94)
+  [OK] Console app published to .\publish\WallpaperApp\
+  [OK] Tray app published to .\bin\TrayApp\
+  [OK] Installer built: .\installer\WallpaperSync-Setup.msi
+========================================
+```
 
-Next step: Run .\scripts\install-tray-app.ps1 to install
-======================================
+**Linux/Mac (`build.sh`):**
+```
+========================================
+✅ BUILD PIPELINE COMPLETE!
+========================================
+  ✅ Build successful
+  ✅ All tests passed (94/94)
+  ✅ Console app published to ./publish/WallpaperApp/
+========================================
 ```
 
 **If you see ANY failed tests or build errors, you MUST fix them before proceeding.**
@@ -115,64 +176,63 @@ Next step: Run .\scripts\install-tray-app.ps1 to install
 ### WHAT FAILURE LOOKS LIKE
 
 ```
-Failed!  - Failed:     1, Passed:    87, Skipped:     0, Total:    88
+Failed!  - Failed:     1, Passed:    93, Skipped:     0, Total:    94
 ```
 
 **This means you broke something. DO NOT COMMIT. FIX IT FIRST.**
 
 ### NO EXCUSES
 
-- ❌ "The tests probably pass" - RUN THEM
-- ❌ "It's a small change" - RUN THEM
-- ❌ "I'll test later" - NO, TEST NOW
-- ❌ "Just XAML changes" - RUN THEM
-- ❌ "Tests take too long" - THEY TAKE 2 MINUTES, RUN THEM
-- ❌ "I'm confident it works" - PROVE IT, RUN THEM
+- ❌ "The tests probably pass" — RUN THEM
+- ❌ "It's a small change" — RUN THEM
+- ❌ "Just XAML/WiX changes" — RUN THEM
+- ❌ "I'll test later" — NO, TEST NOW
+- ❌ "We're on Linux so I can't run the full pipeline" — RUN WHAT YOU CAN (steps 1–2 always work)
 
 ### YOUR RESPONSIBILITY
 
-You are PERSONALLY RESPONSIBLE for ensuring:
-1. ✅ Tests are run after EVERY code change
-2. ✅ ALL 88 tests pass before committing
-3. ✅ You show the test results to prove they passed
-4. ✅ No compiler warnings or errors
-5. ✅ You fix any failures immediately
+You are PERSONALLY RESPONSIBLE for:
+1. ✅ Detecting the OS before running any command
+2. ✅ Running the correct script/commands for the current platform
+3. ✅ Tests run after EVERY code change — all 94 must pass
+4. ✅ Showing the test output to prove they passed
+5. ✅ No compiler warnings or errors
+6. ✅ Fixing any failures immediately before committing
 
 ### Test Quality Standards
 
-- All 88 tests must pass - NO EXCEPTIONS
-- Zero test failures allowed
-- Zero tests skipped
-- No compiler warnings (treat warnings as errors)
+- All 94 tests must pass — NO EXCEPTIONS
+- Zero test failures, zero skipped
+- No compiler warnings (warnings-as-errors is enforced)
 - No xUnit analyzer warnings
-- Platform-specific tests must handle both Windows and Linux correctly
 - Check for common issues:
   - xUnit1031: Use async/await instead of blocking task operations
   - Proper disposal of resources in tests
   - No hardcoded paths that break on different platforms
   - Default values must match test expectations (e.g., FitMode defaults)
 
+---
+
 ## Git Workflow
 
-**MANDATORY SEQUENCE - DO NOT DEVIATE:**
+**MANDATORY SEQUENCE — DO NOT DEVIATE:**
 
-1. Develop on designated feature branch (e.g., `claude/wallpaper-sync-phase-1-9oLWN`)
-2. **RUN BUILD PIPELINE** - `./scripts/build.sh` (Linux/Mac) or `.\scripts\build.bat` (Windows)
-3. **VERIFY** - Confirm "✅ BUILD PIPELINE COMPLETE!" appears
+1. Develop on designated feature branch (e.g., `claude/my-feature-aBcDe`)
+2. **RUN BUILD PIPELINE** — platform-appropriate command (see above)
+3. **VERIFY** — all tests pass, no warnings
 4. **ONLY IF PIPELINE SUCCEEDS:** Commit with clear messages
-5. **BEFORE PUSHING:** Run build pipeline one more time to be absolutely sure
-6. **ONLY IF PIPELINE SUCCEEDS:** Push to remote
+5. **ONLY IF PIPELINE SUCCEEDS:** Push to remote
 
 ### Communicating with the User
 
-When reporting your work to the user, you MUST:
-1. ✅ Show the actual build pipeline command you ran (./scripts/build.sh)
-2. ✅ Show the complete pipeline output (build, tests, publish)
-3. ✅ Explicitly state "✅ BUILD PIPELINE COMPLETE!" appeared
-4. ✅ Confirm all 88 tests passed in the output
-5. ❌ Do NOT say "pipeline succeeds" without proving it with actual command output
-6. ❌ Do NOT assume success without running the full pipeline
-7. ❌ Do NOT say "should work" - prove it by running ./scripts/build.sh
+When reporting your work you MUST:
+1. ✅ State which platform you're on and which command you ran
+2. ✅ Show the actual command output (build, tests, publish)
+3. ✅ Confirm test count passed (e.g., "94/94 passing")
+4. ❌ Do NOT say "should work" — prove it by running the pipeline
+5. ❌ Do NOT commit without showing test results
+
+---
 
 ## Code Quality
 
