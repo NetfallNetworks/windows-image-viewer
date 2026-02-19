@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WallpaperApp.Core\WallpaperApp.Core.csproj" />
     <ProjectReference Include="..\WallpaperApp\WallpaperApp.csproj" />
   </ItemGroup>
 
