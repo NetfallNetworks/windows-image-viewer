@@ -70,6 +70,64 @@
                   Return="asyncNoWait"
                   Execute="immediate" />
 
+    <!--
+      ── Uninstall custom actions ─────────────────────────────────────────────
+
+      KillApp: force-terminates the running tray process before MSI removes the
+      exe. /T also kills child processes. Return="ignore" so uninstall proceeds
+      cleanly even if the app wasn't running.
+
+      CleanupInstallFolder: after MSI removes the tracked files it leaves behind
+      any runtime files the app created (state.json, etc.) because they aren't in
+      the component table. This CA force-removes the whole install directory so
+      nothing is left behind. Runs After="RemoveFiles" once the tracked files are
+      already gone.
+
+      RemoveImages: deletes the folder where the app caches downloaded wallpapers.
+      Not run automatically - only fires when the user checks the box on the
+      Finish dialog (see the UI fragment below).
+
+      SetUninstallCheckboxText: swaps the Finish-dialog checkbox label so it
+      reads "Also remove downloaded wallpaper images" during uninstall instead of
+      "Launch Wallpaper Sync". Runs just before ExitDialog opens.
+    -->
+    <CustomAction Id="KillApp"
+                  Directory="SystemFolder"
+                  ExeCommand='"[SystemFolder]taskkill.exe" /F /IM WallpaperApp.TrayApp.exe /T'
+                  Return="ignore"
+                  Execute="immediate" />
+
+    <CustomAction Id="CleanupInstallFolder"
+                  Directory="SystemFolder"
+                  ExeCommand='"[SystemFolder]cmd.exe" /C rmdir /s /q "[LocalAppDataFolder]WallpaperSync"'
+                  Return="ignore"
+                  Execute="immediate" />
+
+    <CustomAction Id="RemoveImages"
+                  Directory="SystemFolder"
+                  ExeCommand='"[SystemFolder]cmd.exe" /C rmdir /s /q "[TempFolder]WallpaperService"'
+                  Return="asyncNoWait"
+                  Execute="immediate" />
+
+    <CustomAction Id="SetUninstallCheckboxText"
+                  Property="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+                  Value="Also remove downloaded wallpaper images" />
+
+    <InstallExecuteSequence>
+      <!-- Kill before files are removed so the exe isn't locked -->
+      <Custom Action="KillApp" Before="RemoveFiles"
+              Condition="REMOVE = 'ALL'" />
+      <!-- Sweep up runtime files (state.json, etc.) the app left behind -->
+      <Custom Action="CleanupInstallFolder" After="RemoveFiles"
+              Condition="REMOVE = 'ALL'" />
+    </InstallExecuteSequence>
+
+    <InstallUISequence>
+      <!-- Flip the Finish-dialog checkbox label before ExitDialog appears -->
+      <Custom Action="SetUninstallCheckboxText" Before="ExitDialog"
+              Condition="REMOVE = 'ALL'" />
+    </InstallUISequence>
+
     <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentGroupRef Id="ShortcutComponents" />
@@ -212,9 +270,14 @@
   -->
   <Fragment>
     <UI>
+      <!-- Fresh install: launch the app if the checkbox is checked -->
       <Publish Dialog="ExitDialog" Control="Finish"
                Event="DoAction" Value="LaunchApp" Order="1"
                Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+      <!-- Uninstall: remove downloaded images if the checkbox is checked -->
+      <Publish Dialog="ExitDialog" Control="Finish"
+               Event="DoAction" Value="RemoveImages" Order="2"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND REMOVE = 'ALL'" />
     </UI>
   </Fragment>
 
