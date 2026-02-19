@@ -456,10 +456,10 @@ namespace WallpaperApp.TrayApp
         {
             try
             {
-                var tempPath = Path.Combine(Path.GetTempPath(), "WallpaperService");
-                if (Directory.Exists(tempPath))
+                var wallpaperPath = AppPaths.WallpaperDirectory;
+                if (Directory.Exists(wallpaperPath))
                 {
-                    System.Diagnostics.Process.Start("explorer.exe", tempPath);
+                    System.Diagnostics.Process.Start("explorer.exe", wallpaperPath);
                 }
                 else
                 {

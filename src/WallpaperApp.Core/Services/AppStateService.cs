@@ -18,11 +18,8 @@ namespace WallpaperApp.Services
         /// </summary>
         public AppStateService()
         {
-            string appDataPath = Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData);
-            string stateDirectory = Path.Combine(appDataPath, "WallpaperSync");
-            Directory.CreateDirectory(stateDirectory);
-            _stateFilePath = Path.Combine(stateDirectory, "state.json");
+            Directory.CreateDirectory(AppPaths.BaseDirectory);
+            _stateFilePath = AppPaths.StateFile;
         }
 
         /// <summary>

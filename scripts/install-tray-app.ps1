@@ -16,7 +16,7 @@ Write-Host
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootPath = Split-Path -Parent $scriptPath
 $buildPath = Join-Path $rootPath "bin\TrayApp"
-$installPath = Join-Path $env:LOCALAPPDATA "Wallpaper"
+$installPath = Join-Path $env:LOCALAPPDATA "WallpaperSync"
 $startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Start Menu\Programs\Startup")
 
 # Check if build exists
