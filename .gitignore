@@ -3,6 +3,11 @@
 **/obj/
 **/publish/
 
+## Installer build output
+installer/*.msi
+installer/*.wixpdb
+.wix/
+
 ## User-specific files
 *.user
 *.suo
