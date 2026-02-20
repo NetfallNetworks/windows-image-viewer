@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WiX v4 installer for Wallpaper Sync
+
+  Build requirements (WiX v4 is pinned in .config\dotnet-tools.json):
+    dotnet tool restore
+    dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
+
+  Build command (from repo root):
+    dotnet tool run wix build installer\Package.wxs ^
+      -ext WixToolset.UI.wixext ^
+      -o installer\WallpaperSync-Setup.msi ^
+      -arch x64
+
+  Per-user install: no UAC elevation required.
+  Installs to: %LOCALAPPDATA%\WallpaperSync\
+  Uninstall via: Windows Settings > Apps, or Control Panel > Programs
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="Wallpaper Sync"
+           Manufacturer="Wallpaper Sync"
+           Version="1.0.0"
+           UpgradeCode="A9B3C4D5-E6F7-4A1B-8C2D-3E4F5A6B7C8D"
+           Scope="perUser"
+           Compressed="yes">
+
+    <!--
+      MajorUpgrade: running the new MSI automatically removes the old version first.
+      Same UpgradeCode is reused across all 1.x.x releases; bump for breaking changes.
+    -->
+    <MajorUpgrade
+      DowngradeErrorMessage="A newer version of Wallpaper Sync is already installed. Please uninstall it first." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Add/Remove Programs (a.k.a. Settings > Apps) metadata -->
+    <Icon Id="WallpaperSyncIcon"
+          SourceFile="src\WallpaperApp.TrayApp\Resources\app.ico" />
+    <Property Id="ARPPRODUCTICON"   Value="WallpaperSyncIcon" />
+    <Property Id="ARPHELPLINK"
+              Value="https://github.com/NetfallNetworks/windows-image-viewer" />
+    <!-- Hide Repair button - single-file EXE doesn't benefit from it -->
+    <Property Id="ARPNOREPAIR"      Value="1" />
+
+    <!--
+      WixUI_Minimal: three-screen wizard (Welcome → Progress → Finish).
+      No directory picker - the install path (%LOCALAPPDATA%\WallpaperSync) is fixed.
+      No license agreement screen (Value not set for WixUILicenseRtf).
+    -->
+    <ui:WixUI Id="WixUI_Minimal" />
+
+    <!--
+      "Launch Wallpaper Sync" checkbox on the Finish dialog.
+      Checked by default so most users get it started immediately.
+    -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Launch Wallpaper Sync" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+
+    <!--
+      Type 34 custom action: run an EXE from a directory path.
+      asyncNoWait = fire-and-forget; installer exits immediately after launch.
+      Wired via the UI fragment below - DoAction on the Finish button.
+    -->
+    <CustomAction Id="LaunchApp"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand='"[INSTALLFOLDER]WallpaperApp.TrayApp.exe" --open-settings'
+                  Return="asyncNoWait"
+                  Execute="immediate" />
+
+    <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="ShortcutComponents" />
+    </Feature>
+
+    <!--
+      Wire the "Launch Wallpaper Sync" checkbox to a DoAction on the Finish button.
+      Must live inside <Package> (not a standalone Fragment) so WiX v4's linker
+      doesn't strip it as an unreferenced fragment.
+    -->
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish"
+               Event="DoAction" Value="LaunchApp" Order="1"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1" />
+    </UI>
+
+  </Package>
+
+  <!-- ─── Directory layout ──────────────────────────────────────────────────── -->
+
+  <Fragment>
+    <!--
+      Per-user install directory: %LOCALAPPDATA%\WallpaperSync
+      This is where the app stores its runtime state (state.json) as well,
+      so keeping everything under one roof makes sense.
+    -->
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="WallpaperSync" />
+    </StandardDirectory>
+
+    <!-- Start Menu > Programs > Wallpaper Sync folder -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="Wallpaper Sync" />
+    </StandardDirectory>
+
+    <!-- %APPDATA%\...\Startup — app auto-starts on Windows login -->
+    <StandardDirectory Id="StartupFolder" />
+
+    <!-- Desktop -->
+    <StandardDirectory Id="DesktopFolder" />
+  </Fragment>
+
+  <!-- ─── Application files ────────────────────────────────────────────────── -->
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+
+      <!-- Main single-file self-contained executable (~150 MB) -->
+      <Component Id="MainExecutable" Guid="*">
+        <File Id="WallpaperTrayExe"
+              Source="bin\TrayApp\WallpaperApp.TrayApp.exe"
+              KeyPath="yes" />
+      </Component>
+
+      <!--
+        Config file: NeverOverwrite="yes" preserves user settings across upgrades.
+        On first install the bundled default config is written.
+        On upgrade the user's existing config is left untouched.
+        Source from the project tree (not build output) so we always ship the
+        canonical default, regardless of what's in bin\TrayApp at build time.
+      -->
+      <Component Id="ConfigFile" Guid="*" NeverOverwrite="yes">
+        <File Id="ConfigJson"
+              Source="src\WallpaperApp.TrayApp\WallpaperApp.json"
+              KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- ─── Shortcuts ────────────────────────────────────────────────────────── -->
+
+  <Fragment>
+    <ComponentGroup Id="ShortcutComponents">
+
+      <!--
+        Start Menu shortcut + the "Wallpaper Sync" folder that contains it.
+        RemoveFolder ensures the folder is deleted cleanly on uninstall.
+        RegistryValue is the KeyPath (shortcuts can't be KeyPaths themselves).
+      -->
+      <Component Id="StartMenuShortcut"
+                 Directory="ApplicationProgramsFolder"
+                 Guid="*">
+        <Shortcut Id="StartMenuShortcutLaunch"
+                  Name="Wallpaper Sync"
+                  Description="Keeps your desktop wallpaper fresh automatically"
+                  Target="[INSTALLFOLDER]WallpaperApp.TrayApp.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RemoveFolder Id="CleanupStartMenuFolder"
+                      Directory="ApplicationProgramsFolder"
+                      On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\WallpaperSync"
+                       Name="StartMenu"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+
+      <!--
+        Startup folder shortcut: launches the tray app on every Windows login.
+        Matches the shortcut name created by the in-app StartupService ("Wallpaper Sync.lnk").
+        MSI manages this shortcut; the app's StartupService will find it already present.
+      -->
+      <Component Id="StartupShortcut"
+                 Directory="StartupFolder"
+                 Guid="*">
+        <Shortcut Id="StartupShortcutLink"
+                  Name="Wallpaper Sync"
+                  Description="Wallpaper Sync auto-start"
+                  Target="[INSTALLFOLDER]WallpaperApp.TrayApp.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\WallpaperSync"
+                       Name="Startup"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+
+      <!-- Desktop shortcut -->
+      <Component Id="DesktopShortcut"
+                 Directory="DesktopFolder"
+                 Guid="*">
+        <Shortcut Id="DesktopShortcutLink"
+                  Name="Wallpaper Sync"
+                  Description="Keeps your desktop wallpaper fresh automatically"
+                  Target="[INSTALLFOLDER]WallpaperApp.TrayApp.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\WallpaperSync"
+                       Name="Desktop"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+
+
+</Wix>

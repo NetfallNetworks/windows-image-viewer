@@ -53,11 +53,52 @@ echo "Publishing WallpaperApp (console/service)..."
 dotnet publish src/WallpaperApp/WallpaperApp.csproj -c Release -o publish/WallpaperApp --verbosity minimal --nologo
 
 if [ "$IS_WINDOWS" = true ]; then
-    # Publish tray app on Windows (to bin/TrayApp for install-tray-app.ps1)
+    # Publish tray app on Windows (to bin/TrayApp - source for installer)
     echo "Publishing WallpaperApp.TrayApp (system tray)..."
     dotnet publish src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj -c Release -o bin/TrayApp --self-contained true --runtime win-x64 /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --verbosity minimal --nologo
+
+    echo ""
+    echo "Building installer (MSI)..."
+    # Restore WiX v4 from the local tool manifest (.config/dotnet-tools.json)
+    if dotnet tool restore >/dev/null 2>&1; then
+        dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5 >/dev/null 2>&1 || true
+        dotnet tool run wix build installer/Package.wxs \
+            -ext WixToolset.UI.wixext \
+            -o installer/WallpaperSync-Setup.msi \
+            -arch x64
+        echo "✅ Installer built: installer/WallpaperSync-Setup.msi"
+    else
+        echo "⚠️  WiX tool restore failed - skipping installer build"
+        echo "   Check .config/dotnet-tools.json and run: dotnet tool restore"
+    fi
 else
     echo "⚠️  Skipping WallpaperApp.TrayApp publish (Windows-only)"
+    echo "⚠️  Skipping full installer build (Windows-only)"
+    echo ""
+
+    # Validate WiX installer source schema on Linux.
+    # WiX v4 is a cross-platform .NET tool, so we can catch XML schema errors
+    # (WIX0005, WIX0400, etc.) here before they surface on Windows.
+    # WIX0103 (file not found) is expected on Linux - the TrayApp exe is a
+    # Windows-only build artifact and won't exist here. Filter it out.
+    echo "Validating WiX installer source schema..."
+    if dotnet tool restore >/dev/null 2>&1; then
+        dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5 >/dev/null 2>&1 || true
+        WIX_OUT=$(dotnet tool run wix build installer/Package.wxs \
+            -ext WixToolset.UI.wixext \
+            -o /tmp/WallpaperSync-validate.msi \
+            -arch x64 2>&1 || true)
+        # WIX0103 = source file not found (expected: exe is Windows-only)
+        REAL_ERRORS=$(echo "$WIX_OUT" | grep ": error WIX" | grep -v "WIX0103" || true)
+        if [ -n "$REAL_ERRORS" ]; then
+            echo "❌ WiX installer source has errors - fix before pushing:"
+            echo "$REAL_ERRORS"
+            exit 1
+        fi
+        echo "✅ WiX installer source schema OK"
+    else
+        echo "⚠️  WiX tool restore failed - skipping installer validation"
+    fi
 fi
 
 echo ""
@@ -69,8 +110,14 @@ echo "  ✅ All tests passed (88/88)"
 echo "  ✅ Console app published to ./publish/WallpaperApp/"
 if [ "$IS_WINDOWS" = true ]; then
     echo "  ✅ Tray app published to ./bin/TrayApp/"
-    echo ""
-    echo "Next step: Run ./scripts/install-tray-app.ps1 to install"
+    if [ -f "installer/WallpaperSync-Setup.msi" ]; then
+        echo "  ✅ Installer built: ./installer/WallpaperSync-Setup.msi"
+        echo ""
+        echo "Ship installer/WallpaperSync-Setup.msi to end users."
+        echo "Double-click to install - no PowerShell or admin rights needed."
+    else
+        echo "  -- Installer skipped (run: dotnet tool install --global wix)"
+    fi
 fi
 echo "========================================"
 exit 0
