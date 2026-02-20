@@ -57,35 +57,25 @@
     <!--
       Launch the app after a fresh install.
 
-      WixShellExec (from WixToolset.Util.wixext) calls ShellExecuteEx on the
-      WixShellExecTarget property value. It runs in the InstallUISequence
-      (the wizard client process), which has proper interactive-desktop access.
+      Type 34 (Directory+ExeCommand) immediate CA fired via DoAction from the
+      Finish button. DoAction runs in the wizard client process (interactive
+      desktop), so WPF window creation works correctly.
 
-      Deferred CAs in the execute sequence run inside the "Impersonated custom
-      action server" — a subprocess of the installer engine that does NOT have
-      a proper interactive desktop window station. WPF window creation fails
-      there (DllNotFoundException in SetWindowLongPtrWndProc). WixShellExec in
-      the UI sequence avoids this because the wizard process already owns the
-      interactive desktop.
+      Do NOT move this to the execute sequence: deferred CAs there run inside
+      the installer's "Impersonated custom action server" subprocess which has
+      no interactive window station, causing WPF to crash with DllNotFoundException.
 
-      WcaGetFormattedProperty expands [INSTALLFOLDER] at runtime so the resolved
-      install path is passed to ShellExecuteEx.
-
-      Condition "NOT Installed": only on fresh install, not on upgrade or repair.
-      After="ExecuteAction": fires after all files are installed but before the
-      Finish dialog appears, so the app is already running when the user clicks Finish.
+      Condition: only on fresh install (NOT Installed), checked by default via
+      WIXUI_EXITDIALOGOPTIONALCHECKBOX so the user can uncheck if desired.
     -->
-    <Property Id="WixShellExecTarget"
-              Value="[INSTALLFOLDER]WallpaperApp.TrayApp.exe" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Launch Wallpaper Sync" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <CustomAction Id="LaunchApp"
-                  BinaryRef="Wix4UtilCA_X64"
-                  DllEntry="WixShellExec"
-                  Return="ignore" />
-
-    <InstallUISequence>
-      <Custom Action="LaunchApp" After="ExecuteAction"
-              Condition="NOT Installed" />
-    </InstallUISequence>
+                  Directory="INSTALLFOLDER"
+                  ExeCommand='"[INSTALLFOLDER]WallpaperApp.TrayApp.exe" --open-settings'
+                  Return="asyncNoWait"
+                  Execute="immediate" />
 
     <!--
       ── Uninstall: close the running app ─────────────────────────────────────
@@ -264,5 +254,17 @@
     </ComponentGroup>
   </Fragment>
 
+  <!--
+    Wire LaunchApp to the Finish button via DoAction.
+    DoAction runs the CA in the wizard client process (interactive desktop).
+    Condition: checkbox checked (default=1) AND this is a fresh install.
+  -->
+  <Fragment>
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish"
+               Event="DoAction" Value="LaunchApp" Order="1"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+  </Fragment>
 
 </Wix>
