@@ -5,12 +5,10 @@
   Build requirements (WiX v4 is pinned in .config\dotnet-tools.json):
     dotnet tool restore
     dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
-    dotnet tool run wix extension add WixToolset.Util.wixext/4.0.5
 
   Build command (from repo root):
     dotnet tool run wix build installer\Package.wxs ^
       -ext WixToolset.UI.wixext ^
-      -ext WixToolset.Util.wixext ^
       -o installer\WallpaperSync-Setup.msi ^
       -arch x64
 
@@ -19,8 +17,7 @@
   Uninstall via: Windows Settings > Apps, or Control Panel > Programs
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
-     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
   <Package Name="Wallpaper Sync"
            Manufacturer="Wallpaper Sync"
@@ -55,62 +52,39 @@
     <ui:WixUI Id="WixUI_Minimal" />
 
     <!--
-      Launch the app after a fresh install.
-
-      Type 34 (Directory+ExeCommand) immediate CA fired via DoAction from the
-      Finish button. DoAction runs in the wizard client process (interactive
-      desktop), so WPF window creation works correctly.
-
-      Do NOT move this to the execute sequence: deferred CAs there run inside
-      the installer's "Impersonated custom action server" subprocess which has
-      no interactive window station, causing WPF to crash with DllNotFoundException.
-
-      Condition: only on fresh install (NOT Installed), checked by default via
-      WIXUI_EXITDIALOGOPTIONALCHECKBOX so the user can uncheck if desired.
+      "Launch Wallpaper Sync" checkbox on the Finish dialog.
+      Checked by default so most users get it started immediately.
     -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
               Value="Launch Wallpaper Sync" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+
+    <!--
+      Type 34 custom action: run an EXE from a directory path.
+      asyncNoWait = fire-and-forget; installer exits immediately after launch.
+      Wired via the UI fragment below - DoAction on the Finish button.
+    -->
     <CustomAction Id="LaunchApp"
                   Directory="INSTALLFOLDER"
                   ExeCommand='"[INSTALLFOLDER]WallpaperApp.TrayApp.exe" --open-settings'
                   Return="asyncNoWait"
                   Execute="immediate" />
 
-    <!--
-      ── Uninstall: close the running app ─────────────────────────────────────
-
-      util:CloseApplication terminates the tray process before MSI removes the
-      exe. It is a no-op if the process isn't running so it is safe to leave it
-      unconditional. It runs via the WixCloseApplications action injected by the
-      Util extension into InstallExecuteSequence (before CostFinalize).
-
-      Type 34 (Directory+ExeCommand) immediate CAs cannot reliably launch new
-      processes when Windows Installer runs entirely server-side (no separate
-      client process), which causes error 2717 at runtime. util:CloseApplication
-      avoids that class of problem entirely.
-
-      ── Uninstall: remove runtime files ─────────────────────────────────────
-
-      MSI only removes files it installed. state.json is created at runtime and
-      would be left behind. RemoveFile + RemoveFolder in CleanupComponent handle
-      this natively, without a custom action.
-    -->
-
-    <!--
-      CloseMessage="yes": send WM_CLOSE first (graceful).
-      TerminateProcess="0": if still running after timeout, call TerminateProcess(exit=0).
-    -->
-    <util:CloseApplication Id="CloseWallpaperSync"
-                           Target="WallpaperApp.TrayApp.exe"
-                           CloseMessage="yes"
-                           RebootPrompt="no"
-                           TerminateProcess="0" />
-
     <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentGroupRef Id="ShortcutComponents" />
     </Feature>
+
+    <!--
+      Wire the "Launch Wallpaper Sync" checkbox to a DoAction on the Finish button.
+      Must live inside <Package> (not a standalone Fragment) so WiX v4's linker
+      doesn't strip it as an unreferenced fragment.
+    -->
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish"
+               Event="DoAction" Value="LaunchApp" Order="1"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1" />
+    </UI>
 
   </Package>
 
@@ -161,24 +135,6 @@
         <File Id="ConfigJson"
               Source="src\WallpaperApp.TrayApp\WallpaperApp.json"
               KeyPath="yes" />
-      </Component>
-
-      <!--
-        Cleanup component: removes files the app creates at runtime (not tracked
-        by MSI) and the install folder itself on uninstall.
-        RemoveFile removes state.json (written by the app at runtime).
-        RemoveFolder removes the now-empty INSTALLFOLDER directory.
-        A RegistryValue is required as the KeyPath (RemoveFile can't be a KeyPath).
-      -->
-      <Component Id="CleanupComponent" Guid="*">
-        <RemoveFile Id="RemoveStateJson" Name="state.json" On="uninstall" />
-        <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
-        <RegistryValue Root="HKCU"
-                       Key="Software\WallpaperSync"
-                       Name="CleanupInstalled"
-                       Type="integer"
-                       Value="1"
-                       KeyPath="yes" />
       </Component>
 
     </ComponentGroup>
@@ -254,17 +210,5 @@
     </ComponentGroup>
   </Fragment>
 
-  <!--
-    Wire LaunchApp to the Finish button via DoAction.
-    DoAction runs the CA in the wizard client process (interactive desktop).
-    Condition: checkbox checked (default=1) AND this is a fresh install.
-  -->
-  <Fragment>
-    <UI>
-      <Publish Dialog="ExitDialog" Control="Finish"
-               Event="DoAction" Value="LaunchApp" Order="1"
-               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
-    </UI>
-  </Fragment>
 
 </Wix>
