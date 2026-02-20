@@ -57,31 +57,35 @@
     <!--
       Launch the app after a fresh install.
 
-      Scheduled Before="InstallFinalize" so the install is fully committed before
-      the exe starts. Execute="deferred" + asyncNoWait means the installer fires
-      the process and returns immediately (no waiting for the app to close).
+      WixShellExec (from WixToolset.Util.wixext) calls ShellExecuteEx on the
+      WixShellExecTarget property value. It runs in the InstallUISequence
+      (the wizard client process), which has proper interactive-desktop access.
 
-      Type 34 (Directory+ExeCommand) immediate CAs fail with error 2717 when
-      Windows Installer runs server-side. Deferred execution in the execute
-      sequence avoids this.
+      Deferred CAs in the execute sequence run inside the "Impersonated custom
+      action server" — a subprocess of the installer engine that does NOT have
+      a proper interactive desktop window station. WPF window creation fails
+      there (DllNotFoundException in SetWindowLongPtrWndProc). WixShellExec in
+      the UI sequence avoids this because the wizard process already owns the
+      interactive desktop.
+
+      WcaGetFormattedProperty expands [INSTALLFOLDER] at runtime so the resolved
+      install path is passed to ShellExecuteEx.
 
       Condition "NOT Installed": only on fresh install, not on upgrade or repair.
+      After="ExecuteAction": fires after all files are installed but before the
+      Finish dialog appears, so the app is already running when the user clicks Finish.
     -->
+    <Property Id="WixShellExecTarget"
+              Value="[INSTALLFOLDER]WallpaperApp.TrayApp.exe" />
     <CustomAction Id="LaunchApp"
-                  Directory="INSTALLFOLDER"
-                  ExeCommand='"[INSTALLFOLDER]WallpaperApp.TrayApp.exe" --open-settings'
-                  Return="asyncNoWait"
-                  Execute="deferred" />
+                  BinaryRef="Wix4UtilCA_X64"
+                  DllEntry="WixShellExec"
+                  Return="ignore" />
 
-    <InstallExecuteSequence>
-      <!--
-        Deferred CAs must be between InstallInitialize and InstallFinalize.
-        asyncNoWait fires the process and returns immediately so the install
-        can proceed to InstallFinalize and commit the transaction.
-      -->
-      <Custom Action="LaunchApp" Before="InstallFinalize"
+    <InstallUISequence>
+      <Custom Action="LaunchApp" After="ExecuteAction"
               Condition="NOT Installed" />
-    </InstallExecuteSequence>
+    </InstallUISequence>
 
     <!--
       ── Uninstall: close the running app ─────────────────────────────────────
