@@ -20,8 +20,10 @@ namespace WallpaperApp.Services
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _imageValidator = imageValidator ?? throw new ArgumentNullException(nameof(imageValidator));
 
-            // Set temp directory to %TEMP%/Wallpaper/
-            _tempDirectory = Path.Combine(Path.GetTempPath(), "Wallpaper");
+            // Store downloaded images under %LOCALAPPDATA%\WallpaperSync\wallpapers\
+            _tempDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "WallpaperSync", "wallpapers");
         }
 
         /// <summary>
@@ -99,31 +101,8 @@ namespace WallpaperApp.Services
             return $"wallpaper-{timestamp}.png";
         }
 
-        /// <summary>
-        /// Logs an information message.
-        /// </summary>
-        private void LogInformation(string message)
-        {
-            // TODO: Replace with proper logging in Story 8
-            Console.WriteLine($"[INFO] {message}");
-        }
-
-        /// <summary>
-        /// Logs a warning message.
-        /// </summary>
-        private void LogWarning(string message)
-        {
-            // TODO: Replace with proper logging in Story 8
-            Console.WriteLine($"[WARNING] {message}");
-        }
-
-        /// <summary>
-        /// Logs an error message.
-        /// </summary>
-        private void LogError(string message)
-        {
-            // TODO: Replace with proper logging in Story 8
-            Console.WriteLine($"[ERROR] {message}");
-        }
+        private void LogInformation(string message) => FileLogger.Log($"[INFO] {message}");
+        private void LogWarning(string message) => FileLogger.Log($"[WARNING] {message}");
+        private void LogError(string message) => FileLogger.Log($"[ERROR] {message}");
     }
 }

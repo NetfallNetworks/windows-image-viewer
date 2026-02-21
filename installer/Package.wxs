@@ -17,7 +17,8 @@
   Uninstall via: Windows Settings > Apps, or Control Panel > Programs
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
   <Package Name="Wallpaper Sync"
            Manufacturer="Wallpaper Sync"
@@ -66,7 +67,7 @@
     -->
     <CustomAction Id="LaunchApp"
                   Directory="INSTALLFOLDER"
-                  ExeCommand='"[INSTALLFOLDER]WallpaperApp.TrayApp.exe" --open-settings'
+                  ExeCommand='"[INSTALLFOLDER]WallpaperApp.TrayApp.exe" --open-welcome'
                   Return="asyncNoWait"
                   Execute="immediate" />
 
@@ -125,16 +126,30 @@
       </Component>
 
       <!--
-        Config file: NeverOverwrite="yes" preserves user settings across upgrades.
-        On first install the bundled default config is written.
-        On upgrade the user's existing config is left untouched.
+        Config file: always freshly installed (RemoveFolderEx wipes the folder on
+        uninstall, so the config never survives a clean uninstall+reinstall cycle).
         Source from the project tree (not build output) so we always ship the
         canonical default, regardless of what's in bin\TrayApp at build time.
       -->
-      <Component Id="ConfigFile" Guid="*" NeverOverwrite="yes">
+      <Component Id="ConfigFile" Guid="*">
         <File Id="ConfigJson"
               Source="src\WallpaperApp.TrayApp\WallpaperApp.json"
               KeyPath="yes" />
+      </Component>
+
+      <!--
+        Cleanup on uninstall: wipes the entire %LOCALAPPDATA%\WallpaperSync\ folder
+        (state.json, service.log, wallpapers/) so reinstall starts from a clean state.
+        Registry key is the KeyPath; util:RemoveFolderEx does the recursive delete.
+      -->
+      <Component Id="CleanupOnUninstall" Guid="*">
+        <RegistryValue Root="HKCU"
+                       Key="Software\WallpaperSync"
+                       Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+        <util:RemoveFolderEx Property="INSTALLFOLDER" On="uninstall" />
       </Component>
 
     </ComponentGroup>

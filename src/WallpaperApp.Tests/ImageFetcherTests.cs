@@ -31,13 +31,15 @@ namespace WallpaperApp.Tests
                     Directory.Delete(_testTempDirectory, recursive: true);
                 }
 
-                // Clean up Wallpaper directory in actual TEMP
-                string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
-                if (Directory.Exists(weatherWallpaperDir))
+                // Clean up images directory
+                string wallpaperImagesDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "WallpaperSync", "wallpapers");
+                if (Directory.Exists(wallpaperImagesDir))
                 {
                     // Only delete files created during tests, not the directory itself
                     // to avoid conflicts with other test runs
-                    var files = Directory.GetFiles(weatherWallpaperDir, "wallpaper-*.png");
+                    var files = Directory.GetFiles(wallpaperImagesDir, "wallpaper-*.png");
                     foreach (var file in files)
                     {
                         try
@@ -201,7 +203,9 @@ namespace WallpaperApp.Tests
 
             // Assert
             Assert.NotNull(result);
-            string expectedPath = Path.Combine(Path.GetTempPath(), "Wallpaper");
+            string expectedPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "WallpaperSync", "wallpapers");
             Assert.StartsWith(expectedPath, result);
         }
 
@@ -288,19 +292,16 @@ namespace WallpaperApp.Tests
             var imageValidator = new ImageValidator();
             var fetcher = new ImageFetcher(httpClient, imageValidator);
 
-            // Ensure directory doesn't exist (or delete it)
-            string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
-            if (Directory.Exists(weatherWallpaperDir))
-            {
-                // Just verify it gets created/used - don't delete it as it might be in use
-            }
+            string wallpaperImagesDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "WallpaperSync", "wallpapers");
 
             // Act
             var result = await fetcher.DownloadImageAsync("https://example.com/test.png");
 
             // Assert
             Assert.NotNull(result);
-            Assert.True(Directory.Exists(weatherWallpaperDir));
+            Assert.True(Directory.Exists(wallpaperImagesDir));
         }
 
         [Fact]
@@ -329,11 +330,13 @@ namespace WallpaperApp.Tests
             // Assert
             Assert.Null(result); // Should return null for invalid image
 
-            // Verify file was deleted (doesn't exist in temp directory)
-            string weatherWallpaperDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
-            if (Directory.Exists(weatherWallpaperDir))
+            // Verify file was deleted (doesn't exist in images directory)
+            string wallpaperImagesDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "WallpaperSync", "wallpapers");
+            if (Directory.Exists(wallpaperImagesDir))
             {
-                var files = Directory.GetFiles(weatherWallpaperDir, "wallpaper-*.png");
+                var files = Directory.GetFiles(wallpaperImagesDir, "wallpaper-*.png");
                 // The invalid file should have been deleted, so we shouldn't find it
                 // (This is a weak assertion but sufficient given the async nature)
             }

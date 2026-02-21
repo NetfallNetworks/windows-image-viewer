@@ -303,26 +303,19 @@ namespace WallpaperApp.TrayApp
             {
                 FileLogger.Log("=== Tray App Starting ===");
 
-                // Check for first run and show welcome wizard
+                // Show welcome wizard on first run or when launched from the installer.
+                // --open-welcome is a safety net: even if state.json somehow survived
+                // a reinstall, the installer flag ensures the wizard always shows.
                 var state = _appStateService.LoadState();
-                bool wasFirstRun = state.IsFirstRun;
-                if (wasFirstRun)
+                bool launchedFromInstaller = Environment.GetCommandLineArgs().Contains("--open-welcome");
+                if (state.IsFirstRun || launchedFromInstaller)
                 {
-                    FileLogger.Log("First run detected - showing welcome wizard");
+                    FileLogger.Log(state.IsFirstRun
+                        ? "First run detected - showing welcome wizard"
+                        : "--open-welcome flag detected - showing welcome wizard");
                     var wizard = new WelcomeWizard(_configurationService, _appStateService);
-                    wizard.ShowDialog(); // Modal - blocks until wizard completes
-
-                    // Reload state after wizard
+                    wizard.ShowDialog();
                     state = _appStateService.LoadState();
-                }
-
-                // When launched from the installer with --open-settings, open the settings
-                // window so the user can configure immediately without hunting for the tray icon.
-                // Skip this on first run - the welcome wizard already handled setup.
-                if (!wasFirstRun && Environment.GetCommandLineArgs().Contains("--open-settings"))
-                {
-                    FileLogger.Log("--open-settings flag detected, opening settings window");
-                    ShowSettingsWindow();
                 }
 
                 // Check if enabled
@@ -466,10 +459,12 @@ namespace WallpaperApp.TrayApp
         {
             try
             {
-                var tempPath = Path.Combine(Path.GetTempPath(), "WallpaperService");
-                if (Directory.Exists(tempPath))
+                var imagePath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "WallpaperSync", "wallpapers");
+                if (Directory.Exists(imagePath))
                 {
-                    System.Diagnostics.Process.Start("explorer.exe", tempPath);
+                    System.Diagnostics.Process.Start("explorer.exe", imagePath);
                 }
                 else
                 {

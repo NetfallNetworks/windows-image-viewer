@@ -591,9 +591,11 @@ namespace WallpaperApp.TrayApp.ViewModels
                 else if (settings.SourceType == ModelImageSource.Url &&
                          !string.IsNullOrWhiteSpace(settings.ImageUrl))
                 {
-                    var tempDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
-                    Directory.CreateDirectory(tempDir);
-                    var tempPath = Path.Combine(tempDir, $"wallpaper-{DateTime.Now:yyyyMMdd-HHmmss-fff}.png");
+                    var wallpapersDir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "WallpaperSync", "wallpapers");
+                    Directory.CreateDirectory(wallpapersDir);
+                    var tempPath = Path.Combine(wallpapersDir, $"wallpaper-{DateTime.Now:yyyyMMdd-HHmmss-fff}.png");
 
                     var response = await _httpClient.GetAsync(settings.ImageUrl);
                     if (!response.IsSuccessStatusCode)

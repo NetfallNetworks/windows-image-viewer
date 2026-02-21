@@ -2,11 +2,13 @@ namespace WallpaperApp.Services
 {
     /// <summary>
     /// Simple file logger for debugging service issues.
-    /// Logs to %TEMP%\WallpaperService\service.log
+    /// Logs to %LOCALAPPDATA%\WallpaperSync\service.log
     /// </summary>
     public static class FileLogger
     {
-        private static readonly string LogDirectory = Path.Combine(Path.GetTempPath(), "WallpaperService");
+        private static readonly string LogDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "WallpaperSync");
         private static readonly string LogFilePath = Path.Combine(LogDirectory, "service.log");
         private static readonly object _lock = new object();
 
