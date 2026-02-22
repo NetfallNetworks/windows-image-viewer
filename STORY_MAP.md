@@ -824,6 +824,56 @@ Add system tray icon for easy service management without opening services.msc:
 
 ---
 
+## Phase 4: Widget Board (Backlog)
+
+> **Overview**: `plan/widget-overview.md`
+> **ADR**: `plan/adr/ADR-007-widget-board-with-sparse-package.md`
+> **Stories**: `plan/widget-phase-1-stories.md`, `plan/widget-phase-2-stories.md`, `plan/widget-phase-3-stories.md`
+
+Add a Windows 11 Widget Board widget as a second rendering option alongside desktop wallpaper. The widget displays the same image in the Win+W flyout at the same refresh cadence. Implementation requires a new out-of-process COM server (`WallpaperApp.WidgetProvider`) and a sparse MSIX identity package.
+
+### Story WS-15: Widget Provider Project Setup
+**Points**: 5 | **Phase**: 1 — Widget Provider Core
+
+Create `WallpaperApp.WidgetProvider` .NET 8 console app. Bootstrap as a Windows App SDK COM server with stub `IWidgetProvider` implementation. Add to solution file. Full build must succeed.
+
+### Story WS-16: Adaptive Card Templates
+**Points**: 3 | **Phase**: 1 — Widget Provider Core
+
+Design and embed small/medium/large Adaptive Card JSON templates with `${data binding}` placeholders. Create `CardTemplateService` to load and hydrate templates. Validate in Adaptive Cards Designer.
+
+### Story WS-17: Widget Data Binding & Lifecycle
+**Points**: 5 | **Phase**: 1 — Widget Provider Core
+
+Wire `IConfigurationService` and `IAppStateService` from Core into the widget provider. Handle create/delete/activate/deactivate callbacks. Implement "Refresh Now" action via `IWallpaperUpdater`. Add periodic fallback polling timer (30 s) and named EventWaitHandle stub for IPC.
+
+### Story WS-18: Identity Package (Sparse MSIX)
+**Points**: 8 | **Phase**: 2 — Packaging & Identity
+
+Create `installer/IdentityPackage/AppxManifest.xml` with COM server + widget definition declarations. Build sparse MSIX via `makeappx.exe`. Sign with self-signed dev cert. Register via `WidgetPackageRegistrar` in TrayApp at first run using `PackageManager.AddPackageByUriAsync()`.
+
+### Story WS-19: TrayApp ↔ Widget IPC
+**Points**: 3 | **Phase**: 2 — Packaging & Identity
+
+Complete named `EventWaitHandle` IPC. TrayApp signals `Global\WallpaperSyncWidgetRefresh` after every successful wallpaper update. Widget provider wakes and pushes updated card within 500 ms. Polling fallback remains as safety net.
+
+### Story WS-20: Installer Integration
+**Points**: 5 | **Phase**: 3 — Integration & Pipeline
+
+Update `installer/Package.wxs` to bundle `WallpaperApp.WidgetProvider.exe` and `WallpaperSync-Identity.msix`. Both files installed and uninstalled by the MSI. Document MSIX deregistration gap.
+
+### Story WS-21: Build Pipeline Updates
+**Points**: 3 | **Phase**: 3 — Integration & Pipeline
+
+Update `scripts/build.bat` to publish WidgetProvider and build identity MSIX (Steps 5–6). Update `scripts/build.sh` with `[SKIPPED on Linux]` messages for widget steps. All 94+ tests still pass on Linux.
+
+### Story WS-22: Widget Provider Tests
+**Points**: 3 | **Phase**: 3 — Integration & Pipeline
+
+Add unit tests for `CardTemplateService`, `WidgetInstanceTracker`, `WidgetData` construction, and `WidgetIpcService` to `WallpaperApp.Tests`. All tests must run on Linux (no Windows App SDK runtime required). Total test count increases from 94.
+
+---
+
 ## Definition of Ready (for each story)
 
 A story is ready to start when:
