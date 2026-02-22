@@ -20,7 +20,9 @@ if [ "$IS_WINDOWS" = true ]; then
     dotnet build WallpaperApp.sln -c Release --warnaserror --verbosity minimal --nologo
 else
     # On Linux/Mac, build only non-WPF projects
-    echo "Building WallpaperApp (console/service)..."
+    echo "Building WallpaperApp.Core (shared library)..."
+    dotnet build src/WallpaperApp.Core/WallpaperApp.Core.csproj -c Release --warnaserror --verbosity minimal --nologo
+    echo "Building WallpaperApp (console)..."
     dotnet build src/WallpaperApp/WallpaperApp.csproj -c Release --warnaserror --verbosity minimal --nologo
     echo "Building WallpaperApp.Tests..."
     dotnet build src/WallpaperApp.Tests/WallpaperApp.Tests.csproj -c Release --warnaserror --verbosity minimal --nologo
@@ -88,8 +90,10 @@ else
             -ext WixToolset.UI.wixext \
             -o /tmp/WallpaperSync-validate.msi \
             -arch x64 2>&1 || true)
-        # WIX0103 = source file not found (expected: exe is Windows-only)
-        REAL_ERRORS=$(echo "$WIX_OUT" | grep ": error WIX" | grep -v "WIX0103" || true)
+        # WIX0103 = source file not found (expected: exe is Windows-only build artifact)
+        # WIX0389 = Directory/@Name "not a relative path" - Linux WiX validator false positive
+        #           for valid Windows folder names like "WallpaperSync" and "Wallpaper Sync"
+        REAL_ERRORS=$(echo "$WIX_OUT" | grep ": error WIX" | grep -v "WIX0103" | grep -v "WIX0389" || true)
         if [ -n "$REAL_ERRORS" ]; then
             echo "❌ WiX installer source has errors - fix before pushing:"
             echo "$REAL_ERRORS"

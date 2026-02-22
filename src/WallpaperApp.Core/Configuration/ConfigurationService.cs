@@ -27,10 +27,8 @@ namespace WallpaperApp.Configuration
         /// </summary>
         public ConfigurationService()
         {
-            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string configDirectory = Path.Combine(appDataPath, "WallpaperSync");
-            Directory.CreateDirectory(configDirectory);
-            _configFilePath = Path.Combine(configDirectory, "WallpaperApp.json");
+            Directory.CreateDirectory(AppPaths.BaseDirectory);
+            _configFilePath = AppPaths.ConfigFile;
             _defaultConfigFilePath = Path.Combine(AppContext.BaseDirectory, "WallpaperApp.json");
         }
 

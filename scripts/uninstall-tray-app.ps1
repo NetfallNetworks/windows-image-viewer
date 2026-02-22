@@ -9,7 +9,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host
 
 # Get paths
-$installPath = Join-Path $env:LOCALAPPDATA "Wallpaper"
+$installPath = Join-Path $env:LOCALAPPDATA "WallpaperSync"
 $startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Start Menu\Programs\Startup")
 $shortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
 
@@ -51,16 +51,8 @@ if (Test-Path $installPath) {
 }
 Write-Host
 
-# Clean up temp files (optional)
-$tempPath = Join-Path $env:TEMP "WallpaperService"
-if (Test-Path $tempPath) {
-    $cleanTemp = Read-Host "Would you like to delete downloaded wallpaper images? (y/n)"
-    if ($cleanTemp -eq "y" -or $cleanTemp -eq "Y") {
-        Write-Host "Removing temporary files..." -ForegroundColor Yellow
-        Remove-Item -Path $tempPath -Recurse -Force
-        Write-Host "Temporary files removed" -ForegroundColor Green
-    }
-}
+# Note: logs and wallpaper images are stored inside the installation directory
+# and were already removed above when $installPath was deleted.
 Write-Host
 
 Write-Host "========================================" -ForegroundColor Cyan

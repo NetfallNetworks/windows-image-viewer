@@ -591,7 +591,7 @@ namespace WallpaperApp.TrayApp.ViewModels
                 else if (settings.SourceType == ModelImageSource.Url &&
                          !string.IsNullOrWhiteSpace(settings.ImageUrl))
                 {
-                    var tempDir = Path.Combine(Path.GetTempPath(), "Wallpaper");
+                    var tempDir = AppPaths.WallpaperDirectory;
                     Directory.CreateDirectory(tempDir);
                     var tempPath = Path.Combine(tempDir, $"wallpaper-{DateTime.Now:yyyyMMdd-HHmmss-fff}.png");
 
