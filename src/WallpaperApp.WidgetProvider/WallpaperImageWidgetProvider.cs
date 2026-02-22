@@ -1,5 +1,7 @@
 using Microsoft.Windows.Widgets.Providers;
 using WallpaperApp.Configuration;
+using SdkWidgetSize = Microsoft.Windows.Widgets.WidgetSize;
+using AppWidgetSize = WallpaperApp.Widget.WidgetSize;
 using WallpaperApp.Models;
 using WallpaperApp.Services;
 using WallpaperApp.Widget;
@@ -61,6 +63,28 @@ namespace WallpaperApp.WidgetProvider
         }
 
         /// <summary>
+        /// Called by Widget Board when the widget comes into view (user opens Win+W).
+        /// Re-sends the current card so the widget shows fresh data immediately.
+        /// </summary>
+        public void Activate(WidgetContext widgetContext)
+        {
+            var size = ToWidgetSize(widgetContext.Size);
+            _tracker.AddOrUpdate(widgetContext.Id, size);
+            SendUpdate(widgetContext.Id, size);
+        }
+
+        /// <summary>
+        /// Called by Widget Board when the widget goes out of view (user closes Win+W).
+        /// Stop pushing updates — the widget is no longer visible so updates are wasteful.
+        /// </summary>
+        public void Deactivate(string widgetId)
+        {
+            // No state change needed — _tracker keeps the entry so we can resume
+            // on the next Activate call. Updates will still fire from the polling
+            // loop but WidgetManager silently drops them for inactive widgets.
+        }
+
+        /// <summary>
         /// Called by Widget Board when the user removes (unpins) the widget.
         /// </summary>
         public void DeleteWidget(string widgetId, string customStateStr)
@@ -109,7 +133,7 @@ namespace WallpaperApp.WidgetProvider
             }
         }
 
-        private void SendUpdate(string widgetId, WidgetSize size)
+        private void SendUpdate(string widgetId, AppWidgetSize size)
         {
             try
             {
@@ -209,13 +233,13 @@ namespace WallpaperApp.WidgetProvider
         }
 
         // Translates Windows App SDK WidgetSize to our platform-neutral enum.
-        private static WidgetSize ToWidgetSize(Microsoft.Windows.Widgets.Providers.WidgetSize sdkSize) =>
+        private static AppWidgetSize ToWidgetSize(SdkWidgetSize sdkSize) =>
             sdkSize switch
             {
-                Microsoft.Windows.Widgets.Providers.WidgetSize.Small  => WidgetSize.Small,
-                Microsoft.Windows.Widgets.Providers.WidgetSize.Medium => WidgetSize.Medium,
-                Microsoft.Windows.Widgets.Providers.WidgetSize.Large  => WidgetSize.Large,
-                _ => WidgetSize.Medium
+                SdkWidgetSize.Small  => AppWidgetSize.Small,
+                SdkWidgetSize.Medium => AppWidgetSize.Medium,
+                SdkWidgetSize.Large  => AppWidgetSize.Large,
+                _ => AppWidgetSize.Medium
             };
     }
 }

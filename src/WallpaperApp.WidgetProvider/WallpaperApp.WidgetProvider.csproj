@@ -9,11 +9,22 @@
     <!-- COM server must be x64 to match Widget Board host process -->
     <Platforms>x64</Platforms>
     <AssemblyName>WallpaperApp.WidgetProvider</AssemblyName>
+    <!-- Phase 1: unpackaged app — disable MRT/PRI resource generation.
+         Windows App SDK's MrtCore.PriGen.targets requires VS AppxPackage tools
+         which are not available when building with dotnet CLI.
+         Remove (or change to 'MSIX') when adding identity package in Phase 2. -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <!-- Prevent MrtCore.PriGen.targets from being imported. That file contains multiple
+         targets that load Microsoft.Build.AppxPackage.dll (VS AppxPackage tools),
+         which are not present when building with dotnet CLI without Visual Studio.
+         MrtCore.targets only imports MrtCore.PriGen.targets when EnableCoreMrtTooling==true.
+         Phase 2 MSIX packaging will re-enable this for the packaged build. -->
+    <EnableCoreMrtTooling>false</EnableCoreMrtTooling>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- Windows App SDK provides IWidgetProvider, WidgetManager, WidgetProviderServer -->
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240923000" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240923002" />
   </ItemGroup>
 
   <ItemGroup>
