@@ -5,7 +5,9 @@ using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using WallpaperApp.Configuration;
 using WallpaperApp.Services;
+using WallpaperApp.TrayApp.Services;
 using WallpaperApp.TrayApp.Views;
+using WallpaperApp.Widget;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
 using DrawingFont = System.Drawing.Font;
@@ -303,6 +305,21 @@ namespace WallpaperApp.TrayApp
             {
                 FileLogger.Log("=== Tray App Starting ===");
 
+                // Register the sparse MSIX identity package if needed (for widget support).
+                // This is fire-and-forget — widget registration failure does not block the app.
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var registrar = new WidgetPackageRegistrar(new WindowsPackageManagerAdapter());
+                        await registrar.RegisterIfNeededAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        FileLogger.LogError("Widget identity package registration failed", ex);
+                    }
+                });
+
                 // Check for first run and show welcome wizard
                 var state = _appStateService.LoadState();
                 bool wasFirstRun = state.IsFirstRun;
@@ -397,9 +414,14 @@ namespace WallpaperApp.TrayApp
         {
             try
             {
-                await _wallpaperUpdater.UpdateWallpaperAsync();
+                var updated = await _wallpaperUpdater.UpdateWallpaperAsync();
                 FileLogger.Log("Wallpaper update completed successfully");
                 _status = "Running";
+
+                if (updated)
+                {
+                    SignalWidgetRefresh();
+                }
             }
             catch (Exception ex)
             {
@@ -408,6 +430,31 @@ namespace WallpaperApp.TrayApp
             }
 
             UpdateTrayIconText();
+        }
+
+        /// <summary>
+        /// Signals the widget provider (if running) that the wallpaper has been updated.
+        /// Uses TryOpenExisting so the signal is silently dropped when the widget provider
+        /// process is not running — no error, no exception.
+        /// </summary>
+        private static void SignalWidgetRefresh()
+        {
+            try
+            {
+                if (EventWaitHandle.TryOpenExisting(WidgetIpcConstants.WidgetRefreshEventName, out var handle))
+                {
+                    using (handle)
+                    {
+                        handle.Set();
+                    }
+                    FileLogger.Log("Widget refresh signal sent");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Non-critical — widget refresh is best-effort
+                FileLogger.LogError("Failed to signal widget refresh", ex);
+            }
         }
 
         private async Task RefreshNowAsync()
