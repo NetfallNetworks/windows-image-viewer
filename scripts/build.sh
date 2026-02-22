@@ -27,6 +27,7 @@ else
     echo "Building WallpaperApp.Tests..."
     dotnet build src/WallpaperApp.Tests/WallpaperApp.Tests.csproj -c Release --warnaserror --verbosity minimal --nologo
     echo "⚠️  Skipping WallpaperApp.TrayApp (Windows-only WPF project)"
+    echo "⚠️  Skipping WallpaperApp.WidgetProvider (Windows-only COM server — requires Windows App SDK)"
 fi
 
 echo ""
@@ -110,7 +111,7 @@ echo "========================================"
 echo "✅ BUILD PIPELINE COMPLETE!"
 echo "========================================"
 echo "  ✅ Build successful"
-echo "  ✅ All tests passed (88/88)"
+echo "  ✅ All tests passed"
 echo "  ✅ Console app published to ./publish/WallpaperApp/"
 if [ "$IS_WINDOWS" = true ]; then
     echo "  ✅ Tray app published to ./bin/TrayApp/"

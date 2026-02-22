@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Widget Board requires Windows App SDK which targets Windows 10 2004+ -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- COM server must be x64 to match Widget Board host process -->
+    <Platforms>x64</Platforms>
+    <AssemblyName>WallpaperApp.WidgetProvider</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Windows App SDK provides IWidgetProvider, WidgetManager, WidgetProviderServer -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240923000" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WallpaperApp.Core\WallpaperApp.Core.csproj" />
+  </ItemGroup>
+
+</Project>
