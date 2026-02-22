@@ -12,4 +12,10 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Widget/Cards/small-card.json" LogicalName="WallpaperSync.small-card.json" />
+    <EmbeddedResource Include="Widget/Cards/medium-card.json" LogicalName="WallpaperSync.medium-card.json" />
+    <EmbeddedResource Include="Widget/Cards/large-card.json" LogicalName="WallpaperSync.large-card.json" />
+  </ItemGroup>
+
 </Project>
