@@ -15,6 +15,7 @@
 using System.Runtime.InteropServices;
 using Microsoft.Windows.ApplicationModel.WindowsAppRuntime;
 using WallpaperApp.Configuration;
+using WallpaperApp.Widget;
 using WallpaperApp.WidgetProvider;
 using WallpaperApp.Services;
 
@@ -43,6 +44,12 @@ var updater = new WallpaperUpdater(configService, imageFetcher, wallpaperService
 
 // Create the widget provider instance
 var provider = new WallpaperImageWidgetProvider(configService, stateService, updater);
+
+// Start the IPC listener so TrayApp can signal instant widget refresh after wallpaper updates.
+// The WidgetIpcService creates the named EventWaitHandle and calls PushUpdateToAllWidgets()
+// on the provider whenever the handle is signaled.
+using var ipcService = new WidgetIpcService(provider.PushUpdateToAllWidgets);
+Console.WriteLine("[WidgetProvider] IPC listener started.");
 
 // Register as COM class object so the Widget Board host can activate this process.
 // CoRegisterClassObject tells the COM SCM "I am the server for CLSID {6B2A4C8E-...}".

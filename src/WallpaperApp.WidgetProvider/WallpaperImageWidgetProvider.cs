@@ -25,12 +25,6 @@ namespace WallpaperApp.WidgetProvider
         private readonly CardTemplateService _cardService = new();
         private readonly WidgetInstanceTracker _tracker = new();
 
-        // Named EventWaitHandle for IPC with TrayApp (fully wired in WS-19).
-        // When the TrayApp sets a new wallpaper it signals this handle so the
-        // widget card refreshes within milliseconds instead of waiting for the
-        // 30-second polling interval.
-        private const string IpcEventName = "Global\\WallpaperSyncWidgetRefresh";
-
         // Fallback polling interval when no IPC signal is received.
         private static readonly TimeSpan PollingInterval = TimeSpan.FromSeconds(30);
 
@@ -45,8 +39,8 @@ namespace WallpaperApp.WidgetProvider
             _stateService = stateService ?? throw new ArgumentNullException(nameof(stateService));
             _updater = updater ?? throw new ArgumentNullException(nameof(updater));
 
-            // Start background threads for IPC listener and periodic polling
-            Task.Run(RunIpcListenerAsync);
+            // Start the fallback polling loop. The IPC listener (WidgetIpcService)
+            // is started externally by Program.cs and calls NotifyWidgetRefresh().
             Task.Run(RunPollingLoopAsync);
         }
 
@@ -125,7 +119,12 @@ namespace WallpaperApp.WidgetProvider
             PushUpdateToAllWidgets();
         }
 
-        private void PushUpdateToAllWidgets()
+        /// <summary>
+        /// Pushes the current card data to all active widget instances.
+        /// Called by the IPC service when the TrayApp signals a wallpaper update,
+        /// and by the internal polling loop as a fallback.
+        /// </summary>
+        public void PushUpdateToAllWidgets()
         {
             foreach (var (widgetId, size) in _tracker.GetAll())
             {
@@ -184,35 +183,6 @@ namespace WallpaperApp.WidgetProvider
                 || settings.SourceType == ImageSource.LocalFile;
 
             return new WidgetData(imageUrl, lastUpdated, status, hasImage);
-        }
-
-        private async Task RunIpcListenerAsync()
-        {
-            // Stub for WS-19 IPC implementation. Creates the named event now so
-            // TrayApp can signal it even before Phase 2 packaging is complete.
-            using var ipcEvent = new EventWaitHandle(
-                initialState: false,
-                mode: EventResetMode.AutoReset,
-                name: IpcEventName,
-                createdNew: out _);
-
-            while (!_cts.IsCancellationRequested)
-            {
-                try
-                {
-                    // WaitOne with a 1-second timeout so we can check cancellation
-                    if (ipcEvent.WaitOne(TimeSpan.FromSeconds(1)))
-                    {
-                        PushUpdateToAllWidgets();
-                    }
-                }
-                catch (ObjectDisposedException) { break; }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"[WidgetProvider] IPC listener error: {ex.Message}");
-                    await Task.Delay(TimeSpan.FromSeconds(5), _cts.Token).ConfigureAwait(false);
-                }
-            }
         }
 
         private async Task RunPollingLoopAsync()

@@ -6,7 +6,13 @@
 ## Installer build output
 installer/*.msi
 installer/*.wixpdb
+installer/*.msix
 .wix/
+
+## Certificate files (NEVER commit)
+*.pfx
+*.cer
+*.p12
 
 ## User-specific files
 *.user
