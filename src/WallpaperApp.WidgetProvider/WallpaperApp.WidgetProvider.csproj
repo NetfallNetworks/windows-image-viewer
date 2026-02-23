@@ -14,12 +14,13 @@
          which are not available when building with dotnet CLI.
          Remove (or change to 'MSIX') when adding identity package in Phase 2. -->
     <WindowsPackageType>None</WindowsPackageType>
-    <!-- Prevent MrtCore.PriGen.targets from being imported. That file contains multiple
-         targets that load Microsoft.Build.AppxPackage.dll (VS AppxPackage tools),
-         which are not present when building with dotnet CLI without Visual Studio.
-         MrtCore.targets only imports MrtCore.PriGen.targets when EnableCoreMrtTooling==true.
-         Phase 2 MSIX packaging will re-enable this for the packaged build. -->
-    <EnableCoreMrtTooling>false</EnableCoreMrtTooling>
+    <!-- Enable MSIX tooling for resources.pri generation during PublishSingleFile.
+         Windows App SDK requires this for embedded resource handling. -->
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- WindowsAppSDKSelfContained requires an explicit RID (win-x64) which is only
+         available during publish, not during the AnyCPU solution build. Gate it on
+         the presence of RuntimeIdentifier to avoid the build-time error. -->
+    <WindowsAppSDKSelfContained Condition="'$(RuntimeIdentifier)' != ''">true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
   <ItemGroup>

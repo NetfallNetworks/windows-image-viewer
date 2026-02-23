@@ -108,10 +108,21 @@ if [ "$IS_WINDOWS" = true ]; then
     # Restore WiX v4 from the local tool manifest (.config/dotnet-tools.json)
     if dotnet tool restore >/dev/null 2>&1; then
         dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5 >/dev/null 2>&1 || true
+
+        # Include Widget feature only when both artifacts exist (Steps 4+5 succeeded)
+        WIX_WIDGET_FLAG=""
+        if [ -f "bin/WidgetProvider/WallpaperApp.WidgetProvider.exe" ] && \
+           [ -f "installer/WallpaperSync-Identity.msix" ]; then
+            WIX_WIDGET_FLAG="-d IncludeWidget=true"
+            echo "Including Widget Board feature in installer."
+        else
+            echo "Excluding Widget Board feature (missing artifacts)."
+        fi
+
         dotnet tool run wix build installer/Package.wxs \
             -ext WixToolset.UI.wixext \
             -o installer/WallpaperSync-Setup.msi \
-            -arch x64
+            -arch x64 $WIX_WIDGET_FLAG
         echo "✅ Installer built: installer/WallpaperSync-Setup.msi"
     else
         echo "⚠️  WiX tool restore failed - skipping installer build"

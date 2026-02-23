@@ -111,16 +111,18 @@ echo ========================================
 echo.
 
 REM Build the sparse MSIX identity package for Widget Board registration.
-REM Requires makeappx.exe and signtool.exe from the Windows SDK.
+REM Requires makeappx.exe, signtool.exe (Windows SDK), and a dev cert.
+REM Run installer\IdentityPackage\create-dev-cert.ps1 first if you haven't.
+REM Stderr is redirected to nul to prevent PowerShell error parentheses
+REM from corrupting the batch if/else parser.
 echo Building identity MSIX package...
-powershell -ExecutionPolicy Bypass -File installer\IdentityPackage\build-identity-package.ps1
+powershell -ExecutionPolicy Bypass -File installer\IdentityPackage\build-identity-package.ps1 2>nul
 
 if errorlevel 1 (
     echo.
     echo [WARN] Identity MSIX build failed.
-    echo        Widget Board registration will not work without the signed MSIX.
-    echo        Ensure Windows SDK (makeappx.exe, signtool.exe) is installed.
-    echo        Continuing with remaining steps...
+    echo        Run: powershell installer\IdentityPackage\create-dev-cert.ps1
+    echo        Then re-run this script.
     echo.
 ) else (
     echo [OK] Identity MSIX built: installer\WallpaperSync-Identity.msix
@@ -149,27 +151,34 @@ REM Cache the WiX extensions (idempotent - safe to run multiple times).
 REM The /4.0.5 suffix pins the extension to the matching WiX v4 version.
 echo Ensuring WiX extensions v4 are available...
 dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5 >nul 2>&1
-dotnet tool run wix extension add WixToolset.Util.wixext/4.0.5 >nul 2>&1
 
-REM Build the MSI installer
+REM Build the MSI installer.
+REM Include the optional Widget feature only when both the WidgetProvider exe
+REM and the identity MSIX are present (Step 4 + Step 5 both succeeded).
+if not exist "bin\WidgetProvider\WallpaperApp.WidgetProvider.exe" goto BuildMsiWithoutWidget
+if not exist "installer\WallpaperSync-Identity.msix" goto BuildMsiWithoutWidget
+
+echo Including Widget Board feature in installer.
 echo Building WallpaperSync-Setup.msi...
-dotnet tool run wix build installer\Package.wxs ^
-    -ext WixToolset.UI.wixext ^
-    -ext WixToolset.Util.wixext ^
-    -o installer\WallpaperSync-Setup.msi ^
-    -arch x64
+dotnet tool run wix build installer\Package.wxs -ext WixToolset.UI.wixext -o installer\WallpaperSync-Setup.msi -arch x64 -d IncludeWidget=true
+goto CheckMsiResult
 
-if errorlevel 1 (
+:BuildMsiWithoutWidget
+echo Excluding Widget Board feature from installer.
+echo Building WallpaperSync-Setup.msi...
+dotnet tool run wix build installer\Package.wxs -ext WixToolset.UI.wixext -o installer\WallpaperSync-Setup.msi -arch x64
+
+:CheckMsiResult
+if not exist "installer\WallpaperSync-Setup.msi" (
     echo.
     echo ========================================
     echo ERROR: Installer build failed!
     echo ========================================
     echo.
     echo Troubleshooting:
-    echo   1. Ensure bin\TrayApp\WallpaperApp.TrayApp.exe exists (Step 3 must succeed)
-    echo   2. Ensure bin\WidgetProvider\WallpaperApp.WidgetProvider.exe exists (Step 4 must succeed)
-    echo   3. Re-run: dotnet tool restore
-    echo   4. Re-run: dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
+    echo   1. Ensure bin\TrayApp\WallpaperApp.TrayApp.exe exists
+    echo   2. Re-run: dotnet tool restore
+    echo   3. Re-run: dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
     pause
     exit /b 1
 )

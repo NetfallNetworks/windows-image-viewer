@@ -23,6 +23,12 @@ using WallpaperApp.Services;
 const uint CLSCTX_LOCAL_SERVER = 4;
 const uint REGCLS_MULTIPLEUSE = 1;
 
+// PublishSingleFile: set the base directory so the Windows App Runtime
+// can locate its native DLLs next to the single-file exe at runtime.
+Environment.SetEnvironmentVariable(
+    "MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY",
+    AppContext.BaseDirectory);
+
 // Ensure Windows App Runtime packages are registered before any SDK calls.
 // DeploymentManager.Initialize() registers any missing runtime packages.
 var deployResult = DeploymentManager.Initialize();

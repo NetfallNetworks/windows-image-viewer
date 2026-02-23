@@ -10,7 +10,8 @@
     dotnet tool run wix build installer\Package.wxs ^
       -ext WixToolset.UI.wixext ^
       -o installer\WallpaperSync-Setup.msi ^
-      -arch x64
+      -arch x64 ^
+      -d IncludeWidget=true        (optional — includes Widget Board feature)
 
   Per-user install: no UAC elevation required.
   Installs to: %LOCALAPPDATA%\WallpaperSync\
@@ -45,11 +46,12 @@
     <Property Id="ARPNOREPAIR"      Value="1" />
 
     <!--
-      WixUI_Minimal: three-screen wizard (Welcome → Progress → Finish).
-      No directory picker - the install path (%LOCALAPPDATA%\WallpaperSync) is fixed.
+      WixUI_FeatureTree: adds a "Custom Setup" dialog where users can
+      select or deselect optional features (e.g., Widget Board support).
+      No directory picker — the install path (%LOCALAPPDATA%\WallpaperSync) is fixed.
       No license agreement screen (Value not set for WixUILicenseRtf).
     -->
-    <ui:WixUI Id="WixUI_Minimal" />
+    <ui:WixUI Id="WixUI_FeatureTree" />
 
     <!--
       "Launch Wallpaper Sync" checkbox on the Finish dialog.
@@ -70,10 +72,31 @@
                   Return="asyncNoWait"
                   Execute="immediate" />
 
-    <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1">
-      <ComponentGroupRef Id="ProductComponents" />
-      <ComponentGroupRef Id="WidgetComponents" />
-      <ComponentGroupRef Id="ShortcutComponents" />
+    <!--
+      Feature tree visible in the "Custom Setup" dialog.
+      CoreFeature: always installed (Absent="disallow" prevents unchecking).
+      WidgetFeature: checked by default (Level=1) but user can uncheck it.
+    -->
+    <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1"
+             Display="expand" ConfigurableDirectory="INSTALLFOLDER"
+             AllowAbsent="no"
+             Description="Wallpaper Sync application and all features.">
+
+      <Feature Id="CoreFeature" Title="Desktop Wallpaper"
+               Level="1" AllowAbsent="no"
+               Description="Core application — automatically syncs your desktop wallpaper from a URL or local file. Includes system tray app, auto-start, and desktop/Start Menu shortcuts.">
+        <ComponentGroupRef Id="ProductComponents" />
+        <ComponentGroupRef Id="ShortcutComponents" />
+      </Feature>
+
+      <?ifdef IncludeWidget ?>
+      <Feature Id="WidgetFeature" Title="Widget Board Support"
+               Level="1" AllowAbsent="yes"
+               Description="Adds a Windows 11 Widget Board tile (Win+W) that displays your current wallpaper image. Requires Windows 11.">
+        <ComponentGroupRef Id="WidgetComponents" />
+      </Feature>
+      <?endif ?>
+
     </Feature>
 
     <!--
@@ -143,8 +166,9 @@
     </ComponentGroup>
   </Fragment>
 
-  <!-- ─── Widget provider files ──────────────────────────────────────────── -->
+  <!-- ─── Widget provider files (only included when -d IncludeWidget is passed) ── -->
 
+  <?ifdef IncludeWidget ?>
   <Fragment>
     <ComponentGroup Id="WidgetComponents">
 
@@ -168,6 +192,7 @@
 
     </ComponentGroup>
   </Fragment>
+  <?endif ?>
 
   <!-- ─── Shortcuts ────────────────────────────────────────────────────────── -->
 
