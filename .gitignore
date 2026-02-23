@@ -7,6 +7,7 @@
 installer/*.msi
 installer/*.wixpdb
 installer/*.msix
+installer/WidgetProviderFiles.wxs
 .wix/
 
 ## Certificate files (NEVER commit)

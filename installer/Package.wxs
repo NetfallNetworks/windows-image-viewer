@@ -10,7 +10,8 @@
     dotnet tool run wix build installer\Package.wxs ^
       -ext WixToolset.UI.wixext ^
       -o installer\WallpaperSync-Setup.msi ^
-      -arch x64
+      -arch x64 ^
+      -d IncludeWidget=true        (optional — includes Widget Board feature)
 
   Per-user install: no UAC elevation required.
   Installs to: %LOCALAPPDATA%\WallpaperSync\
@@ -21,7 +22,7 @@
 
   <Package Name="Wallpaper Sync"
            Manufacturer="Wallpaper Sync"
-           Version="1.0.0"
+           Version="1.1.0"
            UpgradeCode="A9B3C4D5-E6F7-4A1B-8C2D-3E4F5A6B7C8D"
            Scope="perUser"
            Compressed="yes">
@@ -45,11 +46,12 @@
     <Property Id="ARPNOREPAIR"      Value="1" />
 
     <!--
-      WixUI_Minimal: three-screen wizard (Welcome → Progress → Finish).
-      No directory picker - the install path (%LOCALAPPDATA%\WallpaperSync) is fixed.
+      WixUI_FeatureTree: adds a "Custom Setup" dialog where users can
+      select or deselect optional features (e.g., Widget Board support).
+      No directory picker — the install path (%LOCALAPPDATA%\WallpaperSync) is fixed.
       No license agreement screen (Value not set for WixUILicenseRtf).
     -->
-    <ui:WixUI Id="WixUI_Minimal" />
+    <ui:WixUI Id="WixUI_FeatureTree" />
 
     <!--
       "Launch Wallpaper Sync" checkbox on the Finish dialog.
@@ -70,9 +72,31 @@
                   Return="asyncNoWait"
                   Execute="immediate" />
 
-    <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1">
-      <ComponentGroupRef Id="ProductComponents" />
-      <ComponentGroupRef Id="ShortcutComponents" />
+    <!--
+      Feature tree visible in the "Custom Setup" dialog.
+      CoreFeature: always installed (Absent="disallow" prevents unchecking).
+      WidgetFeature: checked by default (Level=1) but user can uncheck it.
+    -->
+    <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1"
+             Display="expand" ConfigurableDirectory="INSTALLFOLDER"
+             AllowAbsent="no"
+             Description="Wallpaper Sync application and all features.">
+
+      <Feature Id="CoreFeature" Title="Desktop Wallpaper"
+               Level="1" AllowAbsent="no"
+               Description="Core application — automatically syncs your desktop wallpaper from a URL or local file. Includes system tray app, auto-start, and desktop/Start Menu shortcuts.">
+        <ComponentGroupRef Id="ProductComponents" />
+        <ComponentGroupRef Id="ShortcutComponents" />
+      </Feature>
+
+      <?ifdef IncludeWidget ?>
+      <Feature Id="WidgetFeature" Title="Widget Board Support"
+               Level="1" AllowAbsent="yes"
+               Description="Adds a Windows 11 Widget Board tile (Win+W) that displays your current wallpaper image. Requires Windows 11.">
+        <ComponentGroupRef Id="WidgetComponents" />
+      </Feature>
+      <?endif ?>
+
     </Feature>
 
     <!--
@@ -97,7 +121,10 @@
       so keeping everything under one roof makes sense.
     -->
     <StandardDirectory Id="LocalAppDataFolder">
-      <Directory Id="INSTALLFOLDER" Name="WallpaperSync" />
+      <Directory Id="INSTALLFOLDER" Name="WallpaperSync">
+        <Directory Id="WidgetDir" Name="widget" />
+        <Directory Id="WidgetProviderDir" Name="WidgetProvider" />
+      </Directory>
     </StandardDirectory>
 
     <!-- Start Menu > Programs > Wallpaper Sync folder -->
@@ -139,6 +166,36 @@
 
     </ComponentGroup>
   </Fragment>
+
+  <!-- ─── Widget provider files (only included when -d IncludeWidget is passed) ── -->
+
+  <!--
+    Widget provider files: the WidgetProviderFiles component group is auto-generated
+    by "wix heat dir" in the build script (see Step 4b in build.bat). It harvests all
+    files from bin/WidgetProvider/ into installer/WidgetProviderFiles.wxs.
+
+    The identity MSIX is kept as a separate static component since it lives in a
+    different directory (widget\) and comes from a different source path.
+  -->
+  <?ifdef IncludeWidget ?>
+  <Fragment>
+    <ComponentGroup Id="WidgetComponents">
+      <ComponentGroupRef Id="WidgetProviderFiles" />
+
+      <!--
+        Sparse MSIX identity package (installed to widget\ subdirectory).
+        The TrayApp's WidgetPackageRegistrar registers this at first run via
+        PackageManager.AddPackageByUriAsync() — no WiX custom action needed.
+      -->
+      <Component Id="WidgetIdentityComponent" Directory="WidgetDir" Guid="*">
+        <File Id="WidgetIdentityMsix"
+              Source="installer/WallpaperSync-Identity.msix"
+              KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+  <?endif ?>
 
   <!-- ─── Shortcuts ────────────────────────────────────────────────────────── -->
 

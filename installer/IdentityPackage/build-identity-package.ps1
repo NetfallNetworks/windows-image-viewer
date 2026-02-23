@@ -4,9 +4,10 @@
 
 .DESCRIPTION
     This script:
-    1. Locates makeappx.exe and signtool.exe from the Windows SDK
-    2. Packs the identity package directory into an MSIX
-    3. Signs the MSIX with the development certificate (WallpaperSync-Dev.pfx)
+    1. Locates makeappx.exe and signtool.exe from the Windows SDK (10.0.18362+)
+    2. Auto-creates a self-signed dev certificate if one doesn't exist
+    3. Packs the identity package (manifest + assets only) into an MSIX
+    4. Signs the MSIX with the certificate
 
     The resulting MSIX provides package identity for the widget provider COM server
     so the Windows 11 Widget Board can activate it.
@@ -33,16 +34,16 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = $PSScriptRoot
 $outputMsix = Join-Path (Split-Path $scriptDir -Parent) "WallpaperSync-Identity.msix"
+$minSdkVersion = [version]"10.0.18362.0"
 
 Write-Host "=== Building Sparse MSIX Identity Package ===" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Locate Windows SDK tools ──────────────────────────────────────────────────
+# -- Locate Windows SDK tools (requires 10.0.18362+ for AllowExternalContent) --
 
 function Find-SdkTool {
     param([string]$ToolName)
 
-    # Search in standard Windows SDK paths
     $sdkPaths = @(
         "${env:ProgramFiles(x86)}\Windows Kits\10\bin",
         "$env:ProgramFiles\Windows Kits\10\bin"
@@ -50,12 +51,12 @@ function Find-SdkTool {
 
     foreach ($sdkBase in $sdkPaths) {
         if (Test-Path $sdkBase) {
-            # Find the latest SDK version directory
             $versionDirs = Get-ChildItem -Path $sdkBase -Directory |
                 Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
                 Sort-Object { [version]$_.Name } -Descending
 
             foreach ($versionDir in $versionDirs) {
+                if ([version]$versionDir.Name -lt $minSdkVersion) { continue }
                 $toolPath = Join-Path $versionDir.FullName "x64\$ToolName"
                 if (Test-Path $toolPath) {
                     return $toolPath
@@ -75,27 +76,64 @@ $makeappx = Find-SdkTool "makeappx.exe"
 $signtool = Find-SdkTool "signtool.exe"
 
 if (-not $makeappx) {
-    Write-Error "makeappx.exe not found. Install the Windows SDK: https://developer.microsoft.com/windows/downloads/windows-sdk/"
+    Write-Error "makeappx.exe not found (need SDK $minSdkVersion+). Install from: https://developer.microsoft.com/windows/downloads/windows-sdk/"
 }
 
 if (-not $signtool) {
-    Write-Error "signtool.exe not found. Install the Windows SDK: https://developer.microsoft.com/windows/downloads/windows-sdk/"
+    Write-Error "signtool.exe not found (need SDK $minSdkVersion+). Install from: https://developer.microsoft.com/windows/downloads/windows-sdk/"
 }
 
 Write-Host "  makeappx: $makeappx"
 Write-Host "  signtool: $signtool"
 
-# ── Verify prerequisites ──────────────────────────────────────────────────────
+# -- Verify prerequisites -------------------------------------------------
 
 if (-not (Test-Path (Join-Path $scriptDir "AppxManifest.xml"))) {
     Write-Error "AppxManifest.xml not found in $scriptDir"
 }
 
+# -- Auto-create dev certificate if missing --------------------------------
+
 if (-not (Test-Path $PfxPath)) {
-    Write-Error "Certificate not found: $PfxPath. Run create-dev-cert.ps1 first."
+    Write-Host "  Certificate not found - creating self-signed dev cert..." -ForegroundColor Yellow
+
+    $certSubject = "CN=WallpaperSync"
+    $pfxSecure = ConvertTo-SecureString -String $PfxPassword -Force -AsPlainText
+
+    # Remove any stale cert with the same subject
+    Get-ChildItem -Path Cert:\CurrentUser\My |
+        Where-Object { $_.Subject -eq $certSubject } |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+
+    # Create self-signed code signing certificate (no admin needed)
+    $cert = New-SelfSignedCertificate `
+        -Type Custom `
+        -Subject $certSubject `
+        -KeyUsage DigitalSignature `
+        -FriendlyName "Wallpaper Sync Development Certificate" `
+        -CertStoreLocation "Cert:\CurrentUser\My" `
+        -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}") `
+        -NotAfter (Get-Date).AddYears(1)
+
+    Export-PfxCertificate -Cert $cert -FilePath $PfxPath -Password $pfxSecure | Out-Null
+    Write-Host "  Certificate created: $($cert.Thumbprint)" -ForegroundColor Green
+
+    # Trust the cert so Windows accepts the signed MSIX (requires admin).
+    # If not admin, skip - the user will see a trust prompt on first install.
+    try {
+        $store = New-Object System.Security.Cryptography.X509Certificates.X509Store(
+            "TrustedPeople",
+            [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+        $store.Open("ReadWrite")
+        $store.Add($cert)
+        $store.Close()
+        Write-Host "  Certificate trusted (TrustedPeople store)" -ForegroundColor Green
+    } catch {
+        Write-Host "  Skipped TrustedPeople store (not admin - MSIX install may prompt)" -ForegroundColor Yellow
+    }
 }
 
-# ── Pack the MSIX ─────────────────────────────────────────────────────────────
+# -- Pack the MSIX (manifest + assets only) --------------------------------
 
 Write-Host ""
 Write-Host "Packing identity package..." -ForegroundColor Yellow
@@ -105,14 +143,28 @@ if (Test-Path $outputMsix) {
     Remove-Item $outputMsix -Force
 }
 
-& $makeappx pack /d $scriptDir /p $outputMsix /nv
+# Use a mapping file so makeappx only packs the manifest and assets,
+# not scripts, certs, or other dev files in the directory.
+$mappingFile = Join-Path $env:TEMP "WallpaperSync-msix-mapping.txt"
+$mappingContent = @"
+[Files]
+"$scriptDir\AppxManifest.xml" "AppxManifest.xml"
+"$scriptDir\Assets\StoreLogo.png" "Assets\StoreLogo.png"
+"$scriptDir\Assets\Square44x44Logo.png" "Assets\Square44x44Logo.png"
+"$scriptDir\Assets\Square150x150Logo.png" "Assets\Square150x150Logo.png"
+"@
+Set-Content -Path $mappingFile -Value $mappingContent -Encoding UTF8
+
+& $makeappx pack /f $mappingFile /p $outputMsix /nv
 if ($LASTEXITCODE -ne 0) {
     Write-Error "makeappx.exe failed with exit code $LASTEXITCODE"
 }
 
+Remove-Item $mappingFile -Force -ErrorAction SilentlyContinue
+
 Write-Host "MSIX created: $outputMsix" -ForegroundColor Green
 
-# ── Sign the MSIX ─────────────────────────────────────────────────────────────
+# -- Sign the MSIX --------------------------------------------------------
 
 Write-Host ""
 Write-Host "Signing identity package..." -ForegroundColor Yellow
@@ -124,12 +176,9 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "MSIX signed successfully" -ForegroundColor Green
 
-# ── Done ──────────────────────────────────────────────────────────────────────
+# -- Done ------------------------------------------------------------------
 
 Write-Host ""
 Write-Host "=== Identity Package Build Complete ===" -ForegroundColor Cyan
 Write-Host "  Output: $outputMsix"
 Write-Host "  Size:   $([math]::Round((Get-Item $outputMsix).Length / 1KB, 1)) KB"
-Write-Host ""
-Write-Host "To install: Add-AppxPackage -Path `"$outputMsix`"" -ForegroundColor Yellow
-Write-Host "To register via TrayApp: The app will auto-register on first startup." -ForegroundColor Yellow
