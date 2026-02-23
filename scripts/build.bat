@@ -111,8 +111,8 @@ echo ========================================
 echo.
 
 REM Build the sparse MSIX identity package for Widget Board registration.
-REM Requires makeappx.exe, signtool.exe (Windows SDK), and a dev cert.
-REM Run installer\IdentityPackage\create-dev-cert.ps1 first if you haven't.
+REM The script auto-creates a dev cert if one doesn't exist yet.
+REM Requires makeappx.exe and signtool.exe from the Windows SDK.
 REM Stderr is redirected to nul to prevent PowerShell error parentheses
 REM from corrupting the batch if/else parser.
 echo Building identity MSIX package...
@@ -121,8 +121,8 @@ powershell -ExecutionPolicy Bypass -File installer\IdentityPackage\build-identit
 if errorlevel 1 (
     echo.
     echo [WARN] Identity MSIX build failed.
-    echo        Run: powershell installer\IdentityPackage\create-dev-cert.ps1
-    echo        Then re-run this script.
+    echo        Requires Windows SDK 10.0.18362+ (makeappx.exe, signtool.exe^).
+    echo        Download: https://developer.microsoft.com/windows/downloads/windows-sdk/
     echo.
 ) else (
     echo [OK] Identity MSIX built: installer\WallpaperSync-Identity.msix
