@@ -88,9 +88,19 @@ echo Step 4/6: Publishing Widget Provider...
 echo ========================================
 echo.
 
-REM Publish widget provider COM server (to bin\WidgetProvider - source for installer)
+REM Clean WidgetProvider intermediate output before publish. The solution build
+REM (Step 1) compiles without RuntimeIdentifier, which generates a WinRT activation
+REM manifest with loadFrom env var paths (non-self-contained style). The publish
+REM step reuses these cached artifacts unless we force a clean rebuild.
+if exist "src\WallpaperApp.WidgetProvider\obj" rd /s /q "src\WallpaperApp.WidgetProvider\obj"
+if exist "src\WallpaperApp.WidgetProvider\bin" rd /s /q "src\WallpaperApp.WidgetProvider\bin"
+
+REM Publish widget provider COM server (to bin\WidgetProvider - source for installer).
+REM NOT PublishSingleFile: Windows App SDK embeds a WinRT activation manifest with
+REM loadFrom env var paths when SingleFile is enabled, causing an SxS loader error.
+REM Non-SingleFile keeps native DLLs next to the exe where the SxS loader expects them.
 echo Publishing WallpaperApp.WidgetProvider (widget COM server)...
-dotnet publish src\WallpaperApp.WidgetProvider\WallpaperApp.WidgetProvider.csproj -c Release -o bin\WidgetProvider --self-contained true --runtime win-x64 /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --verbosity minimal --nologo
+dotnet publish src\WallpaperApp.WidgetProvider\WallpaperApp.WidgetProvider.csproj -c Release -o bin\WidgetProvider --self-contained true --runtime win-x64 --verbosity minimal --nologo
 
 if errorlevel 1 (
     echo.
@@ -158,9 +168,20 @@ REM and the identity MSIX are present (Step 4 + Step 5 both succeeded).
 if not exist "bin\WidgetProvider\WallpaperApp.WidgetProvider.exe" goto BuildMsiWithoutWidget
 if not exist "installer\WallpaperSync-Identity.msix" goto BuildMsiWithoutWidget
 
+REM Harvest widget provider files into a WiX fragment. The widget provider is
+REM published as non-SingleFile (Windows App SDK SxS requirement), so we generate
+REM Component/File entries for all ~460 files via a PowerShell script.
+echo Harvesting widget provider files...
+powershell -ExecutionPolicy Bypass -File installer\harvest-widget-files.ps1 2>nul
+
+if errorlevel 1 (
+    echo [WARN] Widget file harvesting failed - building MSI without widget feature.
+    goto BuildMsiWithoutWidget
+)
+
 echo Including Widget Board feature in installer.
 echo Building WallpaperSync-Setup.msi...
-dotnet tool run wix build installer\Package.wxs -ext WixToolset.UI.wixext -o installer\WallpaperSync-Setup.msi -arch x64 -d IncludeWidget=true
+dotnet tool run wix build installer\Package.wxs installer\WidgetProviderFiles.wxs -ext WixToolset.UI.wixext -o installer\WallpaperSync-Setup.msi -arch x64 -d IncludeWidget=true
 goto CheckMsiResult
 
 :BuildMsiWithoutWidget

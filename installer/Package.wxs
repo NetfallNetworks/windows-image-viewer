@@ -123,6 +123,7 @@
     <StandardDirectory Id="LocalAppDataFolder">
       <Directory Id="INSTALLFOLDER" Name="WallpaperSync">
         <Directory Id="WidgetDir" Name="widget" />
+        <Directory Id="WidgetProviderDir" Name="WidgetProvider" />
       </Directory>
     </StandardDirectory>
 
@@ -168,16 +169,18 @@
 
   <!-- ─── Widget provider files (only included when -d IncludeWidget is passed) ── -->
 
+  <!--
+    Widget provider files: the WidgetProviderFiles component group is auto-generated
+    by "wix heat dir" in the build script (see Step 4b in build.bat). It harvests all
+    files from bin/WidgetProvider/ into installer/WidgetProviderFiles.wxs.
+
+    The identity MSIX is kept as a separate static component since it lives in a
+    different directory (widget\) and comes from a different source path.
+  -->
   <?ifdef IncludeWidget ?>
   <Fragment>
     <ComponentGroup Id="WidgetComponents">
-
-      <!-- Widget provider COM server executable (installed to main directory) -->
-      <Component Id="WidgetProviderComponent" Directory="INSTALLFOLDER" Guid="*">
-        <File Id="WidgetProviderExe"
-              Source="bin/WidgetProvider/WallpaperApp.WidgetProvider.exe"
-              KeyPath="yes" />
-      </Component>
+      <ComponentGroupRef Id="WidgetProviderFiles" />
 
       <!--
         Sparse MSIX identity package (installed to widget\ subdirectory).

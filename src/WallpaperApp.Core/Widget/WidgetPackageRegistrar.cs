@@ -28,9 +28,17 @@ namespace WallpaperApp.Widget
         public const string PackageFamilyNamePrefix = "WallpaperSync.WidgetProvider";
 
         /// <summary>
-        /// Expected MSIX file name (relative to the application base directory).
+        /// Expected MSIX file path (relative to the application base directory).
+        /// The MSIX is installed to the widget\ subdirectory by the MSI installer.
         /// </summary>
-        public const string MsixFileName = "WallpaperSync-Identity.msix";
+        public const string MsixRelativePath = @"widget\WallpaperSync-Identity.msix";
+
+        /// <summary>
+        /// Widget provider subdirectory name (relative to the application base directory).
+        /// The ExternalLocationUri must point here so the sparse MSIX can resolve
+        /// the Executable path in AppxManifest.xml.
+        /// </summary>
+        public const string WidgetProviderSubdir = "WidgetProvider";
 
         public WidgetPackageRegistrar(IPackageManagerAdapter packageManager)
         {
@@ -53,19 +61,21 @@ namespace WallpaperApp.Widget
                     return true;
                 }
 
-                // Locate the MSIX file
-                var msixPath = Path.Combine(AppContext.BaseDirectory, MsixFileName);
+                // Locate the MSIX file in the widget\ subdirectory
+                var msixPath = Path.Combine(AppContext.BaseDirectory, MsixRelativePath);
                 if (!File.Exists(msixPath))
                 {
                     FileLogger.Log($"[WidgetPackageRegistrar] MSIX not found at {msixPath}, skipping registration.");
                     return false;
                 }
 
-                // Register the sparse package with ExternalLocationUri pointing to the install directory
+                // ExternalLocationUri must point to the WidgetProvider\ subdirectory
+                // where the exe and its DLLs are installed
+                var externalLocation = Path.Combine(AppContext.BaseDirectory, WidgetProviderSubdir);
                 FileLogger.Log($"[WidgetPackageRegistrar] Registering identity package from {msixPath}...");
                 var result = await _packageManager.RegisterSparsePackageAsync(
                     msixPath,
-                    AppContext.BaseDirectory);
+                    externalLocation);
 
                 if (result)
                 {

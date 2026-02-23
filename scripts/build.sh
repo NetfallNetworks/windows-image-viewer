@@ -71,8 +71,11 @@ echo "========================================"
 echo ""
 
 if [ "$IS_WINDOWS" = true ]; then
+    # Clean WidgetProvider intermediates to avoid stale WinRT activation manifest
+    rm -rf src/WallpaperApp.WidgetProvider/obj src/WallpaperApp.WidgetProvider/bin
     echo "Publishing WallpaperApp.WidgetProvider (widget COM server)..."
-    dotnet publish src/WallpaperApp.WidgetProvider/WallpaperApp.WidgetProvider.csproj -c Release -o bin/WidgetProvider --self-contained true --runtime win-x64 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --verbosity minimal --nologo
+    # NOT PublishSingleFile: Windows App SDK generates SxS-incompatible manifest with SingleFile
+    dotnet publish src/WallpaperApp.WidgetProvider/WallpaperApp.WidgetProvider.csproj -c Release -o bin/WidgetProvider --self-contained true --runtime win-x64 --verbosity minimal --nologo
     echo "✅ Widget provider published"
 else
     echo "[SKIPPED on Linux] Step 4: Widget provider (Windows App SDK required)"
@@ -111,15 +114,20 @@ if [ "$IS_WINDOWS" = true ]; then
 
         # Include Widget feature only when both artifacts exist (Steps 4+5 succeeded)
         WIX_WIDGET_FLAG=""
+        WIX_WIDGET_FILES=""
         if [ -f "bin/WidgetProvider/WallpaperApp.WidgetProvider.exe" ] && \
            [ -f "installer/WallpaperSync-Identity.msix" ]; then
+            # Harvest widget provider files into a WiX fragment
+            echo "Harvesting widget provider files..."
+            powershell -ExecutionPolicy Bypass -File installer/harvest-widget-files.ps1
             WIX_WIDGET_FLAG="-d IncludeWidget=true"
+            WIX_WIDGET_FILES="installer/WidgetProviderFiles.wxs"
             echo "Including Widget Board feature in installer."
         else
             echo "Excluding Widget Board feature (missing artifacts)."
         fi
 
-        dotnet tool run wix build installer/Package.wxs \
+        dotnet tool run wix build installer/Package.wxs $WIX_WIDGET_FILES \
             -ext WixToolset.UI.wixext \
             -o installer/WallpaperSync-Setup.msi \
             -arch x64 $WIX_WIDGET_FLAG

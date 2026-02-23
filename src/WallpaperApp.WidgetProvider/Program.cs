@@ -13,7 +13,6 @@
 //   4. Open Win+W to trigger activation
 
 using System.Runtime.InteropServices;
-using Microsoft.Windows.ApplicationModel.WindowsAppRuntime;
 using WallpaperApp.Configuration;
 using WallpaperApp.Widget;
 using WallpaperApp.WidgetProvider;
@@ -22,21 +21,6 @@ using WallpaperApp.Services;
 // COM constants — declared before use
 const uint CLSCTX_LOCAL_SERVER = 4;
 const uint REGCLS_MULTIPLEUSE = 1;
-
-// PublishSingleFile: set the base directory so the Windows App Runtime
-// can locate its native DLLs next to the single-file exe at runtime.
-Environment.SetEnvironmentVariable(
-    "MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY",
-    AppContext.BaseDirectory);
-
-// Ensure Windows App Runtime packages are registered before any SDK calls.
-// DeploymentManager.Initialize() registers any missing runtime packages.
-var deployResult = DeploymentManager.Initialize();
-if (deployResult.Status != DeploymentStatus.Ok)
-{
-    Console.Error.WriteLine($"[WidgetProvider] Windows App Runtime initialization failed: {deployResult.Status}");
-    return 1;
-}
 
 // Wire up Core services (no DI container — keep the provider lightweight)
 var configService = new ConfigurationService();

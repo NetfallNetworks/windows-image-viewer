@@ -72,12 +72,19 @@ namespace WallpaperApp.Tests.Widget
                 .Setup(pm => pm.IsPackageRegistered(It.IsAny<string>()))
                 .Returns(false);
 
-            // Create a temporary MSIX file so the File.Exists check passes
-            var msixPath = Path.Combine(AppContext.BaseDirectory, WidgetPackageRegistrar.MsixFileName);
+            // Create a temporary MSIX file in the widget\ subdirectory so File.Exists passes
+            var msixPath = Path.Combine(AppContext.BaseDirectory, WidgetPackageRegistrar.MsixRelativePath);
+            var msixDir = Path.GetDirectoryName(msixPath)!;
+            var createdDir = false;
             var createdFile = false;
 
             try
             {
+                if (!Directory.Exists(msixDir))
+                {
+                    Directory.CreateDirectory(msixDir);
+                    createdDir = true;
+                }
                 if (!File.Exists(msixPath))
                 {
                     File.WriteAllBytes(msixPath, new byte[] { 0 });
@@ -93,8 +100,8 @@ namespace WallpaperApp.Tests.Widget
                 Assert.True(result);
                 _mockPackageManager.Verify(
                     pm => pm.RegisterSparsePackageAsync(
-                        It.Is<string>(s => s.Contains(WidgetPackageRegistrar.MsixFileName)),
-                        It.IsAny<string>()),
+                        It.Is<string>(s => s.Contains("WallpaperSync-Identity.msix")),
+                        It.Is<string>(s => s.Contains(WidgetPackageRegistrar.WidgetProviderSubdir))),
                     Times.Once);
             }
             finally
@@ -102,6 +109,10 @@ namespace WallpaperApp.Tests.Widget
                 if (createdFile && File.Exists(msixPath))
                 {
                     File.Delete(msixPath);
+                }
+                if (createdDir && Directory.Exists(msixDir))
+                {
+                    Directory.Delete(msixDir, false);
                 }
             }
         }
@@ -113,12 +124,19 @@ namespace WallpaperApp.Tests.Widget
                 .Setup(pm => pm.IsPackageRegistered(It.IsAny<string>()))
                 .Returns(false);
 
-            // Create a temporary MSIX file
-            var msixPath = Path.Combine(AppContext.BaseDirectory, WidgetPackageRegistrar.MsixFileName);
+            // Create a temporary MSIX file in the widget\ subdirectory
+            var msixPath = Path.Combine(AppContext.BaseDirectory, WidgetPackageRegistrar.MsixRelativePath);
+            var msixDir = Path.GetDirectoryName(msixPath)!;
+            var createdDir = false;
             var createdFile = false;
 
             try
             {
+                if (!Directory.Exists(msixDir))
+                {
+                    Directory.CreateDirectory(msixDir);
+                    createdDir = true;
+                }
                 if (!File.Exists(msixPath))
                 {
                     File.WriteAllBytes(msixPath, new byte[] { 0 });
@@ -138,6 +156,10 @@ namespace WallpaperApp.Tests.Widget
                 if (createdFile && File.Exists(msixPath))
                 {
                     File.Delete(msixPath);
+                }
+                if (createdDir && Directory.Exists(msixDir))
+                {
+                    Directory.Delete(msixDir, false);
                 }
             }
         }
