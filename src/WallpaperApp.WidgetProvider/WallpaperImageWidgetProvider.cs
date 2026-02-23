@@ -170,19 +170,7 @@ namespace WallpaperApp.WidgetProvider
             try { state = _stateService.LoadState(); }
             catch { state = new AppState(); }
 
-            var imageUrl = settings.SourceType == ImageSource.LocalFile
-                ? "https://via.placeholder.com/400x225?text=Local+File+Mode"
-                : settings.ImageUrl;
-
-            var lastUpdated = state.LastUpdateTime.HasValue
-                ? state.LastUpdateTime.Value.ToString("ddd HH:mm")
-                : "Never";
-
-            var status = state.IsEnabled ? "Active" : "Paused";
-            var hasImage = !string.IsNullOrEmpty(settings.ImageUrl)
-                || settings.SourceType == ImageSource.LocalFile;
-
-            return new WidgetData(imageUrl, lastUpdated, status, hasImage);
+            return WidgetData.From(settings, state);
         }
 
         private async Task RunPollingLoopAsync()

@@ -21,7 +21,7 @@
 
   <Package Name="Wallpaper Sync"
            Manufacturer="Wallpaper Sync"
-           Version="1.0.0"
+           Version="1.1.0"
            UpgradeCode="A9B3C4D5-E6F7-4A1B-8C2D-3E4F5A6B7C8D"
            Scope="perUser"
            Compressed="yes">
@@ -72,6 +72,7 @@
 
     <Feature Id="ProductFeature" Title="Wallpaper Sync" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="WidgetComponents" />
       <ComponentGroupRef Id="ShortcutComponents" />
     </Feature>
 
@@ -97,7 +98,9 @@
       so keeping everything under one roof makes sense.
     -->
     <StandardDirectory Id="LocalAppDataFolder">
-      <Directory Id="INSTALLFOLDER" Name="WallpaperSync" />
+      <Directory Id="INSTALLFOLDER" Name="WallpaperSync">
+        <Directory Id="WidgetDir" Name="widget" />
+      </Directory>
     </StandardDirectory>
 
     <!-- Start Menu > Programs > Wallpaper Sync folder -->
@@ -134,6 +137,32 @@
       <Component Id="ConfigFile" Guid="*" NeverOverwrite="yes">
         <File Id="ConfigJson"
               Source="src/WallpaperApp.TrayApp/WallpaperApp.json"
+              KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- ─── Widget provider files ──────────────────────────────────────────── -->
+
+  <Fragment>
+    <ComponentGroup Id="WidgetComponents">
+
+      <!-- Widget provider COM server executable (installed to main directory) -->
+      <Component Id="WidgetProviderComponent" Directory="INSTALLFOLDER" Guid="*">
+        <File Id="WidgetProviderExe"
+              Source="bin/WidgetProvider/WallpaperApp.WidgetProvider.exe"
+              KeyPath="yes" />
+      </Component>
+
+      <!--
+        Sparse MSIX identity package (installed to widget\ subdirectory).
+        The TrayApp's WidgetPackageRegistrar registers this at first run via
+        PackageManager.AddPackageByUriAsync() — no WiX custom action needed.
+      -->
+      <Component Id="WidgetIdentityComponent" Directory="WidgetDir" Guid="*">
+        <File Id="WidgetIdentityMsix"
+              Source="installer/WallpaperSync-Identity.msix"
               KeyPath="yes" />
       </Component>
 

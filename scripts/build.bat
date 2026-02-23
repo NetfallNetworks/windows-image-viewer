@@ -7,7 +7,7 @@ set "REPO_ROOT=%SCRIPT_DIR%.."
 cd /d "%REPO_ROOT%"
 
 echo ========================================
-echo Step 1/4: Building Projects...
+echo Step 1/6: Building Projects...
 echo ========================================
 echo.
 
@@ -28,7 +28,7 @@ echo [OK] Build successful!
 echo.
 
 echo ========================================
-echo Step 2/4: Running Tests...
+echo Step 2/6: Running Tests...
 echo ========================================
 echo.
 
@@ -49,7 +49,7 @@ echo [OK] All tests passed!
 echo.
 
 echo ========================================
-echo Step 3/4: Publishing Applications...
+echo Step 3/6: Publishing Applications...
 echo ========================================
 echo.
 
@@ -84,7 +84,51 @@ echo [OK] Applications published!
 echo.
 
 echo ========================================
-echo Step 4/4: Building Installer (MSI)...
+echo Step 4/6: Publishing Widget Provider...
+echo ========================================
+echo.
+
+REM Publish widget provider COM server (to bin\WidgetProvider - source for installer)
+echo Publishing WallpaperApp.WidgetProvider (widget COM server)...
+dotnet publish src\WallpaperApp.WidgetProvider\WallpaperApp.WidgetProvider.csproj -c Release -o bin\WidgetProvider --self-contained true --runtime win-x64 /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --verbosity minimal --nologo
+
+if errorlevel 1 (
+    echo.
+    echo ========================================
+    echo ERROR: Publish failed for WidgetProvider!
+    echo ========================================
+    pause
+    exit /b 1
+)
+
+echo.
+echo [OK] Widget provider published!
+echo.
+
+echo ========================================
+echo Step 5/6: Building Identity MSIX...
+echo ========================================
+echo.
+
+REM Build the sparse MSIX identity package for Widget Board registration.
+REM Requires makeappx.exe and signtool.exe from the Windows SDK.
+echo Building identity MSIX package...
+powershell -ExecutionPolicy Bypass -File installer\IdentityPackage\build-identity-package.ps1
+
+if errorlevel 1 (
+    echo.
+    echo [WARN] Identity MSIX build failed.
+    echo        Widget Board registration will not work without the signed MSIX.
+    echo        Ensure Windows SDK (makeappx.exe, signtool.exe) is installed.
+    echo        Continuing with remaining steps...
+    echo.
+) else (
+    echo [OK] Identity MSIX built: installer\WallpaperSync-Identity.msix
+    echo.
+)
+
+echo ========================================
+echo Step 6/6: Building Installer (MSI)...
 echo ========================================
 echo.
 
@@ -123,8 +167,9 @@ if errorlevel 1 (
     echo.
     echo Troubleshooting:
     echo   1. Ensure bin\TrayApp\WallpaperApp.TrayApp.exe exists (Step 3 must succeed)
-    echo   2. Re-run: dotnet tool restore
-    echo   3. Re-run: dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
+    echo   2. Ensure bin\WidgetProvider\WallpaperApp.WidgetProvider.exe exists (Step 4 must succeed)
+    echo   3. Re-run: dotnet tool restore
+    echo   4. Re-run: dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
     pause
     exit /b 1
 )
@@ -138,9 +183,19 @@ echo ========================================
 echo [SUCCESS] BUILD PIPELINE COMPLETE!
 echo ========================================
 echo   [OK] Build successful
-echo   [OK] All tests passed (94/94)
+echo   [OK] All tests passed
 echo   [OK] Console app published to .\publish\WallpaperApp\
 echo   [OK] Tray app published to .\bin\TrayApp\
+if exist "bin\WidgetProvider\WallpaperApp.WidgetProvider.exe" (
+    echo   [OK] Widget provider published to .\bin\WidgetProvider\
+) else (
+    echo   [--] Widget provider skipped
+)
+if exist "installer\WallpaperSync-Identity.msix" (
+    echo   [OK] Identity package built: .\installer\WallpaperSync-Identity.msix
+) else (
+    echo   [--] Identity package skipped (requires Windows SDK)
+)
 if exist "installer\WallpaperSync-Setup.msi" (
     echo   [OK] Installer built: .\installer\WallpaperSync-Setup.msi
     echo.
