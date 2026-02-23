@@ -14,6 +14,22 @@ namespace WallpaperApp.Tests.Widget
         // Named EventWaitHandle is a Windows-only feature.
         // On Linux these tests verify the service degrades gracefully.
 
+        /// <summary>
+        /// Waits for the background thread to create the named EventWaitHandle.
+        /// Uses a retry loop instead of a fixed delay to avoid race conditions.
+        /// </summary>
+        private static EventWaitHandle WaitForHandle(string eventName, TimeSpan timeout)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            while (DateTime.UtcNow < deadline)
+            {
+                if (EventWaitHandle.TryOpenExisting(eventName, out var handle))
+                    return handle;
+                Thread.Sleep(50);
+            }
+            throw new TimeoutException($"EventWaitHandle '{eventName}' was not created within {timeout}");
+        }
+
         [Fact]
         public async Task Start_WhenSignalReceived_InvokesCallback()
         {
@@ -33,11 +49,8 @@ namespace WallpaperApp.Tests.Widget
                 () => callbackInvoked.Set(),
                 eventName);
 
-            // Give the background thread a moment to create the event
-            await Task.Delay(200);
-
-            // Signal the event (simulating TrayApp)
-            using var handle = EventWaitHandle.OpenExisting(eventName);
+            // Wait for the background thread to create the handle
+            using var handle = WaitForHandle(eventName, TimeSpan.FromSeconds(5));
             handle.Set();
 
             // Wait for callback — should fire within the 1-second WaitOne timeout
@@ -114,9 +127,8 @@ namespace WallpaperApp.Tests.Widget
                 },
                 eventName);
 
-            await Task.Delay(200);
-
-            using var handle = EventWaitHandle.OpenExisting(eventName);
+            // Wait for the background thread to create the handle
+            using var handle = WaitForHandle(eventName, TimeSpan.FromSeconds(5));
 
             // Send 3 signals with small delays so the listener can process each
             for (int i = 0; i < 3; i++)
@@ -188,13 +200,9 @@ namespace WallpaperApp.Tests.Widget
                 () => signaled.Set(),
                 eventName);
 
-            await Task.Delay(200);
-
-            // Simulate TrayApp's SignalWidgetRefresh pattern
-            if (EventWaitHandle.TryOpenExisting(eventName, out var handle))
-            {
-                using (handle) { handle.Set(); }
-            }
+            // Wait for the background thread to create the handle, then simulate TrayApp's signal
+            using var handle = WaitForHandle(eventName, TimeSpan.FromSeconds(5));
+            handle.Set();
 
             var wasSignaled = signaled.Wait(TimeSpan.FromSeconds(5));
             Assert.True(wasSignaled, "Event was not received by the IPC service");
