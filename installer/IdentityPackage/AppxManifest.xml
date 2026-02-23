@@ -14,8 +14,10 @@
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
-  IgnorableNamespaces="uap3 com">
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap3 uap10 com rescap">
 
   <Identity
     Name="WallpaperSync.WidgetProvider"
@@ -28,7 +30,7 @@
     <PublisherDisplayName>WallpaperSync</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <!-- AllowExternalContent lets the manifest reference an exe installed outside the package -->
-    <uap3:AllowExternalContent>true</uap3:AllowExternalContent>
+    <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
   </Properties>
 
   <Dependencies>
@@ -100,4 +102,8 @@
       </Extensions>
     </Application>
   </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
 </Package>
