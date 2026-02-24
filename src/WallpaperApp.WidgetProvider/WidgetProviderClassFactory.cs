@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Microsoft.Windows.Widgets.Providers;
+using WinRT;
 
 namespace WallpaperApp.WidgetProvider
 {
@@ -33,10 +34,12 @@ namespace WallpaperApp.WidgetProvider
                 return CLASS_E_NOAGGREGATION;
             }
 
-            // Return the single shared provider instance (singleton pattern)
+            // Return the single shared provider instance (singleton pattern).
+            // IWidgetProvider is a WinRT (IInspectable) interface — must use
+            // MarshalInspectable, not Marshal.GetComInterfaceForObject.
             if (riid == typeof(IWidgetProvider).GUID || riid == IID_IUnknown)
             {
-                ppvObject = Marshal.GetComInterfaceForObject(_provider, typeof(IWidgetProvider));
+                ppvObject = MarshalInspectable<IWidgetProvider>.FromManaged(_provider);
                 return 0; // S_OK
             }
 

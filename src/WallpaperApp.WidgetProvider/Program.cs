@@ -17,6 +17,11 @@ using WallpaperApp.Configuration;
 using WallpaperApp.Widget;
 using WallpaperApp.WidgetProvider;
 using WallpaperApp.Services;
+using WinRT;
+
+// Initialize CsWinRT ComWrappers — required before any WinRT interface marshaling.
+// Without this, the Widget Board cannot communicate with the provider through COM.
+ComWrappersSupport.InitializeComWrappers();
 
 // COM constants — declared before use
 const uint CLSCTX_LOCAL_SERVER = 4;

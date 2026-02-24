@@ -45,7 +45,8 @@
   <Applications>
     <Application Id="WallpaperSyncWidgetProvider"
                  Executable="WallpaperApp.WidgetProvider.exe"
-                 EntryPoint="Windows.FullTrustApplication">
+                 uap10:TrustLevel="mediumIL"
+                 uap10:RuntimeBehavior="win32App">
 
       <!-- uap:VisualElements (not uap3) — AppListEntry="none" hides from Start menu -->
       <uap:VisualElements
@@ -141,5 +142,6 @@
 
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
   </Capabilities>
 </Package>
