@@ -24,5 +24,12 @@ namespace WallpaperApp.Widget
         /// </param>
         /// <returns><c>true</c> if registration succeeded.</returns>
         Task<bool> RegisterSparsePackageAsync(string msixPath, string externalLocationUri);
+
+        /// <summary>
+        /// Removes a registered package whose family name starts with the given prefix.
+        /// </summary>
+        /// <param name="packageFamilyNamePrefix">Prefix to match against installed package family names.</param>
+        /// <returns><c>true</c> if removal succeeded or no matching package was found.</returns>
+        Task<bool> RemovePackageAsync(string packageFamilyNamePrefix);
     }
 }

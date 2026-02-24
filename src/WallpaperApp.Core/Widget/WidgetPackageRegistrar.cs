@@ -94,5 +94,60 @@ namespace WallpaperApp.Widget
                 return false;
             }
         }
+
+        /// <summary>
+        /// Removes and re-registers the sparse MSIX identity package.
+        /// Use when the widget is registered but not appearing in the Widget Board.
+        /// </summary>
+        /// <returns><c>true</c> if re-registration succeeded; <c>false</c> on error.</returns>
+        public async Task<bool> ForceReregisterAsync()
+        {
+            try
+            {
+                // Remove the existing package first (if present)
+                if (_packageManager.IsPackageRegistered(PackageFamilyNamePrefix))
+                {
+                    FileLogger.Log("[WidgetPackageRegistrar] Removing existing identity package for re-registration...");
+                    var removed = await _packageManager.RemovePackageAsync(PackageFamilyNamePrefix);
+                    if (!removed)
+                    {
+                        FileLogger.Log("[WidgetPackageRegistrar] Failed to remove existing identity package.");
+                        return false;
+                    }
+                    FileLogger.Log("[WidgetPackageRegistrar] Existing identity package removed.");
+                }
+
+                // Locate the MSIX file in the widget\ subdirectory
+                var msixPath = Path.Combine(AppContext.BaseDirectory, MsixRelativePath);
+                if (!File.Exists(msixPath))
+                {
+                    FileLogger.Log($"[WidgetPackageRegistrar] MSIX not found at {msixPath}, cannot re-register.");
+                    return false;
+                }
+
+                // Re-register with the ExternalLocationUri pointing to WidgetProvider\
+                var externalLocation = Path.Combine(AppContext.BaseDirectory, WidgetProviderSubdir);
+                FileLogger.Log($"[WidgetPackageRegistrar] Re-registering identity package from {msixPath}...");
+                var result = await _packageManager.RegisterSparsePackageAsync(
+                    msixPath,
+                    externalLocation);
+
+                if (result)
+                {
+                    FileLogger.Log("[WidgetPackageRegistrar] Identity package re-registered successfully.");
+                }
+                else
+                {
+                    FileLogger.Log("[WidgetPackageRegistrar] Identity package re-registration returned false.");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogError("[WidgetPackageRegistrar] Re-registration failed", ex);
+                return false;
+            }
+        }
     }
 }

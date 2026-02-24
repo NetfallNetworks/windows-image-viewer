@@ -709,11 +709,11 @@ namespace WallpaperApp.TrayApp.ViewModels
         {
             try
             {
-                WidgetPackageStatus = "Registering...";
+                WidgetPackageStatus = "Re-registering...";
                 WidgetPackageStatusColor = System.Windows.Media.Brushes.Gray;
 
                 var registrar = new WidgetPackageRegistrar(new WindowsPackageManagerAdapter());
-                var result = await registrar.RegisterIfNeededAsync();
+                var result = await registrar.ForceReregisterAsync();
 
                 if (result)
                 {

@@ -69,5 +69,48 @@ namespace WallpaperApp.TrayApp.Services
                 return false;
             }
         }
+
+        /// <inheritdoc/>
+        public async Task<bool> RemovePackageAsync(string packageFamilyNamePrefix)
+        {
+            try
+            {
+                var packageManager = new Windows.Management.Deployment.PackageManager();
+                var packages = packageManager.FindPackagesForUser("");
+                string? fullName = null;
+
+                foreach (var package in packages)
+                {
+                    if (package.Id.FamilyName.StartsWith(packageFamilyNamePrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        fullName = package.Id.FullName;
+                        break;
+                    }
+                }
+
+                if (fullName == null)
+                {
+                    FileLogger.Log($"[PackageManagerAdapter] No package matching '{packageFamilyNamePrefix}' found to remove.");
+                    return true;
+                }
+
+                FileLogger.Log($"[PackageManagerAdapter] Removing package {fullName}...");
+                var operation = packageManager.RemovePackageAsync(fullName);
+                var result = await operation.AsTask();
+
+                if (!string.IsNullOrEmpty(result.ErrorText))
+                {
+                    FileLogger.Log($"[PackageManagerAdapter] Removal error: {result.ErrorText}");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogError("[PackageManagerAdapter] Package removal failed", ex);
+                return false;
+            }
+        }
     }
 }
