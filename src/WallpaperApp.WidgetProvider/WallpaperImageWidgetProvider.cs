@@ -6,10 +6,6 @@ using WallpaperApp.Models;
 using WallpaperApp.Services;
 using WallpaperApp.Widget;
 
-// COM CLSID for this widget provider. Must match the MSIX manifest in Phase 2.
-// Generate a new GUID if forking this class: Tools → Create GUID in Visual Studio.
-[assembly: System.Runtime.InteropServices.Guid("6B2A4C8E-3F1D-4A9B-8E2C-5D7F1A3B6E4C")]
-
 namespace WallpaperApp.WidgetProvider
 {
     /// <summary>
@@ -17,6 +13,12 @@ namespace WallpaperApp.WidgetProvider
     /// as a glanceable widget in the Win+W flyout. Implements <see cref="IWidgetProvider"/>
     /// from the Windows App SDK.
     /// </summary>
+    /// <remarks>
+    /// The <see cref="System.Runtime.InteropServices.GuidAttribute"/> must be on the class
+    /// (not the assembly) so that <c>typeof(WallpaperImageWidgetProvider).GUID</c> returns
+    /// the correct COM CLSID matching the AppxManifest.xml declaration.
+    /// </remarks>
+    [System.Runtime.InteropServices.Guid("6B2A4C8E-3F1D-4A9B-8E2C-5D7F1A3B6E4C")]
     public sealed class WallpaperImageWidgetProvider : IWidgetProvider
     {
         private readonly IConfigurationService _configService;
