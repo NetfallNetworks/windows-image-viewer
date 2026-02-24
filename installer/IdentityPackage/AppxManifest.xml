@@ -13,11 +13,12 @@
 -->
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap3 uap10 com rescap">
+  IgnorableNamespaces="uap uap3 uap10 com rescap">
 
   <Identity
     Name="WallpaperSync.WidgetProvider"
@@ -46,10 +47,12 @@
                  Executable="WallpaperApp.WidgetProvider.exe"
                  EntryPoint="Windows.FullTrustApplication">
 
-      <uap3:VisualElements
+      <!-- uap:VisualElements (not uap3) — AppListEntry="none" hides from Start menu -->
+      <uap:VisualElements
         DisplayName="Wallpaper Sync"
         Description="Displays your Wallpaper Sync image in the Widget Board"
         BackgroundColor="transparent"
+        AppListEntry="none"
         Square44x44Logo="Assets\Square44x44Logo.png"
         Square150x150Logo="Assets\Square150x150Logo.png" />
 
@@ -77,7 +80,7 @@
             <uap3:Properties>
               <WidgetProvider>
                 <ProviderIcons>
-                  <Icon Path="Assets\Square44x44Logo.png" />
+                  <Icon Path="WidgetAssets\WidgetIcon.png" />
                 </ProviderIcons>
                 <Activation>
                   <CreateInstance ClassId="6B2A4C8E-3F1D-4A9B-8E2C-5D7F1A3B6E4C" />
@@ -89,10 +92,43 @@
                     Description="Shows your synchronized wallpaper image"
                     AllowMultiple="false">
                     <Capabilities>
-                      <Capability Type="size" Name="small" />
-                      <Capability Type="size" Name="medium" />
-                      <Capability Type="size" Name="large" />
+                      <Capability>
+                        <Size Name="small" />
+                      </Capability>
+                      <Capability>
+                        <Size Name="medium" />
+                      </Capability>
+                      <Capability>
+                        <Size Name="large" />
+                      </Capability>
                     </Capabilities>
+                    <ThemeResources>
+                      <Icons>
+                        <Icon Path="WidgetAssets\WidgetIcon.png" />
+                      </Icons>
+                      <Screenshots>
+                        <Screenshot Path="WidgetAssets\WidgetScreenshotLight.png"
+                                    DisplayAltText="Wallpaper Sync widget preview" />
+                      </Screenshots>
+                      <DarkMode>
+                        <Icons>
+                          <Icon Path="WidgetAssets\WidgetIcon.png" />
+                        </Icons>
+                        <Screenshots>
+                          <Screenshot Path="WidgetAssets\WidgetScreenshotDark.png"
+                                      DisplayAltText="Wallpaper Sync widget preview (dark)" />
+                        </Screenshots>
+                      </DarkMode>
+                      <LightMode>
+                        <Icons>
+                          <Icon Path="WidgetAssets\WidgetIcon.png" />
+                        </Icons>
+                        <Screenshots>
+                          <Screenshot Path="WidgetAssets\WidgetScreenshotLight.png"
+                                      DisplayAltText="Wallpaper Sync widget preview (light)" />
+                        </Screenshots>
+                      </LightMode>
+                    </ThemeResources>
                   </Definition>
                 </Definitions>
               </WidgetProvider>

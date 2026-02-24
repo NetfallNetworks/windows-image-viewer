@@ -14,6 +14,8 @@ using System.Windows.Media.Imaging;
 using WallpaperApp.Configuration;
 using WallpaperApp.Models;
 using WallpaperApp.Services;
+using WallpaperApp.Widget;
+using WallpaperApp.TrayApp.Services;
 using MessageBox = System.Windows.MessageBox;
 using WpfImageSource = System.Windows.Media.ImageSource;
 using ModelImageSource = WallpaperApp.Models.ImageSource;
@@ -368,6 +370,42 @@ namespace WallpaperApp.TrayApp.ViewModels
             }
         }
 
+        // Widget status properties
+        private string _widgetMsixStatus = "Checking...";
+        public string WidgetMsixStatus
+        {
+            get => _widgetMsixStatus;
+            set { _widgetMsixStatus = value; OnPropertyChanged(); }
+        }
+
+        private System.Windows.Media.Brush _widgetMsixStatusColor = System.Windows.Media.Brushes.Gray;
+        public System.Windows.Media.Brush WidgetMsixStatusColor
+        {
+            get => _widgetMsixStatusColor;
+            set { _widgetMsixStatusColor = value; OnPropertyChanged(); }
+        }
+
+        private string _widgetPackageStatus = "Checking...";
+        public string WidgetPackageStatus
+        {
+            get => _widgetPackageStatus;
+            set { _widgetPackageStatus = value; OnPropertyChanged(); }
+        }
+
+        private System.Windows.Media.Brush _widgetPackageStatusColor = System.Windows.Media.Brushes.Gray;
+        public System.Windows.Media.Brush WidgetPackageStatusColor
+        {
+            get => _widgetPackageStatusColor;
+            set { _widgetPackageStatusColor = value; OnPropertyChanged(); }
+        }
+
+        private bool _widgetSectionExpanded;
+        public bool WidgetSectionExpanded
+        {
+            get => _widgetSectionExpanded;
+            set { _widgetSectionExpanded = value; OnPropertyChanged(); }
+        }
+
         private string? _urlValidationError;
         public string? UrlValidationError
         {
@@ -390,6 +428,8 @@ namespace WallpaperApp.TrayApp.ViewModels
         public ICommand ResetToDefaultsCommand { get; }
         public ICommand SelectUrlModeCommand { get; }
         public ICommand SelectLocalFileModeCommand { get; }
+        public ICommand CheckWidgetStatusCommand { get; }
+        public ICommand ReregisterWidgetCommand { get; }
 
         public SettingsViewModel(
             IConfigurationService configService,
@@ -446,9 +486,14 @@ namespace WallpaperApp.TrayApp.ViewModels
             ResetToDefaultsCommand = new RelayCommand(OnUndoChanges);
             SelectUrlModeCommand = new RelayCommand(() => SourceType = ModelImageSource.Url);
             SelectLocalFileModeCommand = new RelayCommand(() => SourceType = ModelImageSource.LocalFile);
+            CheckWidgetStatusCommand = new RelayCommand(CheckWidgetStatus);
+            ReregisterWidgetCommand = new RelayCommand(async () => await ReregisterWidgetAsync());
 
             // Initial preview load
             _ = UpdatePreviewAsync();
+
+            // Check widget status in background
+            CheckWidgetStatus();
         }
 
         private void SaveOriginalValues()
@@ -617,6 +662,77 @@ namespace WallpaperApp.TrayApp.ViewModels
             catch
             {
                 // Best effort — wallpaper apply failure does not block save
+            }
+        }
+
+        private void CheckWidgetStatus()
+        {
+            try
+            {
+                // Check MSIX file
+                var msixPath = Path.Combine(AppContext.BaseDirectory, WidgetPackageRegistrar.MsixRelativePath);
+                if (File.Exists(msixPath))
+                {
+                    WidgetMsixStatus = $"Found ({msixPath})";
+                    WidgetMsixStatusColor = System.Windows.Media.Brushes.Green;
+                }
+                else
+                {
+                    WidgetMsixStatus = $"Not found ({msixPath})";
+                    WidgetMsixStatusColor = System.Windows.Media.Brushes.Red;
+                    WidgetSectionExpanded = true;
+                }
+
+                // Check package registration
+                var adapter = new WindowsPackageManagerAdapter();
+                if (adapter.IsPackageRegistered(WidgetPackageRegistrar.PackageFamilyNamePrefix))
+                {
+                    WidgetPackageStatus = "Yes (widget should appear in Win+W)";
+                    WidgetPackageStatusColor = System.Windows.Media.Brushes.Green;
+                }
+                else
+                {
+                    WidgetPackageStatus = "No (widget will not appear until registered)";
+                    WidgetPackageStatusColor = System.Windows.Media.Brushes.OrangeRed;
+                    WidgetSectionExpanded = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                WidgetPackageStatus = $"Error: {ex.Message}";
+                WidgetPackageStatusColor = System.Windows.Media.Brushes.Red;
+                WidgetSectionExpanded = true;
+            }
+        }
+
+        private async Task ReregisterWidgetAsync()
+        {
+            try
+            {
+                WidgetPackageStatus = "Registering...";
+                WidgetPackageStatusColor = System.Windows.Media.Brushes.Gray;
+
+                var registrar = new WidgetPackageRegistrar(new WindowsPackageManagerAdapter());
+                var result = await registrar.RegisterIfNeededAsync();
+
+                if (result)
+                {
+                    WidgetPackageStatus = "Registered successfully! Open Win+W and click '+' to find Wallpaper Sync.";
+                    WidgetPackageStatusColor = System.Windows.Media.Brushes.Green;
+                }
+                else
+                {
+                    WidgetPackageStatus = "Registration failed. Check that Developer Mode is enabled and the signing certificate is trusted.";
+                    WidgetPackageStatusColor = System.Windows.Media.Brushes.Red;
+                }
+
+                // Refresh the full status
+                CheckWidgetStatus();
+            }
+            catch (Exception ex)
+            {
+                WidgetPackageStatus = $"Registration error: {ex.Message}";
+                WidgetPackageStatusColor = System.Windows.Media.Brushes.Red;
             }
         }
 

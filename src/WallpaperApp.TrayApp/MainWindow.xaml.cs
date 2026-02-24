@@ -312,7 +312,8 @@ namespace WallpaperApp.TrayApp
                     try
                     {
                         var registrar = new WidgetPackageRegistrar(new WindowsPackageManagerAdapter());
-                        await registrar.RegisterIfNeededAsync();
+                        var registered = await registrar.RegisterIfNeededAsync();
+                        FileLogger.Log($"[Startup] Widget identity package registration result: {registered}");
                     }
                     catch (Exception ex)
                     {

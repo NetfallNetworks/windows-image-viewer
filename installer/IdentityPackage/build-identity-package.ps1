@@ -152,6 +152,9 @@ $mappingContent = @"
 "$scriptDir\Assets\StoreLogo.png" "Assets\StoreLogo.png"
 "$scriptDir\Assets\Square44x44Logo.png" "Assets\Square44x44Logo.png"
 "$scriptDir\Assets\Square150x150Logo.png" "Assets\Square150x150Logo.png"
+"$scriptDir\WidgetAssets\WidgetIcon.png" "WidgetAssets\WidgetIcon.png"
+"$scriptDir\WidgetAssets\WidgetScreenshotLight.png" "WidgetAssets\WidgetScreenshotLight.png"
+"$scriptDir\WidgetAssets\WidgetScreenshotDark.png" "WidgetAssets\WidgetScreenshotDark.png"
 "@
 Set-Content -Path $mappingFile -Value $mappingContent -Encoding UTF8
 
