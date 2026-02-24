@@ -111,6 +111,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM Copy identity package assets (icons, screenshots, Public folder) into the
+REM WidgetProvider output directory. With AllowExternalContent, Windows resolves
+REM CONTENT files from the ExternalLocationUri, not from the MSIX. Without these
+REM the Widget Board cannot enumerate the widget in the "Add Widgets" panel.
+echo Copying widget assets to WidgetProvider output...
+xcopy /Y /I /E installer\IdentityPackage\Assets bin\WidgetProvider\Assets\
+xcopy /Y /I /E installer\IdentityPackage\WidgetAssets bin\WidgetProvider\WidgetAssets\
+if not exist "bin\WidgetProvider\Public" mkdir "bin\WidgetProvider\Public"
+type nul > "bin\WidgetProvider\Public\.keep"
+
 echo.
 echo [OK] Widget provider published!
 echo.

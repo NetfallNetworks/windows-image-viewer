@@ -155,6 +155,7 @@ $mappingContent = @"
 "$scriptDir\WidgetAssets\WidgetIcon.png" "WidgetAssets\WidgetIcon.png"
 "$scriptDir\WidgetAssets\WidgetScreenshotLight.png" "WidgetAssets\WidgetScreenshotLight.png"
 "$scriptDir\WidgetAssets\WidgetScreenshotDark.png" "WidgetAssets\WidgetScreenshotDark.png"
+"$scriptDir\Public\.gitkeep" "Public\.gitkeep"
 "@
 Set-Content -Path $mappingFile -Value $mappingContent -Encoding UTF8
 
