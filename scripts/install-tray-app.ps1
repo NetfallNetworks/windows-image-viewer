@@ -63,7 +63,14 @@ Write-Host
 if ($AutoStart) {
     Write-Host "Adding to Windows Startup..." -ForegroundColor Yellow
 
-    $shortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
+    # Remove old shortcut name if it exists (was previously "Wallpaper.lnk")
+    $oldShortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
+    if (Test-Path $oldShortcutPath) {
+        Remove-Item -Path $oldShortcutPath -Force
+        Write-Host "  Removed old startup shortcut (Wallpaper.lnk)" -ForegroundColor Gray
+    }
+
+    $shortcutPath = Join-Path $startupFolder "Wallpaper Sync.lnk"
     $targetPath = Join-Path $installPath "WallpaperApp.TrayApp.exe"
 
     $WshShell = New-Object -ComObject WScript.Shell

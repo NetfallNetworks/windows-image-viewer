@@ -11,7 +11,8 @@ Write-Host
 # Get paths
 $installPath = Join-Path $env:LOCALAPPDATA "WallpaperSync"
 $startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Start Menu\Programs\Startup")
-$shortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
+$shortcutPath = Join-Path $startupFolder "Wallpaper Sync.lnk"
+$oldShortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
 
 # Check if running
 $processName = "WallpaperApp.TrayApp"
@@ -31,12 +32,17 @@ if ($runningProcess) {
 }
 Write-Host
 
-# Remove startup shortcut
-if (Test-Path $shortcutPath) {
-    Write-Host "Removing startup shortcut..." -ForegroundColor Yellow
-    Remove-Item -Path $shortcutPath -Force
-    Write-Host "Startup shortcut removed" -ForegroundColor Green
-} else {
+# Remove startup shortcuts (both old and new names)
+$removedAny = $false
+foreach ($path in @($shortcutPath, $oldShortcutPath)) {
+    if (Test-Path $path) {
+        Write-Host "Removing startup shortcut: $(Split-Path -Leaf $path)..." -ForegroundColor Yellow
+        Remove-Item -Path $path -Force
+        Write-Host "Startup shortcut removed" -ForegroundColor Green
+        $removedAny = $true
+    }
+}
+if (-not $removedAny) {
     Write-Host "INFO: No startup shortcut found" -ForegroundColor Gray
 }
 Write-Host

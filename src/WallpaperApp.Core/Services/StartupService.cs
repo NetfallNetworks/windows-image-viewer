@@ -11,6 +11,7 @@ namespace WallpaperApp.Services
     public class StartupService : IStartupService
     {
         private const string APP_NAME = "Wallpaper Sync";
+        private const string OLD_APP_NAME = "Wallpaper";
 
         /// <summary>
         /// Checks if the application is configured to run at Windows startup.
@@ -20,6 +21,10 @@ namespace WallpaperApp.Services
         {
             string startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
             string shortcutPath = Path.Combine(startupFolder, $"{APP_NAME}.lnk");
+
+            // Clean up old shortcut name to prevent duplicate tray icons
+            CleanupOldShortcut(startupFolder);
+
             return File.Exists(shortcutPath);
         }
 
@@ -84,6 +89,30 @@ namespace WallpaperApp.Services
             if (File.Exists(shortcutPath))
             {
                 File.Delete(shortcutPath);
+            }
+
+            // Also remove old shortcut name if present
+            CleanupOldShortcut(startupFolder);
+        }
+
+        /// <summary>
+        /// Removes the old "Wallpaper.lnk" shortcut from the Startup folder.
+        /// The install script previously used a different name than the app,
+        /// which caused duplicate tray icons on reboot.
+        /// </summary>
+        private static void CleanupOldShortcut(string startupFolder)
+        {
+            string oldShortcutPath = Path.Combine(startupFolder, $"{OLD_APP_NAME}.lnk");
+            if (File.Exists(oldShortcutPath))
+            {
+                try
+                {
+                    File.Delete(oldShortcutPath);
+                }
+                catch
+                {
+                    // Best effort — don't fail if we can't delete it
+                }
             }
         }
     }

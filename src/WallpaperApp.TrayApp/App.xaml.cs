@@ -16,11 +16,8 @@ namespace WallpaperApp.TrayApp
 
             if (!createdNew)
             {
-                MessageBox.Show(
-                    "Wallpaper is already running! Check your system tray.",
-                    "Already Running",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                // Silently exit — avoids a dialog popup on every reboot
+                // if a duplicate startup shortcut launches a second instance.
                 Shutdown();
                 return;
             }
