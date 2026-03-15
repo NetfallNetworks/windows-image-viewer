@@ -63,7 +63,7 @@ Write-Host
 if ($AutoStart) {
     Write-Host "Adding to Windows Startup..." -ForegroundColor Yellow
 
-    $shortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
+    $shortcutPath = Join-Path $startupFolder "Wallpaper Sync.lnk"
     $targetPath = Join-Path $installPath "WallpaperApp.TrayApp.exe"
 
     $WshShell = New-Object -ComObject WScript.Shell

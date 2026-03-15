@@ -11,7 +11,7 @@ Write-Host
 # Get paths
 $installPath = Join-Path $env:LOCALAPPDATA "WallpaperSync"
 $startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Start Menu\Programs\Startup")
-$shortcutPath = Join-Path $startupFolder "Wallpaper.lnk"
+$shortcutPath = Join-Path $startupFolder "Wallpaper Sync.lnk"
 
 # Check if running
 $processName = "WallpaperApp.TrayApp"
