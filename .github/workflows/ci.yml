@@ -1,0 +1,133 @@
+# CI/CD pipeline for Wallpaper Sync
+# Builds, tests, publishes, and packages the MSI installer on Windows.
+#
+# Triggers:
+#   - Every push to main and PR: build, test, publish, and package MSI
+#
+# Secrets required:  NONE  (unsigned builds)
+#
+# Optional secrets for code-signed releases:
+#   CODE_SIGNING_CERT      - Base64-encoded .pfx certificate
+#   CODE_SIGNING_PASSWORD  - Password for the .pfx
+#   Add at: GitHub repo → Settings → Secrets and variables → Actions
+
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Job 1: Build + Test ──────────────────────────────────────────────
+  build-and-test:
+    name: Build & Test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore WallpaperApp.sln
+
+      - name: Build solution
+        run: dotnet build WallpaperApp.sln -c Release --no-restore --warnaserror --verbosity minimal --nologo
+
+      - name: Run tests
+        run: dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj -c Release --no-build --verbosity minimal --nologo --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results
+          path: src/WallpaperApp.Tests/TestResults/test-results.trx
+          retention-days: 30
+
+  # ─── Job 2: Package MSI installer ────────────────────────────────────
+  package-installer:
+    name: Package Installer (MSI)
+    needs: build-and-test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore WallpaperApp.sln
+
+      - name: Build solution
+        run: dotnet build WallpaperApp.sln -c Release --no-restore --warnaserror --verbosity minimal --nologo
+
+      # ── Publish artifacts ──
+
+      - name: Publish Console App
+        run: dotnet publish src/WallpaperApp/WallpaperApp.csproj -c Release -o publish/WallpaperApp --no-build --verbosity minimal --nologo
+
+      - name: Publish Tray App (single-file, self-contained)
+        run: >
+          dotnet publish src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj
+          -c Release -o bin/TrayApp
+          --self-contained true --runtime win-x64
+          /p:PublishSingleFile=true
+          /p:IncludeNativeLibrariesForSelfExtract=true
+          --verbosity minimal --nologo
+
+      # ── Build MSI ──
+
+      - name: Restore WiX toolset
+        run: dotnet tool restore
+
+      - name: Add WiX UI extension
+        run: dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
+        continue-on-error: true   # idempotent — may already be cached
+
+      - name: Build MSI installer
+        run: >
+          dotnet tool run wix build installer/Package.wxs
+          -ext WixToolset.UI.wixext
+          -o installer/WallpaperSync-Setup.msi
+          -arch x64
+
+      # ── Upload artifacts ──
+
+      - name: Upload MSI installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: WallpaperSync-Setup
+          path: installer/WallpaperSync-Setup.msi
+          retention-days: 90
+
+      - name: Upload Tray App
+        uses: actions/upload-artifact@v7
+        with:
+          name: WallpaperSync-TrayApp
+          path: bin/TrayApp/WallpaperApp.TrayApp.exe
+          retention-days: 90
+
+      - name: Upload Console App
+        uses: actions/upload-artifact@v7
+        with:
+          name: WallpaperSync-ConsoleApp
+          path: publish/WallpaperApp/
+          retention-days: 90
+
+  # ─── Releases ──────────────────────────────────────────────────────────
+  # Use the separate "Release" workflow (release.yml) to create versioned
+  # releases. It bumps versions, builds, tags, and publishes to GitHub Releases.
