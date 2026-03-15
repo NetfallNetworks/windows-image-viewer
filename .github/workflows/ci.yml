@@ -2,8 +2,7 @@
 # Builds, tests, publishes, and packages the MSI installer on Windows.
 #
 # Triggers:
-#   - Every push and PR: build + test (fast feedback)
-#   - Pushes to main: full pipeline including MSI packaging
+#   - Every push to main and PR: build, test, publish, and package MSI
 #
 # Secrets required:  NONE  (unsigned builds)
 #
@@ -31,10 +30,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
@@ -48,7 +47,7 @@ jobs:
         run: dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj -c Release --no-build --verbosity minimal --nologo --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results
@@ -60,14 +59,13 @@ jobs:
     name: Package Installer (MSI)
     needs: build-and-test
     runs-on: windows-latest
-    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
@@ -110,21 +108,21 @@ jobs:
       # ── Upload artifacts ──
 
       - name: Upload MSI installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: WallpaperSync-Setup
           path: installer/WallpaperSync-Setup.msi
           retention-days: 90
 
       - name: Upload Tray App
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: WallpaperSync-TrayApp
           path: bin/TrayApp/WallpaperApp.TrayApp.exe
           retention-days: 90
 
       - name: Upload Console App
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: WallpaperSync-ConsoleApp
           path: publish/WallpaperApp/
