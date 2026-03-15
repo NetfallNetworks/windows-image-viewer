@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -499,8 +500,13 @@ namespace WallpaperApp.TrayApp
 
         private void ShowAbout()
         {
+            var version = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+                ?? "unknown";
+
             MessageBox.Show(
-                "Wallpaper Tray App\n\n" +
+                $"Wallpaper Tray App  v{version}\n\n" +
                 "Automatically updates your wallpaper!\n\n" +
                 "Right-click the tray icon for options.\n" +
                 "Double-click to view status.",
