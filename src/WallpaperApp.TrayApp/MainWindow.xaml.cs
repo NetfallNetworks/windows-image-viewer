@@ -9,6 +9,7 @@ using WallpaperApp.Services;
 using WallpaperApp.TrayApp.Services;
 using WallpaperApp.TrayApp.Views;
 using WallpaperApp.Widget;
+using Microsoft.Win32;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
 using DrawingFont = System.Drawing.Font;
@@ -380,6 +381,9 @@ namespace WallpaperApp.TrayApp
                     dueTime: intervalMilliseconds,
                     period: intervalMilliseconds
                 );
+
+                // Listen for resume from sleep/hibernate to catch missed refreshes
+                SystemEvents.PowerModeChanged += OnPowerModeChanged;
             }
             catch (Exception ex)
             {
@@ -408,6 +412,39 @@ namespace WallpaperApp.TrayApp
             catch (Exception ex)
             {
                 FileLogger.LogError("Error in timer callback", ex);
+            }
+        }
+
+        private async void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode != PowerModes.Resume)
+                return;
+
+            try
+            {
+                FileLogger.Log("System resumed from sleep/hibernate");
+
+                // If the next refresh time has already passed, refresh immediately
+                if (DateTime.Now >= _nextRefreshTime)
+                {
+                    FileLogger.Log("Missed refresh detected after wake - updating now");
+                    _status = "Updating wallpaper...";
+                    UpdateTrayIconText();
+
+                    await ExecuteUpdateAsync();
+
+                    // Reset the timer with a fresh interval
+                    var settings = _configurationService.LoadConfiguration();
+                    var intervalMilliseconds = settings.RefreshIntervalMinutes * 60 * 1000;
+                    _nextRefreshTime = DateTime.Now.AddMinutes(settings.RefreshIntervalMinutes);
+                    FileLogger.Log($"Next refresh at: {_nextRefreshTime:yyyy-MM-dd HH:mm:ss}");
+
+                    _updateTimer?.Change(intervalMilliseconds, intervalMilliseconds);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogError("Error handling resume from sleep", ex);
             }
         }
 
@@ -487,11 +524,21 @@ namespace WallpaperApp.TrayApp
             var settings = _configurationService.LoadConfiguration();
             var timeUntilNext = _nextRefreshTime - DateTime.Now;
 
+            string timeDisplay;
+            if (timeUntilNext.TotalSeconds <= 0)
+            {
+                timeDisplay = "Overdue - refresh pending";
+            }
+            else
+            {
+                timeDisplay = $"{timeUntilNext.Hours}h {timeUntilNext.Minutes}m {timeUntilNext.Seconds}s";
+            }
+
             var statusMessage = $"Wallpaper Status\n\n" +
                               $"Status: {_status}\n" +
                               $"Refresh Interval: {settings.RefreshIntervalMinutes} minutes\n" +
                               $"Next Refresh: {_nextRefreshTime:HH:mm:ss}\n" +
-                              $"Time Until Next: {timeUntilNext.Hours}h {timeUntilNext.Minutes}m {timeUntilNext.Seconds}s\n\n" +
+                              $"Time Until Next: {timeDisplay}\n\n" +
                               $"Image URL: {settings.ImageUrl}\n" +
                               $"Log File: {FileLogger.GetLogPath()}";
 
@@ -583,6 +630,7 @@ namespace WallpaperApp.TrayApp
 
         private void StopWallpaperUpdates()
         {
+            SystemEvents.PowerModeChanged -= OnPowerModeChanged;
             _updateTimer?.Dispose();
             _updateTimer = null;
             _status = "Disabled";
@@ -636,6 +684,7 @@ namespace WallpaperApp.TrayApp
 
         protected override void OnClosed(EventArgs e)
         {
+            SystemEvents.PowerModeChanged -= OnPowerModeChanged;
             _updateTimer?.Dispose();
             _clickTimer?.Stop();
             _notifyIcon?.Dispose();
