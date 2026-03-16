@@ -98,11 +98,24 @@ jobs:
           Set-Content $file $content -NoNewline
           Write-Host "Updated $file to $v"
 
+      - name: Update version in MSIX identity manifest
+        shell: pwsh
+        run: |
+          $v = "${{ steps.version.outputs.NEW_VERSION }}"
+          $file = "installer/IdentityPackage/AppxManifest.xml"
+          $content = Get-Content $file -Raw
+
+          # Update Version="x.y.z.0" in the Identity element (MSIX requires 4-part version)
+          $content = $content -replace '(Version=")[^"]+(")', "`${1}$v.0`${2}"
+
+          Set-Content $file $content -NoNewline
+          Write-Host "Updated $file to $v.0"
+
       - name: Commit version bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj installer/Package.wxs
+          git add src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj installer/Package.wxs installer/IdentityPackage/AppxManifest.xml
           git commit -m "Bump version to ${{ steps.version.outputs.NEW_VERSION }}"
 
       # ── Build + Test ──

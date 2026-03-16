@@ -22,7 +22,7 @@
   <Identity
     Name="WallpaperSync.WidgetProvider"
     Publisher="CN=WallpaperSync"
-    Version="1.0.0.0"
+    Version="1.1.0.0"
     ProcessorArchitecture="x64" />
 
   <Properties>

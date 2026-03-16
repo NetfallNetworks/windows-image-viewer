@@ -22,7 +22,7 @@
 
   <Package Name="Wallpaper Sync"
            Manufacturer="Wallpaper Sync"
-           Version="1.0.0"
+           Version="1.1.0"
            UpgradeCode="A9B3C4D5-E6F7-4A1B-8C2D-3E4F5A6B7C8D"
            Scope="perUser"
            Compressed="yes">
