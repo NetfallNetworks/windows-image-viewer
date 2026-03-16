@@ -30,8 +30,11 @@
     <!--
       MajorUpgrade: running the new MSI automatically removes the old version first.
       Same UpgradeCode is reused across all 1.x.x releases; bump for breaking changes.
+      AllowSameVersionUpgrades: re-running the same version reinstalls in-place
+      without requiring manual removal first.
     -->
     <MajorUpgrade
+      AllowSameVersionUpgrades="yes"
       DowngradeErrorMessage="A newer version of Wallpaper Sync is already installed. Please uninstall it first." />
 
     <MediaTemplate EmbedCab="yes" />
