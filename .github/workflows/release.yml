@@ -52,7 +52,6 @@ jobs:
           # Read current version from TrayApp csproj (source of truth)
           [xml]$csproj = Get-Content "src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj"
           $current = (Select-Xml -Xml $csproj -XPath "//Version").Node.InnerText
-          if (-not $current) { throw "Could not read Version from csproj" }
           Write-Host "Current version: $current"
 
           $parts = $current.Split('.')
