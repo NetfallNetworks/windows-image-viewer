@@ -93,7 +93,8 @@ jobs:
           $content = Get-Content $file -Raw
 
           # Update Version="x.y.z.0" in the Package element (WiX v4 requires 4-part version)
-          $content = $content -replace '(Version=")[^"]+(")', "`${1}$v.0`${2}"
+          # Use -creplace (case-sensitive) so the <?xml version="1.0"?> declaration is not touched
+          $content = $content -creplace '(Version=")[^"]+(")', "`${1}$v.0`${2}"
 
           Set-Content $file $content -NoNewline
           Write-Host "Updated $file to $v"
@@ -106,7 +107,8 @@ jobs:
           $content = Get-Content $file -Raw
 
           # Update Version="x.y.z.0" in the Identity element (MSIX requires 4-part version)
-          $content = $content -replace '(Version=")[^"]+(")', "`${1}$v.0`${2}"
+          # Use -creplace (case-sensitive) so the <?xml version="1.0"?> declaration is not touched
+          $content = $content -creplace '(Version=")[^"]+(")', "`${1}$v.0`${2}"
 
           Set-Content $file $content -NoNewline
           Write-Host "Updated $file to $v.0"
