@@ -5,8 +5,7 @@ cd "$(dirname "$0")/.."
 
 # Read version from the single source of truth (Directory.Build.props)
 APP_VERSION=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props)
-WIX_VERSION="${APP_VERSION}.0"  # WiX requires 4-part version (x.y.z.0)
-echo "Version: $APP_VERSION (WiX: $WIX_VERSION)"
+echo "Version: $APP_VERSION"
 echo ""
 
 # Detect platform
@@ -136,7 +135,7 @@ if [ "$IS_WINDOWS" = true ]; then
         dotnet tool run wix build installer/Package.wxs $WIX_WIDGET_FILES \
             -ext WixToolset.UI.wixext \
             -o installer/WallpaperSync-Setup.msi \
-            -arch x64 -d "Version=$WIX_VERSION" $WIX_WIDGET_FLAG
+            -arch x64 -d "Version=$APP_VERSION" $WIX_WIDGET_FLAG
         echo "✅ Installer built: installer/WallpaperSync-Setup.msi"
     else
         echo "⚠️  WiX tool restore failed - skipping installer build"
@@ -157,7 +156,7 @@ else
         WIX_OUT=$(dotnet tool run wix build installer/Package.wxs \
             -ext WixToolset.UI.wixext \
             -o /tmp/WallpaperSync-validate.msi \
-            -arch x64 -d "Version=$WIX_VERSION" 2>&1 || true)
+            -arch x64 -d "Version=$APP_VERSION" 2>&1 || true)
         # WIX0103 = source file not found (expected: exe is Windows-only build artifact)
         # WIX0389 = Directory/@Name "not a relative path" - Linux WiX validator false positive
         #           for valid Windows folder names like "WallpaperSync" and "Wallpaper Sync"

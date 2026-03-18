@@ -104,7 +104,7 @@ jobs:
         run: |
           [xml]$props = Get-Content "Directory.Build.props"
           $v = (Select-Xml -Xml $props -XPath "//Version").Node.InnerText
-          "WIX_VERSION=$v.0" >> $env:GITHUB_OUTPUT
+          "APP_VERSION=$v" >> $env:GITHUB_OUTPUT
 
       - name: Build MSI installer
         run: >
@@ -112,7 +112,7 @@ jobs:
           -ext WixToolset.UI.wixext
           -o installer/WallpaperSync-Setup.msi
           -arch x64
-          -d Version=${{ steps.version.outputs.WIX_VERSION }}
+          -d Version=${{ steps.version.outputs.APP_VERSION }}
 
       # ── Upload artifacts ──
 

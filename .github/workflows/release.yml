@@ -145,7 +145,7 @@ jobs:
           -ext WixToolset.UI.wixext
           -o installer/WallpaperSync-Setup.msi
           -arch x64
-          -d Version=${{ steps.version.outputs.NEW_VERSION }}.0
+          -d Version=${{ steps.version.outputs.NEW_VERSION }}
 
       # ── Tag + Push ──
 
