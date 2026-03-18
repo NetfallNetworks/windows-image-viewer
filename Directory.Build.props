@@ -1,12 +1,11 @@
 <Project>
   <!--
-    Single source of truth for the product version.
-    All .NET projects (Core, Console, TrayApp, Tests, WidgetProvider) inherit these.
-    The release workflow bumps the version HERE; build scripts pass it to WiX/MSIX.
+    Single source of truth for the product version (semver: major.minor.patch).
+    All .NET projects inherit this automatically.
+    AssemblyVersion/FileVersion are auto-derived (x.y.z → x.y.z.0).
+    Build scripts append .0 when passing to WiX/MSIX (which require 4-part versions).
   -->
   <PropertyGroup>
     <Version>1.1.0</Version>
-    <AssemblyVersion>1.1.0.0</AssemblyVersion>
-    <FileVersion>1.1.0.0</FileVersion>
   </PropertyGroup>
 </Project>
