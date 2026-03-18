@@ -6,6 +6,12 @@ set "REPO_ROOT=%SCRIPT_DIR%.."
 
 cd /d "%REPO_ROOT%"
 
+REM Read version from the single source of truth (Directory.Build.props)
+for /f "tokens=2 delims=<>" %%v in ('findstr /r "<Version>[0-9]" Directory.Build.props') do set "APP_VERSION=%%v"
+set "WIX_VERSION=%APP_VERSION%.0"
+echo Version: %APP_VERSION% (WiX: %WIX_VERSION%)
+echo.
+
 echo ========================================
 echo Step 1/6: Building Projects...
 echo ========================================
@@ -181,13 +187,13 @@ if errorlevel 1 (
 
 echo Including Widget Board feature in installer.
 echo Building WallpaperSync-Setup.msi...
-dotnet tool run wix build installer\Package.wxs installer\WidgetProviderFiles.wxs -ext WixToolset.UI.wixext -o installer\WallpaperSync-Setup.msi -arch x64 -d IncludeWidget=true
+dotnet tool run wix build installer\Package.wxs installer\WidgetProviderFiles.wxs -ext WixToolset.UI.wixext -o installer\WallpaperSync-Setup.msi -arch x64 -d "Version=%WIX_VERSION%" -d IncludeWidget=true
 goto CheckMsiResult
 
 :BuildMsiWithoutWidget
 echo Excluding Widget Board feature from installer.
 echo Building WallpaperSync-Setup.msi...
-dotnet tool run wix build installer\Package.wxs -ext WixToolset.UI.wixext -o installer\WallpaperSync-Setup.msi -arch x64
+dotnet tool run wix build installer\Package.wxs -ext WixToolset.UI.wixext -o installer\WallpaperSync-Setup.msi -arch x64 -d "Version=%WIX_VERSION%"
 
 :CheckMsiResult
 if not exist "installer\WallpaperSync-Setup.msi" (

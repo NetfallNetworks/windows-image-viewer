@@ -49,9 +49,9 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          # Read current version from TrayApp csproj (source of truth)
-          [xml]$csproj = Get-Content "src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj"
-          $current = (Select-Xml -Xml $csproj -XPath "//Version").Node.InnerText
+          # Read current version from Directory.Build.props (single source of truth)
+          [xml]$props = Get-Content "Directory.Build.props"
+          $current = (Select-Xml -Xml $props -XPath "//Version").Node.InnerText
           Write-Host "Current version: $current"
 
           $parts = $current.Split('.')
@@ -70,31 +70,17 @@ jobs:
           "NEW_VERSION=$new" >> $env:GITHUB_OUTPUT
           "TAG=v$new" >> $env:GITHUB_OUTPUT
 
-      - name: Update version in TrayApp csproj
+      - name: Update version in Directory.Build.props
         shell: pwsh
         run: |
           $v = "${{ steps.version.outputs.NEW_VERSION }}"
-          $file = "src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj"
+          $file = "Directory.Build.props"
           $content = Get-Content $file -Raw
 
-          # Update <Version>, <AssemblyVersion>, <FileVersion>
+          # These tags only exist in Directory.Build.props — safe, unambiguous replacement
           $content = $content -replace '<Version>[^<]+</Version>', "<Version>$v</Version>"
           $content = $content -replace '<AssemblyVersion>[^<]+</AssemblyVersion>', "<AssemblyVersion>$v.0</AssemblyVersion>"
           $content = $content -replace '<FileVersion>[^<]+</FileVersion>', "<FileVersion>$v.0</FileVersion>"
-
-          Set-Content $file $content -NoNewline
-          Write-Host "Updated $file to $v"
-
-      - name: Update version in WiX installer
-        shell: pwsh
-        run: |
-          $v = "${{ steps.version.outputs.NEW_VERSION }}"
-          $file = "installer/Package.wxs"
-          $content = Get-Content $file -Raw
-
-          # Update Version="x.y.z.0" in the Package element (WiX v4 requires 4-part version)
-          # Use -creplace (case-sensitive) so the <?xml version="1.0"?> declaration is not touched
-          $content = $content -creplace '(Version=")[^"]+(")', "`${1}$v.0`${2}"
 
           Set-Content $file $content -NoNewline
           Write-Host "Updated $file to $v"
@@ -104,20 +90,21 @@ jobs:
         run: |
           $v = "${{ steps.version.outputs.NEW_VERSION }}"
           $file = "installer/IdentityPackage/AppxManifest.xml"
-          $content = Get-Content $file -Raw
 
-          # Update Version="x.y.z.0" in the Identity element (MSIX requires 4-part version)
-          # Use -creplace (case-sensitive) so the <?xml version="1.0"?> declaration is not touched
-          $content = $content -creplace '(Version=")[^"]+(")', "`${1}$v.0`${2}"
-
-          Set-Content $file $content -NoNewline
+          # Targeted replacement: only the <Identity> element's Version attribute.
+          # This is safe because <Identity> has a unique, stable structure in MSIX manifests.
+          [xml]$manifest = Get-Content $file
+          $ns = @{ x = "http://schemas.microsoft.com/appx/manifest/foundation/windows10" }
+          $identity = (Select-Xml -Xml $manifest -XPath "//x:Identity" -Namespace $ns).Node
+          $identity.SetAttribute("Version", "$v.0")
+          $manifest.Save((Resolve-Path $file))
           Write-Host "Updated $file to $v.0"
 
       - name: Commit version bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/WallpaperApp.TrayApp/WallpaperApp.TrayApp.csproj installer/Package.wxs installer/IdentityPackage/AppxManifest.xml
+          git add Directory.Build.props installer/IdentityPackage/AppxManifest.xml
           git commit -m "Bump version to ${{ steps.version.outputs.NEW_VERSION }}"
 
       # ── Build + Test ──
@@ -160,6 +147,7 @@ jobs:
           -ext WixToolset.UI.wixext
           -o installer/WallpaperSync-Setup.msi
           -arch x64
+          -d Version=${{ steps.version.outputs.NEW_VERSION }}.0
 
       # ── Tag + Push ──
 

@@ -98,12 +98,21 @@ jobs:
         run: dotnet tool run wix extension add WixToolset.UI.wixext/4.0.5
         continue-on-error: true   # idempotent — may already be cached
 
+      - name: Read version from Directory.Build.props
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content "Directory.Build.props"
+          $v = (Select-Xml -Xml $props -XPath "//Version").Node.InnerText
+          "WIX_VERSION=$v.0" >> $env:GITHUB_OUTPUT
+
       - name: Build MSI installer
         run: >
           dotnet tool run wix build installer/Package.wxs
           -ext WixToolset.UI.wixext
           -o installer/WallpaperSync-Setup.msi
           -arch x64
+          -d Version=${{ steps.version.outputs.WIX_VERSION }}
 
       # ── Upload artifacts ──
 
