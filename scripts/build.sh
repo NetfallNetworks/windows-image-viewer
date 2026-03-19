@@ -3,8 +3,8 @@ set -e  # Exit immediately if any command fails
 
 cd "$(dirname "$0")/.."
 
-# Read version from the single source of truth (Directory.Build.props)
-APP_VERSION=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props)
+# Read version via MSBuild (respects Directory.Build.props inheritance, no regex)
+APP_VERSION=$(dotnet msbuild src/WallpaperApp/WallpaperApp.csproj -getProperty:Version -nologo)
 echo "Version: $APP_VERSION"
 echo ""
 

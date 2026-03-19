@@ -6,8 +6,8 @@ set "REPO_ROOT=%SCRIPT_DIR%.."
 
 cd /d "%REPO_ROOT%"
 
-REM Read version from the single source of truth (Directory.Build.props)
-for /f "tokens=2 delims=<>" %%v in ('findstr /r "<Version>[0-9]" Directory.Build.props') do set "APP_VERSION=%%v"
+REM Read version via MSBuild (respects Directory.Build.props inheritance, no regex)
+for /f "usebackq delims=" %%v in (`dotnet msbuild src\WallpaperApp\WallpaperApp.csproj -getProperty:Version -nologo`) do set "APP_VERSION=%%v"
 echo Version: %APP_VERSION%
 echo.
 
