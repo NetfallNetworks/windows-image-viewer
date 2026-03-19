@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    Single source of truth for the product version (semver: major.minor.patch).
+    All .NET projects inherit this automatically.
+    AssemblyVersion/FileVersion are auto-derived by MSBuild.
+    Build scripts pass this version directly to WiX. Only MSIX needs .0 appended (release workflow handles it).
+  -->
+  <PropertyGroup>
+    <Version>1.1.0</Version>
+  </PropertyGroup>
+</Project>
