@@ -25,6 +25,12 @@ on:
 permissions:
   contents: write
 
+env:
+  # Prevent MSBuild internal CLR crashes (0x80131506) caused by
+  # parallel out-of-process node reuse in resource-constrained CI.
+  MSBUILDDISABLENODEREUSE: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
 jobs:
   release:
     name: Bump, Build & Release
@@ -111,7 +117,7 @@ jobs:
         run: dotnet restore WallpaperApp.sln
 
       - name: Build solution
-        run: dotnet build WallpaperApp.sln -c Release --no-restore --warnaserror --verbosity minimal --nologo
+        run: dotnet build WallpaperApp.sln -c Release --no-restore --warnaserror --verbosity minimal --nologo -nodeReuse:false -maxcpucount:1
 
       - name: Run tests
         run: dotnet test src/WallpaperApp.Tests/WallpaperApp.Tests.csproj -c Release --no-build --verbosity minimal --nologo
