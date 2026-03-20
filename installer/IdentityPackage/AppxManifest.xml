@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
   Sparse MSIX Identity Package for Wallpaper Sync Widget Provider.
 
@@ -11,20 +11,8 @@
 
   See ADR-007 for the architectural decision and trade-off analysis.
 -->
-<Package
-  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
-  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
-  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
-  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap3 uap10 com rescap">
-
-  <Identity
-    Name="WallpaperSync.WidgetProvider"
-    Publisher="CN=WallpaperSync"
-    Version="1.1.0.0"
-    ProcessorArchitecture="x64" />
-
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3" xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10" xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap3 uap10 com rescap">
+  <Identity Name="WallpaperSync.WidgetProvider" Publisher="CN=WallpaperSync" Version="1.2.0.0" ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>Wallpaper Sync Widget</DisplayName>
     <PublisherDisplayName>WallpaperSync</PublisherDisplayName>
@@ -32,48 +20,27 @@
     <!-- AllowExternalContent lets the manifest reference an exe installed outside the package -->
     <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
   </Properties>
-
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.22621.0" />
   </Dependencies>
-
   <Resources>
     <Resource Language="en-us" />
   </Resources>
-
   <Applications>
-    <Application Id="WallpaperSyncWidgetProvider"
-                 Executable="WallpaperApp.WidgetProvider.exe"
-                 EntryPoint="Windows.FullTrustApplication">
-
-      <uap3:VisualElements
-        DisplayName="Wallpaper Sync"
-        Description="Displays your Wallpaper Sync image in the Widget Board"
-        BackgroundColor="transparent"
-        Square44x44Logo="Assets\Square44x44Logo.png"
-        Square150x150Logo="Assets\Square150x150Logo.png" />
-
+    <Application Id="WallpaperSyncWidgetProvider" Executable="WallpaperApp.WidgetProvider.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap3:VisualElements DisplayName="Wallpaper Sync" Description="Displays your Wallpaper Sync image in the Widget Board" BackgroundColor="transparent" Square44x44Logo="Assets\Square44x44Logo.png" Square150x150Logo="Assets\Square150x150Logo.png" />
       <Extensions>
         <!-- COM server registration: Widget Board activates this CLSID to create the provider -->
         <com:Extension Category="windows.comServer">
           <com:ComServer>
-            <com:ExeServer
-              Executable="WallpaperApp.WidgetProvider.exe"
-              Arguments="-RegisterProcessAsComServer"
-              DisplayName="Wallpaper Sync Widget Provider">
-              <com:Class Id="6B2A4C8E-3F1D-4A9B-8E2C-5D7F1A3B6E4C"
-                         DisplayName="WallpaperImageWidgetProvider" />
+            <com:ExeServer Executable="WallpaperApp.WidgetProvider.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Wallpaper Sync Widget Provider">
+              <com:Class Id="6B2A4C8E-3F1D-4A9B-8E2C-5D7F1A3B6E4C" DisplayName="WallpaperImageWidgetProvider" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
-
         <!-- Widget definition: declares the widget for the Win+W "Add widgets" panel -->
         <uap3:Extension Category="windows.appExtension">
-          <uap3:AppExtension
-            Name="com.microsoft.windows.widgets"
-            DisplayName="Wallpaper Sync"
-            Id="WallpaperSync.Widget"
-            PublicFolder="Public">
+          <uap3:AppExtension Name="com.microsoft.windows.widgets" DisplayName="Wallpaper Sync" Id="WallpaperSync.Widget" PublicFolder="Public">
             <uap3:Properties>
               <WidgetProvider>
                 <ProviderIcons>
@@ -83,11 +50,7 @@
                   <CreateInstance ClassId="6B2A4C8E-3F1D-4A9B-8E2C-5D7F1A3B6E4C" />
                 </Activation>
                 <Definitions>
-                  <Definition
-                    Id="WallpaperSync_Image"
-                    DisplayName="Wallpaper Sync"
-                    Description="Shows your synchronized wallpaper image"
-                    AllowMultiple="false">
+                  <Definition Id="WallpaperSync_Image" DisplayName="Wallpaper Sync" Description="Shows your synchronized wallpaper image" AllowMultiple="false">
                     <Capabilities>
                       <Capability Type="size" Name="small" />
                       <Capability Type="size" Name="medium" />
@@ -102,7 +65,6 @@
       </Extensions>
     </Application>
   </Applications>
-
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
   </Capabilities>
