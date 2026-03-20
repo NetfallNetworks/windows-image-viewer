@@ -160,18 +160,24 @@ jobs:
           git tag ${{ steps.version.outputs.TAG }}
           git push origin ${{ steps.version.outputs.TAG }}
 
-      - name: Create version bump PR
+      - name: Push version bump to main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $branch = "release/bump-${{ steps.version.outputs.TAG }}"
-          git checkout -b $branch
-          git push origin $branch
-          gh pr create `
-            --base main `
-            --head $branch `
-            --title "Bump version to ${{ steps.version.outputs.NEW_VERSION }}" `
-            --body "Automated version bump from release pipeline (${{ steps.version.outputs.TAG }}).`n`nMerge this to keep ``main`` in sync with the released version."
+          # Try pushing the version bump directly to main first.
+          # If branch protection blocks the direct push, fall back to
+          # a PR with auto-merge so it lands as soon as checks pass.
+          git push origin HEAD:main || {
+            $branch = "release/bump-${{ steps.version.outputs.TAG }}"
+            git checkout -b $branch
+            git push origin $branch
+            gh pr create `
+              --base main `
+              --head $branch `
+              --title "Bump version to ${{ steps.version.outputs.NEW_VERSION }}" `
+              --body "Automated version bump from release pipeline (${{ steps.version.outputs.TAG }}).`n`nMerge this to keep ``main`` in sync with the released version."
+            gh pr merge $branch --auto --merge
+          }
         shell: pwsh
 
       # ── Create Release ──
