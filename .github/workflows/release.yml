@@ -158,7 +158,7 @@ jobs:
       - name: Tag and push
         run: |
           git tag ${{ steps.version.outputs.TAG }}
-          git push origin HEAD:main --tags
+          git push origin ${{ steps.version.outputs.TAG }}
 
       # ── Create Release ──
 
