@@ -160,6 +160,20 @@ jobs:
           git tag ${{ steps.version.outputs.TAG }}
           git push origin ${{ steps.version.outputs.TAG }}
 
+      - name: Create version bump PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $branch = "release/bump-${{ steps.version.outputs.TAG }}"
+          git checkout -b $branch
+          git push origin $branch
+          gh pr create `
+            --base main `
+            --head $branch `
+            --title "Bump version to ${{ steps.version.outputs.NEW_VERSION }}" `
+            --body "Automated version bump from release pipeline (${{ steps.version.outputs.TAG }}).`n`nMerge this to keep ``main`` in sync with the released version."
+        shell: pwsh
+
       # ── Create Release ──
 
       - name: Create GitHub Release
